@@ -1,0 +1,15 @@
+from app.routers.auth_router import router as auth_router
+from app.routers.subscription_router import router as subscription_router
+from app.routers.admin_router import router as admin_router
+from app.routers.documents_router import router as documents_router
+from app.routers.excel_router import router as excel_router
+from app.routers.groups_router import router as groups_router
+from app.routers.payment_router import router as payment_router
+from app.routers.inventory_router import router as inventory_router
+from app.routers.rooming_router import router as rooming_router
+from app.routers.shared_router import router as shared_router
+from app.routers.team_router import router as team_router
+from app.routers.analytics_router import router as analytics_router
+from app.routers.itinerary_router import router as itinerary_router
+from app.routers.document_router import router as document_router
+from app.routers.notification_router import router as notification_router

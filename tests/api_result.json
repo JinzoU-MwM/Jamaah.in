@@ -1,0 +1,26 @@
+{
+  "status": "success",
+  "message": "Processed 3 documents, consolidated to 1 unique records",
+  "total_files": 3,
+  "successful": 3,
+  "failed": 0,
+  "data": [
+    {
+      "no_identitas": "",
+      "nama": "EM '",
+      "tempat_lahir": "PATL",
+      "tanggal_lahir": "",
+      "alamat": "DURUM ROPE K \" Joes",
+      "provinsi": "JAWA TENGAIT",
+      "kabupaten": "PATI",
+      "kecamatan": "",
+      "kelurahan": "",
+      "no_paspor": "",
+      "tanggal_paspor": "",
+      "kota_paspor": "",
+      "no_visa": "",
+      "jenis_identitas": "KTP",
+      "kewarganegaraan": "WNI"
+    }
+  ]
+}
