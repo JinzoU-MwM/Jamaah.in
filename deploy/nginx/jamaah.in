@@ -13,7 +13,7 @@ server {
     
     # Frontend - Serve static files
     location / {
-        root /var/www/jamaah.in/frontend/dist;
+        root /var/www/jamaah.in/frontend-svelte/dist;
         try_files $uri $uri/ /index.html;
         
         # Cache static assets

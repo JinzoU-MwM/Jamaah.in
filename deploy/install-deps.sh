@@ -8,7 +8,7 @@ set -e
 
 APP_DIR="/var/www/jamaah.in"
 BACKEND_DIR="$APP_DIR/backend"
-FRONTEND_DIR="$APP_DIR/frontend"
+FRONTEND_DIR="$APP_DIR/frontend-svelte"
 
 echo "=========================================="
 echo "  Installing Dependencies"
