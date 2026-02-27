@@ -1,0 +1,42 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /var/www/jamaah.in
+            
+            # Pull latest code
+            git pull origin main
+            
+            # Backend: update dependencies
+            cd backend
+            source venv/bin/activate
+            pip install -r requirements.txt --quiet
+            deactivate
+            cd ..
+            
+            # Frontend: install and build
+            cd frontend-svelte
+            npm install --quiet
+            npm run build
+            cd ..
+            
+            # Restart backend service
+            sudo systemctl restart jamaah-backend
+            
+            echo "✅ Deployment complete!"
