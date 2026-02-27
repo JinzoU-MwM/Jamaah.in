@@ -65,12 +65,12 @@ apt install -y \
     tesseract-ocr \
     tesseract-ocr-ind \
     libtesseract-dev \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     poppler-utils
 
-# Install PDF processing
-apt install -y pdf2image || pip3 install pdf2image
+# Install PDF processing (pip package, not apt)
+pip3 install pdf2image
 
 # Setup firewall
 echo -e "${YELLOW}[8/10] Setting up firewall...${NC}"
