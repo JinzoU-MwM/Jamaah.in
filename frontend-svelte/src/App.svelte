@@ -10,19 +10,37 @@
   import ScannerPage from "./lib/pages/ScannerPage.svelte";
   import ItineraryPage from "./lib/pages/ItineraryPage.svelte";
   import MutawwifManifest from "./lib/pages/MutawwifManifest.svelte";
+  import PublicRegistrationPage from "./lib/pages/PublicRegistrationPage.svelte";
   import Sidebar from "./lib/components/Sidebar.svelte";
   import ProGateScreen from "./lib/components/ProGateScreen.svelte";
   import UpgradeModal from "./lib/components/UpgradeModal.svelte";
   import Toast from "./lib/components/Toast.svelte";
   import { ApiService } from "./lib/services/api";
 
+  // Check hash synchronously BEFORE first render to avoid flash of wrong page
+  function getInitialPageAndTokens() {
+    if (typeof window === "undefined") return { page: "landing", sharedToken: "", registrationToken: "" };
+    const hash = window.location.hash;
+    const manifestMatch = hash.match(/^#\/m\/([a-f0-9]+)$/i);
+    const registrationMatch = hash.match(/^#\/reg\/([a-zA-Z0-9_-]+)$/i);
+    if (manifestMatch) {
+      return { page: "mutawwif", sharedToken: manifestMatch[1], registrationToken: "" };
+    }
+    if (registrationMatch) {
+      return { page: "registration", sharedToken: "", registrationToken: registrationMatch[1] };
+    }
+    return { page: "landing", sharedToken: "", registrationToken: "" };
+  }
+  const initial = getInitialPageAndTokens();
+
   // Pages: 'landing' | 'login' | 'register' | 'dashboard' | 'profile' | 'inventory' | 'rooming' | 'mutawwif'
-  let currentPage = $state("landing");
+  let currentPage = $state(initial.page);
   let user = $state(null);
   let subscription = $state(null);
   let sidebarCollapsed = $state(false);
   let showGlobalUpgradeModal = $state(false);
-  let sharedToken = $state(""); // For /#/m/{token} public manifest
+  let sharedToken = $state(initial.sharedToken); // For /#/m/{token} public manifest
+  let registrationToken = $state(initial.registrationToken); // For /#/reg/{token} public registration
 
   // Derived
   let isPro = $derived(
@@ -72,26 +90,27 @@
   let groups = $state([]);
 
   onMount(async () => {
-    // Check for Mutawwif manifest hash route: /#/m/{token}    // Clean up any leftover dark mode from previous versions
+    // Clean up any leftover dark mode from previous versions
     document.documentElement.classList.remove("dark");
     localStorage.removeItem("darkMode");
 
-    const hash = window.location.hash;
-    const manifestMatch = hash.match(/^#\/m\/([a-f0-9]+)$/i);
-
-    if (manifestMatch) {
-      sharedToken = manifestMatch[1];
-      currentPage = "mutawwif";
-      return; // Skip normal auth flow
+    // If already on public page (set by getInitialPageAndTokens), skip auth flow
+    if (currentPage === "mutawwif" || currentPage === "registration") {
+      return;
     }
 
-    // Listen for hash changes (e.g., user navigates to /#/m/...)
+    // Listen for hash changes (e.g., user navigates to /#/m/... or /#/reg/...)
     window.addEventListener("hashchange", () => {
       const h = window.location.hash;
       const m = h.match(/^#\/m\/([a-f0-9]+)$/i);
+      const r = h.match(/^#\/reg\/([a-zA-Z0-9_-]+)$/i);
       if (m) {
         sharedToken = m[1];
         currentPage = "mutawwif";
+      }
+      if (r) {
+        registrationToken = r[1];
+        currentPage = "registration";
       }
     });
 
@@ -119,7 +138,7 @@
         localStorage.setItem("user", JSON.stringify(me));
         subscription = sub;
         groups = groupsData.groups || [];
-        trialAvailable = trial?.can_activate || false;
+        trialAvailable = trial?.trial_available ?? false;
       } catch {
         // Token expired or invalid
         user = null;
@@ -156,7 +175,7 @@
       ]);
       subscription = sub;
       groups = groupsData.groups || [];
-      trialAvailable = trial?.can_activate || false;
+      trialAvailable = trial?.trial_available ?? false;
     } catch (e) {
       console.error("Failed to load user data:", e);
     }
@@ -172,7 +191,7 @@
   }
 
   function handlePageChange(page) {
-    if (page === "profile:upgrade" || page === "header:upgrade") {
+    if (page === "profile:upgrade" || page === "header:upgrade" || page === "trial:activate") {
       // Trigger the global upgrade modal immediately without navigating anywhere
       showGlobalUpgradeModal = true;
       // If we are on landing, login, etc., we probably still want to stay there
@@ -223,6 +242,7 @@
         onPageChange={handlePageChange}
         {user}
         {isPro}
+        {trialAvailable}
         onLogout={handleLogout}
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
@@ -332,6 +352,9 @@
   {:else if currentPage === "mutawwif"}
     <!-- Public Mutawwif Manifest (no auth, no sidebar) -->
     <MutawwifManifest token={sharedToken} />
+  {:else if currentPage === "registration"}
+    <!-- Public Self-Service Registration (no auth, no sidebar) -->
+    <PublicRegistrationPage token={registrationToken} />
   {/if}
 
   <!-- Global Upgrade Modal -->
