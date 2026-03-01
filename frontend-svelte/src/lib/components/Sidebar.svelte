@@ -27,6 +27,7 @@
     onPageChange,
     user = null,
     isPro = false,
+    trialAvailable = false,
     onLogout,
     collapsed = false,
     onToggleCollapse,
@@ -219,28 +220,48 @@
     {/each}
   </nav>
 
-  <!-- Pro CTA (compact) -->
+  <!-- Trial Card / Pro CTA -->
   {#if !isPro && !collapsed}
     <div class="px-3 pb-3">
-      <div
-        class="bg-gradient-to-br from-emerald-50 to-amber-50 rounded-lg p-3 border border-emerald-100"
-      >
-        <div class="flex items-center gap-2 mb-2">
-          <Crown class="h-4 w-4 text-amber-500" />
-          <span class="text-sm font-semibold text-slate-800">Upgrade Pro</span>
-        </div>
-        <p class="text-xs text-slate-500 mb-2.5">Unlock Inventori & Rooming</p>
-        <button
-          type="button"
-          onclick={() => handleNavClick("profile:upgrade")}
-          class="w-full py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded transition-colors"
+      {#if trialAvailable}
+        <!-- Free Trial Card -->
+        <div
+          class="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl p-4 text-white shadow-lg shadow-purple-500/20"
         >
-          Rp80rb/bulan
-        </button>
-        <p class="text-[10px] text-center text-slate-400 mt-1">
-          atau coba gratis 7 hari
-        </p>
-      </div>
+          <div class="flex items-center gap-2 mb-1">
+            <span class="text-lg">🎁</span>
+            <span class="text-sm font-bold">FREE Trial 7 Hari!</span>
+          </div>
+          <p class="text-xs text-purple-100 mb-3">
+            Akses SEMUA fitur Pro gratis. Tanpa kartu kredit.
+          </p>
+          <button
+            type="button"
+            onclick={() => handleNavClick("trial:activate")}
+            class="w-full py-2 bg-white text-purple-600 text-sm font-bold rounded-lg hover:bg-purple-50 transition-colors shadow-sm"
+          >
+            Aktifkan Sekarang
+          </button>
+        </div>
+      {:else}
+        <!-- Regular Pro CTA -->
+        <div
+          class="bg-gradient-to-br from-emerald-50 to-amber-50 rounded-lg p-3 border border-emerald-100"
+        >
+          <div class="flex items-center gap-2 mb-2">
+            <Crown class="h-4 w-4 text-amber-500" />
+            <span class="text-sm font-semibold text-slate-800">Upgrade Pro</span>
+          </div>
+          <p class="text-xs text-slate-500 mb-2.5">Unlock Inventori & Rooming</p>
+          <button
+            type="button"
+            onclick={() => handleNavClick("profile:upgrade")}
+            class="w-full py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded transition-colors"
+          >
+            Rp80rb/bulan
+          </button>
+        </div>
+      {/if}
     </div>
   {/if}
 

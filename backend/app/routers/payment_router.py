@@ -62,7 +62,7 @@ async def create_order(
 ):
     """
     Create a new payment order for Pro subscription upgrade.
-    plan_type: 'monthly' (Rp 99.000) or 'annual' (Rp 990.000).
+    plan_type: 'monthly' (Rp 80.000) or 'annual' (Rp 800.000).
     """
     # Check if user already has active Pro
     sub = user.subscription

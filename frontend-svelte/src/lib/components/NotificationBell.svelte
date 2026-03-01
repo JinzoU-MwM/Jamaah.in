@@ -79,7 +79,7 @@
 
         <!-- Panel -->
         <div
-            class="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-2xl border border-slate-200 z-50 max-h-96 overflow-hidden flex flex-col"
+            class="fixed right-4 top-16 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-slate-200 z-50 max-h-96 overflow-hidden flex flex-col"
         >
             <div
                 class="flex items-center justify-between px-4 py-3 border-b border-slate-100"

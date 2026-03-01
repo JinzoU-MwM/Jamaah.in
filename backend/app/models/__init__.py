@@ -3,6 +3,9 @@ from app.models.group import Group, GroupMember
 from app.models.operational import InventoryMaster, Room, RoomType, GenderType, ItemType
 from app.models.team import Organization, TeamMember, TeamInvite, TeamRole, MemberStatus
 from app.models.itinerary import Itinerary
+from app.models.registration import RegistrationLink
+from app.models.pending_member import PendingMember
+from app.models.export_template import ExportTemplate
 
 __all__ = [
     # User models
@@ -15,4 +18,9 @@ __all__ = [
     "Organization", "TeamMember", "TeamInvite", "TeamRole", "MemberStatus",
     # Itinerary
     "Itinerary",
+    # Registration
+    "RegistrationLink",
+    "PendingMember",
+    # Export
+    "ExportTemplate",
 ]

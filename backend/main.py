@@ -56,6 +56,8 @@ from app.routers import (
     itinerary_router,
     document_router,
     notification_router,
+    registration_router,
+    export_router,
 )
 from app.services.cache import ocr_cache
 from app.error_handlers import (
@@ -145,6 +147,8 @@ app.include_router(analytics_router)   # Pro: Dashboard Analytics
 app.include_router(itinerary_router)   # Pro: Itinerary/Schedule
 app.include_router(document_router)    # Pro: Document Templates
 app.include_router(notification_router) # Smart Notifications
+app.include_router(registration_router) # Self-service Registration
+app.include_router(export_router)       # Custom Export Templates
 
 
 # ---- Startup ----
