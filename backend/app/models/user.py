@@ -37,7 +37,7 @@ class User(Base):
     # Phone verification (for anti-abuse)
     phone_number = Column(String(20), unique=True, nullable=True, index=True)
     phone_verified = Column(Boolean, default=False)
-    phone_otp_code = Column(String(10), nullable=True)
+    phone_otp_code = Column(String(255), nullable=True)  # bcrypt hash
     phone_otp_expires = Column(DateTime, nullable=True)
     trial_used_at = Column(DateTime, nullable=True)  # When Pro Trial was activated
 

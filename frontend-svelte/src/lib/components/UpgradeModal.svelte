@@ -309,7 +309,7 @@
                             </button>
                         {:else}
                             <!-- Pro Trial Button -->
-                            {#if trialStatus?.can_activate}
+                            {#if trialStatus?.trial_available}
                                 <button
                                     onclick={activateTrial}
                                     disabled={phoneLoading}
