@@ -20,9 +20,10 @@
     Sparkles,
     BadgeCheck,
     Rocket,
+    CalendarDays,
   } from "lucide-svelte";
 
-  let { onGoToLogin, onGoToRegister } = $props();
+  let { onGoToLogin = () => {}, onGoToRegister = () => {} } = $props();
 </script>
 
 <div class="landing">
@@ -99,8 +100,7 @@
         </button>
       </div>
       <p class="hero-note">
-        <Check class="w-4 h-4" /> Tanpa kartu kredit · 50 scan gratis · Setup 30
-        detik
+        <Check class="w-4 h-4" /> 7 hari Pro Trial gratis · Tanpa kartu kredit · Setup 30 detik
       </p>
     </div>
   </section>
@@ -220,116 +220,147 @@
     <div class="section-inner">
       <div class="section-header">
         <h2 class="section-title">
-          4 Pilar yang Bikin Operasional <span class="text-emerald-400"
-            >Anti Ribet</span
-          >
+          Semua yang Travel Agency <span class="text-emerald-400">Butuhkan</span>
         </h2>
         <p class="section-desc">
-          Setiap fitur dirancang khusus untuk tantangan nyata travel umrah &
-          haji di Indonesia.
+          Fitur lengkap untuk operasional haji & umrah — dari scan dokumen sampai manifest digital.
         </p>
       </div>
-      <div class="features-grid features-grid-2x2">
+      <div class="features-grid features-grid-3x2">
         <!-- Feature 1: AI Document Scanner -->
-        <div class="feature-card feature-card-large">
+        <div class="feature-card">
           <div class="feature-icon blue">
             <ScanLine class="w-6 h-6" />
           </div>
           <div class="feature-label">AI-Powered</div>
           <h3>AI Document Scanner</h3>
           <p class="feature-tagline">
-            "Scan KTP, Paspor, Visa — langsung jadi format 32 kolom Siskopatuh."
+            Scan KTP, Paspor, Visa → langsung jadi Excel Siskopatuh 32 kolom.
           </p>
           <ul class="feature-bullets">
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Powered by Gemini Flash
-              — akurasi tinggi untuk dokumen Indonesia
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Gemini Flash — akurasi tinggi
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Upload banyak dokumen
-              sekaligus, proses paralel dalam detik
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Batch upload, proses paralel
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Fuzzy Merge mengenali
-              orang yang sama dari beberapa dokumen
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Fuzzy Merge anti duplikat
             </li>
           </ul>
         </div>
 
         <!-- Feature 2: Smart Auto-Rooming -->
-        <div class="feature-card feature-card-large">
+        <div class="feature-card">
           <div class="feature-icon cyan">
             <Hotel class="w-6 h-6" />
           </div>
           <div class="feature-label">Pro</div>
           <h3>Smart Auto-Rooming</h3>
           <p class="feature-tagline">
-            "Pisahkan gender & satukan keluarga otomatis."
+            Pisahkan gender & satukan keluarga otomatis dengan 1 klik.
           </p>
           <ul class="feature-bullets">
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Algoritma cerdas mengisi
-              kamar Quad/Triple/Double secara optimal
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Algoritma cerdas optimal
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Laki-laki dan perempuan
-              dipisahkan, keluarga tetap satu kamar
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Quad/Triple/Double support
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Drag & drop untuk penyesuaian
-              manual — visual, cepat, akurat
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Drag & drop manual
             </li>
           </ul>
         </div>
 
         <!-- Feature 3: Mutawwif Mobile Manifest -->
-        <div class="feature-card feature-card-large">
+        <div class="feature-card">
           <div class="feature-icon purple">
             <Smartphone class="w-6 h-6" />
           </div>
           <div class="feature-label">Pro</div>
-          <h3>Mutawwif Mobile Manifest</h3>
+          <h3>Mutawwif Manifest</h3>
           <p class="feature-tagline">
-            "Tinggalkan absen kertas. Tour Leader pakai HP."
+            Tinggalkan absen kertas. Tour Leader pakai HP dengan PIN aman.
           </p>
           <ul class="feature-bullets">
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Generate link manifest
-              aman dengan PIN — share ke Mutawwif
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Link manifest + PIN
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Ceklis kehadiran digital,
-              cari jamaah instan, data selalu update
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Ceklis kehadiran digital
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Tombol WhatsApp langsung
-              — komunikasi 1 klik dari manifest
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> WhatsApp langsung
             </li>
           </ul>
         </div>
 
         <!-- Feature 4: Inventory Checklist -->
-        <div class="feature-card feature-card-large">
+        <div class="feature-card">
           <div class="feature-icon amber">
             <Package class="w-6 h-6" />
           </div>
           <div class="feature-label">Pro</div>
           <h3>Inventory Checklist</h3>
           <p class="feature-tagline">
-            "Gudang nggak akan bocor. Distribusi tercatat rapi."
+            Kelola stok Koper, Ihram, Mukena — tracking distribusi per jamaah.
           </p>
           <ul class="feature-bullets">
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Kelola stok Koper, Ihram,
-              Mukena, Baju — semua di satu tempat
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Stok real-time
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Forecast otomatis kebutuhan
-              berdasarkan jumlah jamaah & gender
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Forecast otomatis
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Tracking distribusi
-              per jamaah — siapa sudah terima, siapa belum
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Print rooming list
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 5: Itinerary Manager -->
+        <div class="feature-card">
+          <div class="feature-icon pink">
+            <CalendarDays class="w-6 h-6" />
+          </div>
+          <div class="feature-label">Pro</div>
+          <h3>Itinerary Manager</h3>
+          <p class="feature-tagline">
+            Jadwal perjalanan terorganisir — flight, hotel, transport, activity.
+          </p>
+          <ul class="feature-bullets">
+            <li>
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Timeline view per hari
+            </li>
+            <li>
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Kategori warna-warni
+            </li>
+            <li>
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Share ke tim & jamaah
+            </li>
+          </ul>
+        </div>
+
+        <!-- Feature 6: Team & Analytics -->
+        <div class="feature-card">
+          <div class="feature-icon green">
+            <Shield class="w-6 h-6" />
+          </div>
+          <div class="feature-label">Pro</div>
+          <h3>Team & Analytics</h3>
+          <p class="feature-tagline">
+            Dashboard analytics + manajemen tim untuk kolaborasi lebih baik.
+          </p>
+          <ul class="feature-bullets">
+            <li>
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Statistik jamaah
+            </li>
+            <li>
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Passport expiry alert
+            </li>
+            <li>
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Multi-user support
             </li>
           </ul>
         </div>
@@ -354,18 +385,21 @@
       <div class="pricing-grid">
         <!-- Free Tier -->
         <div class="price-card">
+          <div class="price-badge-free">TRIAL 7 HARI</div>
           <div class="price-plan">Free</div>
           <div class="price-value">
             <span class="price-amount">Rp 0</span>
             <span class="price-period"> / selamanya</span>
           </div>
           <p class="price-subtitle">
-            Cukup untuk test drive. Tanpa batas waktu.
+            Mulai dengan trial Pro 7 hari, lalu 5 scan gratis.
           </p>
           <ul class="price-features">
             <li>
-              <Check class="w-4 h-4 text-emerald-400" /> <strong>5 scan</strong>
-              dokumen
+              <Check class="w-4 h-4 text-emerald-400" /> <strong>7 hari Pro Trial</strong> akses penuh
+            </li>
+            <li>
+              <Check class="w-4 h-4 text-emerald-400" /> <strong>5 scan</strong> setelah trial
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" /> AI OCR (Gemini Flash)
@@ -373,14 +407,11 @@
             <li>
               <Check class="w-4 h-4 text-emerald-400" /> Preview & edit hasil scan
             </li>
-            <li class="muted">
-              <XIcon class="w-4 h-4" /> Export Excel Siskopatuh
+            <li>
+              <Check class="w-4 h-4 text-emerald-400" /> Export Excel Siskopatuh
             </li>
             <li class="muted">
-              <XIcon class="w-4 h-4" /> Auto-Rooming & Manifest
-            </li>
-            <li class="muted">
-              <XIcon class="w-4 h-4" /> Inventori & Distribusi
+              <XIcon class="w-4 h-4" /> Auto-Rooming (Pro only)
             </li>
           </ul>
           <button type="button" onclick={onGoToRegister} class="btn-secondary"
@@ -395,16 +426,12 @@
             <span class="price-period"> / bulan</span>
           </div>
           <p class="price-subtitle">
-            Fleksibel, bayar per bulan sesuai kebutuhan.
+            Untuk travel agency aktif dengan keberangkatan rutin.
           </p>
           <ul class="price-features">
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Unlimited</strong> scan dokumen
-            </li>
-            <li>
-              <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Unlimited</strong> grup jamaah
+              <strong>Unlimited</strong> scan & grup
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" /> AI OCR + Fuzzy Merge
@@ -418,11 +445,11 @@
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Manifest Digital</strong> Mutawwif
+              <strong>Manifest</strong> Mutawwif
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Inventori</strong> & Distribusi
+              <strong>Inventori</strong> & Jadwal
             </li>
           </ul>
           <button type="button" onclick={onGoToRegister} class="btn-secondary"
@@ -444,25 +471,26 @@
           <ul class="price-features">
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
-              <strong>7 hari Pro Trial</strong> GRATIS
+              <strong>Semua fitur Pro</strong> tanpa batas
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Unlimited</strong> scan dokumen
-            </li>
-            <li>
-              <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Unlimited</strong> grup jamaah
+              <strong>Unlimited</strong> scan & grup
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" /> AI OCR + Fuzzy Merge
             </li>
             <li>
-              <Check class="w-4 h-4 text-emerald-400" /> Export Excel Siskopatuh
+              <Check class="w-4 h-4 text-emerald-400" />
+              <strong>Auto-Rooming</strong> + Manifest
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
-              <strong>Auto-Rooming</strong> + Manifest
+              <strong>Inventori</strong> + Jadwal
+            </li>
+            <li>
+              <Check class="w-4 h-4 text-emerald-400" />
+              <strong>Team</strong> Management
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" />
@@ -504,7 +532,7 @@
           </button>
         </div>
         <p class="hero-note" style="margin-top: 1rem;">
-          <Check class="w-4 h-4" /> 7 hari gratis · 50 scan · Tanpa kartu kredit
+          <Check class="w-4 h-4" /> 7 hari Pro Trial gratis · Tanpa kartu kredit
         </p>
       </div>
     </div>
@@ -816,6 +844,11 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 1.25rem;
   }
+  .features-grid-3x2 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+  }
   .feature-card {
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.04);
@@ -895,6 +928,14 @@
     background: rgba(6, 182, 212, 0.1);
     color: #06b6d4;
   }
+  .feature-icon.pink {
+    background: rgba(236, 72, 153, 0.1);
+    color: #ec4899;
+  }
+  .feature-icon.green {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+  }
 
   /* ---- PRICING ---- */
   .pricing {
@@ -926,6 +967,19 @@
     left: 50%;
     transform: translateX(-50%);
     background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    padding: 0.25rem 0.875rem;
+    border-radius: 999px;
+  }
+  .price-badge-free {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
     color: white;
     font-size: 0.625rem;
     font-weight: 700;
@@ -1080,7 +1134,8 @@
       grid-template-columns: 1fr;
       max-width: 440px;
     }
-    .features-grid-2x2 {
+    .features-grid-2x2,
+    .features-grid-3x2 {
       grid-template-columns: 1fr;
     }
     .pricing-grid {
