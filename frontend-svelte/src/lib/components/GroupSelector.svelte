@@ -15,9 +15,11 @@
         CheckCircle,
         X,
         MessageCircle,
+        UserPlus,
     } from "lucide-svelte";
     import { ApiService } from "../services/api.js";
     import WhatsAppBlast from "./WhatsAppBlast.svelte";
+    import RegistrationLinkModal from "./RegistrationLinkModal.svelte";
 
     let {
         selectedGroup = $bindable(null),
@@ -44,9 +46,9 @@
     let shareError = $state("");
     let copied = $state(false);
 
-    // --- WhatsApp Blast ---
-    let waBlastOpen = $state(false);
-    let waBlastGroup = $state(null);
+    // --- Registration Link ---
+    let regLinkModal = $state(false);
+    let regLinkGroup = $state(null);
 
     function openWaBlast(group) {
         waBlastGroup = group;
