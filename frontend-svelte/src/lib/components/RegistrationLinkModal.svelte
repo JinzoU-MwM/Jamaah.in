@@ -3,7 +3,15 @@
 -->
 <script>
   import { onMount } from "svelte";
-  import { X, Copy, Check, Loader2, Link, Calendar, AlertCircle } from "lucide-svelte";
+  import {
+    X,
+    Copy,
+    Check,
+    Loader2,
+    Link,
+    Calendar,
+    AlertCircle,
+  } from "lucide-svelte";
   import { ApiService } from "../services/api";
 
   let { groupId, onClose } = $props();
@@ -55,7 +63,20 @@
       copied = true;
       setTimeout(() => (copied = false), 2000);
     } catch (e) {
-      console.error("Failed to copy:", e);
+      // Fallback for non-https environments (like local LAN testing)
+      const textArea = document.createElement("textarea");
+      textArea.value = link.link;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        copied = true;
+        setTimeout(() => (copied = false), 2000);
+      } catch (fallbackErr) {
+        error = "Gagal menyalin link. Silakan copy manual.";
+        console.error("Fallback copy failed", fallbackErr);
+      }
+      document.body.removeChild(textArea);
     }
   }
 
@@ -96,13 +117,11 @@
           <Loader2 class="w-6 h-6 animate-spin text-emerald-500" />
           <p>Memuat...</p>
         </div>
-
       {:else if error}
         <div class="error">
           <AlertCircle class="w-5 h-5" />
           {error}
         </div>
-
       {:else if link}
         <div class="link-info">
           <label>Link Pendaftaran</label>
@@ -119,7 +138,10 @@
 
           <div class="expiry">
             <Calendar class="w-4 h-4" />
-            <span>Berlaku hingga: <strong>{formatDate(link.expires_at)}</strong></span>
+            <span
+              >Berlaku hingga: <strong>{formatDate(link.expires_at)}</strong
+              ></span
+            >
           </div>
 
           {#if link.is_expired}
@@ -134,7 +156,6 @@
             Bagikan link ini ke jamaah via WhatsApp untuk pendaftaran mandiri.
           </p>
         </div>
-
       {:else}
         <div class="no-link">
           <Link class="w-12 h-12 text-slate-300" />

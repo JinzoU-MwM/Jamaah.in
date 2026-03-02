@@ -5,6 +5,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
+import os
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
 from app.database import get_db
 from app.auth import get_current_user
@@ -59,7 +62,7 @@ def generate_link(
     db.commit()
 
     return GenerateLinkResponse(
-        link=f"https://jamaah.in/#/reg/{token}",
+        link=f"{FRONTEND_URL}/#/reg/{token}",
         token=token,
         expires_at=expires_at.isoformat(),
     )
@@ -87,7 +90,7 @@ def get_link_info(
     return {
         "active": True,
         "token": link.token,
-        "link": f"https://jamaah.in/#/reg/{link.token}",
+        "link": f"{FRONTEND_URL}/#/reg/{link.token}",
         "expires_at": link.expires_at.isoformat(),
         "is_expired": datetime.utcnow() > link.expires_at,
     }
