@@ -56,6 +56,8 @@ from app.routers import (
     itinerary_router,
     document_router,
     notification_router,
+    super_admin_router,
+    ticket_router,
 )
 from app.services.cache import ocr_cache
 from app.error_handlers import (
@@ -145,6 +147,8 @@ app.include_router(analytics_router)   # Pro: Dashboard Analytics
 app.include_router(itinerary_router)   # Pro: Itinerary/Schedule
 app.include_router(document_router)    # Pro: Document Templates
 app.include_router(notification_router) # Smart Notifications
+app.include_router(super_admin_router) # Super Admin Dashboard
+app.include_router(ticket_router)      # Support Tickets
 
 
 # ---- Startup ----

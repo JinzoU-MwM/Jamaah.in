@@ -3,6 +3,7 @@ from app.models.group import Group, GroupMember
 from app.models.operational import InventoryMaster, Room, RoomType, GenderType, ItemType
 from app.models.team import Organization, TeamMember, TeamInvite, TeamRole, MemberStatus
 from app.models.itinerary import Itinerary
+from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
 
 __all__ = [
     # User models
@@ -15,4 +16,6 @@ __all__ = [
     "Organization", "TeamMember", "TeamInvite", "TeamRole", "MemberStatus",
     # Itinerary
     "Itinerary",
+    # Support Ticket
+    "SupportTicket", "TicketMessage", "TicketStatus", "TicketPriority", "SenderType",
 ]

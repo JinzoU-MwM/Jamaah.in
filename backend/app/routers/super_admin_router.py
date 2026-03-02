@@ -1,0 +1,278 @@
+"""
+Super Admin Router — /super-admin/*
+Provides super admin-only endpoints for managing the entire application.
+Super admin is the app owner, separate from regular admins.
+"""
+from datetime import datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.database import get_db
+from app.auth import require_super_admin
+from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus
+from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority
+
+router = APIRouter(prefix="/super-admin", tags=["Super Admin"])
+
+
+# --- Schemas ---
+
+class SuperAdminStatsResponse(BaseModel):
+    total_users: int
+    active_users: int
+    pro_users: int
+    free_users: int
+    total_tickets: int
+    open_tickets: int
+    resolved_tickets: int
+    total_revenue: int
+
+
+class TicketListItem(BaseModel):
+    id: int
+    user_id: int
+    user_email: str
+    user_name: str
+    subject: str
+    status: str
+    priority: str
+    created_at: str
+    last_message_at: str
+    message_count: int
+    is_read: bool
+
+
+class TicketMessageResponse(BaseModel):
+    id: int
+    sender_type: str
+    content: str
+    created_at: str
+
+
+class TicketDetailResponse(BaseModel):
+    id: int
+    user_id: int
+    user_email: str
+    user_name: str
+    subject: str
+    status: str
+    priority: str
+    created_at: str
+    messages: List[TicketMessageResponse]
+
+
+class TicketReplyRequest(BaseModel):
+    content: str
+
+
+class TicketStatusRequest(BaseModel):
+    status: str  # "open", "in_progress", "resolved", "closed"
+
+
+# --- Endpoints ---
+
+@router.get("/stats", response_model=SuperAdminStatsResponse)
+async def super_admin_stats(
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Get super admin dashboard statistics."""
+    total = db.query(User).count()
+    active = db.query(User).filter(User.is_active == True).count()
+    pro = db.query(Subscription).filter(Subscription.plan == PlanType.PRO).count()
+    free = total - pro
+
+    total_tickets = db.query(SupportTicket).count()
+    open_tickets = db.query(SupportTicket).filter(SupportTicket.status == TicketStatus.OPEN).count()
+    resolved_tickets = db.query(SupportTicket).filter(SupportTicket.status == TicketStatus.RESOLVED).count()
+
+    # Calculate revenue from payments
+    from app.models.user import Payment, PaymentStatus
+    revenue = db.query(func.sum(Payment.amount)).filter(
+        Payment.status == PaymentStatus.PAID
+    ).scalar() or 0
+
+    return SuperAdminStatsResponse(
+        total_users=total,
+        active_users=active,
+        pro_users=pro,
+        free_users=free,
+        total_tickets=total_tickets,
+        open_tickets=open_tickets,
+        resolved_tickets=resolved_tickets,
+        total_revenue=revenue,
+    )
+
+
+@router.get("/tickets", response_model=List[TicketListItem])
+async def list_tickets(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    status: Optional[str] = None,
+    priority: Optional[str] = None,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """List all support tickets with filters."""
+    query = db.query(SupportTicket)
+
+    if status:
+        try:
+            status_enum = TicketStatus(status)
+            query = query.filter(SupportTicket.status == status_enum)
+        except ValueError:
+            pass
+
+    if priority:
+        try:
+            priority_enum = TicketPriority(priority)
+            query = query.filter(SupportTicket.priority == priority_enum)
+        except ValueError:
+            pass
+
+    tickets = query.order_by(SupportTicket.created_at.desc()).offset(skip).limit(limit).all()
+
+    items = []
+    for ticket in tickets:
+        message_count = db.query(func.count(TicketMessage.id)).filter(
+            TicketMessage.ticket_id == ticket.id
+        ).scalar() or 0
+
+        last_message = db.query(TicketMessage).filter(
+            TicketMessage.ticket_id == ticket.id
+        ).order_by(TicketMessage.created_at.desc()).first()
+
+        items.append(TicketListItem(
+            id=ticket.id,
+            user_id=ticket.user_id,
+            user_email=ticket.user.email,
+            user_name=ticket.user.name,
+            subject=ticket.subject,
+            status=ticket.status.value,
+            priority=ticket.priority.value,
+            created_at=ticket.created_at.isoformat(),
+            last_message_at=last_message.created_at.isoformat() if last_message else ticket.created_at.isoformat(),
+            message_count=message_count,
+            is_read=not db.query(TicketMessage).filter(
+                TicketMessage.ticket_id == ticket.id,
+                TicketMessage.sender_type == "admin",
+                TicketMessage.is_read == False
+            ).first() is None,
+        ))
+
+    return items
+
+
+@router.get("/tickets/{ticket_id}", response_model=TicketDetailResponse)
+async def get_ticket_detail(
+    ticket_id: int,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Get ticket detail with all messages."""
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
+
+    # Mark admin messages as read
+    db.query(TicketMessage).filter(
+        TicketMessage.ticket_id == ticket_id,
+        TicketMessage.sender_type == "user",
+        TicketMessage.is_read == False
+    ).update({"is_read": True})
+    db.commit()
+
+    messages = db.query(TicketMessage).filter(
+        TicketMessage.ticket_id == ticket_id
+    ).order_by(TicketMessage.created_at.asc()).all()
+
+    return TicketDetailResponse(
+        id=ticket.id,
+        user_id=ticket.user_id,
+        user_email=ticket.user.email,
+        user_name=ticket.user.name,
+        subject=ticket.subject,
+        status=ticket.status.value,
+        priority=ticket.priority.value,
+        created_at=ticket.created_at.isoformat(),
+        messages=[
+            TicketMessageResponse(
+                id=msg.id,
+                sender_type=msg.sender_type.value,
+                content=msg.content,
+                created_at=msg.created_at.isoformat(),
+            )
+            for msg in messages
+        ],
+    )
+
+
+@router.post("/tickets/{ticket_id}/reply")
+async def reply_to_ticket(
+    ticket_id: int,
+    req: TicketReplyRequest,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Admin reply to a support ticket."""
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
+
+    message = TicketMessage(
+        ticket_id=ticket_id,
+        sender_type="admin",
+        content=req.content,
+        is_read=False,
+    )
+    db.add(message)
+
+    # Update ticket status to in_progress if it was open
+    if ticket.status == TicketStatus.OPEN:
+        ticket.status = TicketStatus.IN_PROGRESS
+        ticket.updated_at = datetime.utcnow()
+
+    db.commit()
+    return {"success": True, "message_id": message.id}
+
+
+@router.patch("/tickets/{ticket_id}/status")
+async def update_ticket_status(
+    ticket_id: int,
+    req: TicketStatusRequest,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Update ticket status."""
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
+
+    try:
+        ticket.status = TicketStatus(req.status)
+        ticket.updated_at = datetime.utcnow()
+        db.commit()
+        return {"success": True, "status": ticket.status.value}
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Status tidak valid")
+
+
+@router.delete("/tickets/{ticket_id}")
+async def delete_ticket(
+    ticket_id: int,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Delete a support ticket and all its messages."""
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket tidak ditemukan")
+
+    db.query(TicketMessage).filter(TicketMessage.ticket_id == ticket_id).delete()
+    db.query(SupportTicket).filter(SupportTicket.id == ticket_id).delete()
+    db.commit()
+    return {"success": True, "deleted_ticket_id": ticket_id}

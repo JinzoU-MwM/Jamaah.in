@@ -4,6 +4,7 @@
   import Login from "./lib/pages/Login.svelte";
   import Dashboard from "./lib/pages/Dashboard.svelte";
   import ProfilePage from "./lib/pages/ProfilePage.svelte";
+  import SuperAdminDashboard from "./lib/pages/SuperAdminDashboard.svelte";
   import InventoryPage from "./lib/pages/InventoryPage.svelte";
   import RoomingPage from "./lib/pages/RoomingPage.svelte";
   import TeamPage from "./lib/pages/TeamPage.svelte";
@@ -33,7 +34,7 @@
   }
   const initial = getInitialPageAndTokens();
 
-  // Pages: 'landing' | 'login' | 'register' | 'dashboard' | 'profile' | 'inventory' | 'rooming' | 'mutawwif'
+  // Pages: 'landing' | 'login' | 'register' | 'dashboard' | 'profile' | 'inventory' | 'rooming' | 'mutawwif' | 'super-admin'
   let currentPage = $state(initial.page);
   let user = $state(null);
   let subscription = $state(null);
@@ -45,6 +46,9 @@
   // Derived
   let isPro = $derived(
     subscription?.plan === "pro" && subscription?.status !== "expired",
+  );
+  let isSuperAdmin = $derived(
+    user?.is_super_admin === true,
   );
   let trialAvailable = $state(false);
 
@@ -220,10 +224,15 @@
       currentPage === "team" ||
       currentPage === "itinerary",
   );
+
+  // Super admin page (full screen, no sidebar)
+  let showSuperAdminPage = $derived(currentPage === "super-admin");
 </script>
 
 <main class="min-h-screen flex flex-col">
-  {#if currentPage === "landing"}
+  {#if showSuperAdminPage}
+    <SuperAdminDashboard />
+  {:else if currentPage === "landing"}
     <LandingPage
       onGoToLogin={() => (currentPage = "login")}
       onGoToRegister={() => (currentPage = "register")}

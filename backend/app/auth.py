@@ -171,6 +171,25 @@ async def require_admin(
     return user
 
 
+async def require_super_admin(
+    user: User = Depends(get_current_user),
+) -> User:
+    """FastAPI dependency: require current user to be a super admin (app owner)."""
+    super_admin_email = os.getenv("SUPER_ADMIN_EMAIL")
+    if not super_admin_email:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="SUPER_ADMIN_EMAIL not configured",
+        )
+    # Check both is_super_admin flag and email match for security
+    if not user.is_super_admin or user.email.lower() != super_admin_email.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses super admin diperlukan",
+        )
+    return user
+
+
 # =============================================================================
 # SUBSCRIPTION & USAGE CHECKS
 # =============================================================================
