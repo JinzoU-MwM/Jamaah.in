@@ -436,3 +436,63 @@ async def verify_phone(
     db.commit()
 
     return {"success": True, "message": "Nomor WhatsApp berhasil diverifikasi"}
+
+
+# --- Test Email Endpoint ---
+@router.post("/test-email")
+async def test_email(db: Session = Depends(get_db)):
+    """Test endpoint to send email to specified address (for testing SMTP)."""
+    from app.services.email_service import _send_email
+    import random
+    import string
+
+    test_email = "muk.lisca@gmail.com"
+    subject = "Test Email - Jamaah.in SMTP Configuration"
+    test_code = ''.join(random.choices(string.digits, k=6))
+
+    html_body = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #f8fafc;">
+        <div style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <h1 style="color: #10b981; font-size: 24px; margin: 0;">🕌 Test Email</h1>
+                <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Konfigurasi SMTP Hostinger</p>
+            </div>
+            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
+                Ini adalah email tes untuk memverifikasi konfigurasi SMTP Hostinger Anda.
+            </p>
+            <div style="text-align: center; margin: 24px 0;">
+                <div style="display: inline-block; background: linear-gradient(135deg, #d1fae5, #10b981); padding: 16px 32px; border-radius: 12px; letter-spacing: 8px; font-size: 32px; font-weight: 700; color: white;">
+                    {test_code}
+                </div>
+            </div>
+            <p style="color: #94a3b8; font-size: 13px; text-align: center;">
+                Kode tes: <strong>{test_code}</strong>
+            </p>
+            <p style="color: #94a3b8; font-size: 12px; text-align: center;">
+                Jika Anda menerima email ini, konfigurasi SMTP Anda sudah benar!
+            </p>
+            <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 16px;">
+                SMTP Host: smtp.hostinger.com<br>
+                SMTP Port: 587<br>
+                From: {os.getenv("SMTP_EMAIL", "")}
+            </p>
+            <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 16px;">© 2026 Jamaah.in</p>
+        </div>
+    </div>
+    """
+
+    success = _send_email(test_email, subject, html_body)
+
+    if success:
+        return {
+            "success": True,
+            "message": f"Test email sent successfully to {test_email}",
+            "test_email": test_email,
+            "test_code": test_code
+        }
+    else:
+        return {
+            "success": False,
+            "message": "Failed to send test email. Check SMTP configuration in .env",
+            "error_details": "Make sure SMTP_EMAIL, SMTP_PASSWORD, and SMTP_HOST are set correctly"
+        }
