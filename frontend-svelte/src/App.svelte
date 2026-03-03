@@ -2,21 +2,47 @@
   import { onMount } from "svelte";
   import LandingPage from "./lib/pages/LandingPage.svelte";
   import Login from "./lib/pages/Login.svelte";
-  import Dashboard from "./lib/pages/Dashboard.svelte";
-  import ProfilePage from "./lib/pages/ProfilePage.svelte";
-  import SuperAdminDashboard from "./lib/pages/SuperAdminDashboard.svelte";
-  import InventoryPage from "./lib/pages/InventoryPage.svelte";
-  import RoomingPage from "./lib/pages/RoomingPage.svelte";
-  import TeamPage from "./lib/pages/TeamPage.svelte";
-  import ScannerPage from "./lib/pages/ScannerPage.svelte";
-  import ItineraryPage from "./lib/pages/ItineraryPage.svelte";
-  import MutawwifManifest from "./lib/pages/MutawwifManifest.svelte";
-  import PublicRegistrationPage from "./lib/pages/PublicRegistrationPage.svelte";
   import Sidebar from "./lib/components/Sidebar.svelte";
   import ProGateScreen from "./lib/components/ProGateScreen.svelte";
   import UpgradeModal from "./lib/components/UpgradeModal.svelte";
   import Toast from "./lib/components/Toast.svelte";
   import { ApiService } from "./lib/services/api";
+
+  // Lazy-loaded page components (reduces initial bundle for mobile/Landing)
+  let DashboardPage = $state(null);
+  let ProfilePage = $state(null);
+  let SuperAdminDashboardPage = $state(null);
+  let InventoryPage = $state(null);
+  let RoomingPage = $state(null);
+  let TeamPage = $state(null);
+  let ScannerPage = $state(null);
+  let ItineraryPage = $state(null);
+  let MutawwifManifestPage = $state(null);
+  let PublicRegistrationPage = $state(null);
+
+  async function ensurePage(page) {
+    if (page === "dashboard" && !DashboardPage) {
+      DashboardPage = (await import("./lib/pages/Dashboard.svelte")).default;
+    } else if (page === "profile" && !ProfilePage) {
+      ProfilePage = (await import("./lib/pages/ProfilePage.svelte")).default;
+    } else if (page === "super-admin" && !SuperAdminDashboardPage) {
+      SuperAdminDashboardPage = (await import("./lib/pages/SuperAdminDashboard.svelte")).default;
+    } else if (page === "inventory" && !InventoryPage) {
+      InventoryPage = (await import("./lib/pages/InventoryPage.svelte")).default;
+    } else if (page === "rooming" && !RoomingPage) {
+      RoomingPage = (await import("./lib/pages/RoomingPage.svelte")).default;
+    } else if (page === "team" && !TeamPage) {
+      TeamPage = (await import("./lib/pages/TeamPage.svelte")).default;
+    } else if (page === "scanner" && !ScannerPage) {
+      ScannerPage = (await import("./lib/pages/ScannerPage.svelte")).default;
+    } else if (page === "itinerary" && !ItineraryPage) {
+      ItineraryPage = (await import("./lib/pages/ItineraryPage.svelte")).default;
+    } else if (page === "mutawwif" && !MutawwifManifestPage) {
+      MutawwifManifestPage = (await import("./lib/pages/MutawwifManifest.svelte")).default;
+    } else if (page === "registration" && !PublicRegistrationPage) {
+      PublicRegistrationPage = (await import("./lib/pages/PublicRegistrationPage.svelte")).default;
+    }
+  }
 
   // Check hash synchronously BEFORE first render to avoid flash of wrong page
   function getInitialPageAndTokens() {
@@ -301,6 +327,15 @@
 
   // Super admin page (full screen, no sidebar)
   let showSuperAdminPage = $derived(currentPage === "super-admin");
+
+  $effect(() => {
+    // Prefetch only current route and likely next route to reduce render-blocking JS.
+    ensurePage(currentPage);
+    if (currentPage === "dashboard") {
+      ensurePage("scanner");
+      ensurePage("profile");
+    }
+  });
 </script>
 
 <main class="min-h-screen flex flex-col">
@@ -313,7 +348,11 @@
         </div>
       </div>
     {:else if user?.is_super_admin}
-      <SuperAdminDashboard />
+      {#if SuperAdminDashboardPage}
+        <SuperAdminDashboardPage />
+      {:else}
+        <div class="min-h-screen flex items-center justify-center text-slate-500">Loading dashboard...</div>
+      {/if}
     {:else}
       <div class="min-h-screen flex items-center justify-center">
         <div class="text-center">
@@ -351,37 +390,53 @@
       <!-- Main Content Area -->
       <div class="flex-1 lg:ml-0 pt-16 lg:pt-0">
         {#if currentPage === "dashboard"}
-          <Dashboard
-            {user}
-            {subscription}
-            onLogout={handleLogout}
-            onSubscriptionChange={loadUserData}
-            onNavigate={handlePageChange}
-          />
+          {#if DashboardPage}
+            <DashboardPage
+              {user}
+              {subscription}
+              onLogout={handleLogout}
+              onSubscriptionChange={loadUserData}
+              onNavigate={handlePageChange}
+            />
+          {:else}
+            <div class="p-6 text-slate-500">Loading dashboard...</div>
+          {/if}
         {:else if currentPage === "scanner"}
-          <ScannerPage
-            {user}
-            {subscription}
-            onLogout={handleLogout}
-            onSubscriptionChange={loadUserData}
-          />
+          {#if ScannerPage}
+            <ScannerPage
+              {user}
+              {subscription}
+              onLogout={handleLogout}
+              onSubscriptionChange={loadUserData}
+            />
+          {:else}
+            <div class="p-6 text-slate-500">Loading scanner...</div>
+          {/if}
         {:else if currentPage === "profile"}
-          <ProfilePage
-            onLogout={handleLogout}
-            {user}
-            {subscription}
-            {trialAvailable}
-            {groups}
-            onUpgradeRequest={() => handlePageChange("header:upgrade")}
-          />
+          {#if ProfilePage}
+            <ProfilePage
+              onLogout={handleLogout}
+              {user}
+              {subscription}
+              {trialAvailable}
+              {groups}
+              onUpgradeRequest={() => handlePageChange("header:upgrade")}
+            />
+          {:else}
+            <div class="p-6 text-slate-500">Loading profile...</div>
+          {/if}
         {:else if currentPage === "inventory"}
           {#if isPro}
-            <InventoryPage
-              isOpen={true}
-              onClose={() => (currentPage = "dashboard")}
-              {groups}
-              {isPro}
-            />
+            {#if InventoryPage}
+              <InventoryPage
+                isOpen={true}
+                onClose={() => (currentPage = "dashboard")}
+                {groups}
+                {isPro}
+              />
+            {:else}
+              <div class="p-6 text-slate-500">Loading inventory...</div>
+            {/if}
           {:else}
             <ProGateScreen
               featureName={proFeatures.inventory.name}
@@ -394,12 +449,16 @@
           {/if}
         {:else if currentPage === "rooming"}
           {#if isPro}
-            <RoomingPage
-              isOpen={true}
-              onClose={() => (currentPage = "dashboard")}
-              {groups}
-              {isPro}
-            />
+            {#if RoomingPage}
+              <RoomingPage
+                isOpen={true}
+                onClose={() => (currentPage = "dashboard")}
+                {groups}
+                {isPro}
+              />
+            {:else}
+              <div class="p-6 text-slate-500">Loading rooming...</div>
+            {/if}
           {:else}
             <ProGateScreen
               featureName={proFeatures.rooming.name}
@@ -412,7 +471,11 @@
           {/if}
         {:else if currentPage === "team"}
           {#if isPro}
-            <TeamPage {isPro} />
+            {#if TeamPage}
+              <TeamPage {isPro} />
+            {:else}
+              <div class="p-6 text-slate-500">Loading team...</div>
+            {/if}
           {:else}
             <ProGateScreen
               featureName={proFeatures.team.name}
@@ -425,7 +488,11 @@
           {/if}
         {:else if currentPage === "itinerary"}
           {#if isPro}
-            <ItineraryPage {groups} {isPro} />
+            {#if ItineraryPage}
+              <ItineraryPage {groups} {isPro} />
+            {:else}
+              <div class="p-6 text-slate-500">Loading itinerary...</div>
+            {/if}
           {:else}
             <ProGateScreen
               featureName={proFeatures.itinerary.name}
@@ -441,20 +508,32 @@
     </div>
   {:else if currentPage === "profile"}
     <!-- Fallback profile without sidebar -->
-    <ProfilePage
-      onLogout={handleLogout}
-      {user}
-      {subscription}
-      {trialAvailable}
-      {groups}
-      onUpgradeRequest={() => handlePageChange("header:upgrade")}
-    />
+    {#if ProfilePage}
+      <ProfilePage
+        onLogout={handleLogout}
+        {user}
+        {subscription}
+        {trialAvailable}
+        {groups}
+        onUpgradeRequest={() => handlePageChange("header:upgrade")}
+      />
+    {:else}
+      <div class="p-6 text-slate-500">Loading profile...</div>
+    {/if}
   {:else if currentPage === "mutawwif"}
     <!-- Public Mutawwif Manifest (no auth, no sidebar) -->
-    <MutawwifManifest token={sharedToken} />
+    {#if MutawwifManifestPage}
+      <MutawwifManifestPage token={sharedToken} />
+    {:else}
+      <div class="min-h-screen flex items-center justify-center text-slate-500">Loading manifest...</div>
+    {/if}
   {:else if currentPage === "registration"}
     <!-- Public Self-Service Registration (no auth, no sidebar) -->
-    <PublicRegistrationPage token={registrationToken} />
+    {#if PublicRegistrationPage}
+      <PublicRegistrationPage token={registrationToken} />
+    {:else}
+      <div class="min-h-screen flex items-center justify-center text-slate-500">Loading registration...</div>
+    {/if}
   {/if}
 
   <!-- Global Upgrade Modal -->

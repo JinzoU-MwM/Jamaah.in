@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://jamaah.in/sitemap.xml
+Sitemap: https://jamaah.web.id/sitemap.xml

@@ -6,21 +6,36 @@
 
 server {
     listen 80;
-    server_name jamaah.in www.jamaah.in;
+    server_name jamaah.web.id www.jamaah.web.id;
     
     # Redirect HTTP to HTTPS (uncomment after SSL setup)
     # return 301 https://$server_name$request_uri;
     
     # Frontend - Serve static files
+    root /var/www/jamaah.in/frontend-svelte/dist;
+
+    # App shell HTML should not be cached aggressively.
+    location = /index.html {
+        try_files $uri =404;
+        add_header Cache-Control "no-cache";
+    }
+
+    # Vite hashed assets: long immutable cache.
+    location /assets/ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    # Other static assets.
+    location ~* \.(?:js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        try_files $uri =404;
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+    }
+
     location / {
-        root /var/www/jamaah.in/frontend-svelte/dist;
         try_files $uri $uri/ /index.html;
-        
-        # Cache static assets
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
-            expires 1y;
-            add_header Cache-Control "public, immutable";
-        }
     }
     
     # Backend API proxy
