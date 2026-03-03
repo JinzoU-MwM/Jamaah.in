@@ -24,6 +24,10 @@
     const hash = window.location.hash;
     const manifestMatch = hash.match(/^#\/m\/([a-f0-9]+)$/i);
     const registrationMatch = hash.match(/^#\/reg\/([a-zA-Z0-9_-]+)$/i);
+    const superAdminMatch = hash === "#/super-admin";
+    if (superAdminMatch) {
+      return { page: "super-admin", sharedToken: "", registrationToken: "" };
+    }
     if (manifestMatch) {
       return { page: "mutawwif", sharedToken: manifestMatch[1], registrationToken: "" };
     }
@@ -40,6 +44,7 @@
   let subscription = $state(null);
   let sidebarCollapsed = $state(false);
   let showGlobalUpgradeModal = $state(false);
+  let checkingSuperAdminAuth = $state(false); // Loading state for super admin auth check
   let sharedToken = $state(initial.sharedToken); // For /#/m/{token} public manifest
   let registrationToken = $state(initial.registrationToken); // For /#/reg/{token} public registration
 
@@ -93,6 +98,61 @@
   };
   let groups = $state([]);
 
+  async function checkSuperAdminAuth() {
+    checkingSuperAdminAuth = true;
+    const token = localStorage.getItem("token");
+    const savedUser = localStorage.getItem("user");
+
+    console.log("[Super Admin Check] Token exists:", !!token);
+    console.log("[Super Admin Check] Saved user:", savedUser ? JSON.parse(savedUser) : null);
+
+    if (!token || !savedUser) {
+      // Not authenticated, redirect to login
+      console.log("[Super Admin Check] Redirecting to login - no auth");
+      checkingSuperAdminAuth = false;
+      window.location.hash = "#/login";
+      currentPage = "login";
+      return;
+    }
+
+    try {
+      // Try to get current user and verify super admin status
+      const me = await ApiService.getMe();
+      console.log("[Super Admin Check] User from API:", me);
+      console.log("[Super Admin Check] is_super_admin:", me.is_super_admin);
+      user = me;
+      localStorage.setItem("user", JSON.stringify(me));
+
+      if (!me.is_super_admin) {
+        // Authenticated but not super admin, redirect to dashboard
+        checkingSuperAdminAuth = false;
+        window.location.hash = "#/dashboard";
+        currentPage = "dashboard";
+        return;
+      }
+
+      // User is super admin, fetch additional data
+      const [sub, groupsData, trial] = await Promise.all([
+        ApiService.getSubscriptionStatus(),
+        ApiService.listGroups(),
+        ApiService.getTrialStatus().catch(() => null),
+      ]);
+      subscription = sub;
+      groups = groupsData.groups || [];
+      trialAvailable = trial?.trial_available ?? false;
+    } catch (err) {
+      console.error("[Super Admin Check] Auth error:", err);
+      checkingSuperAdminAuth = false;
+      user = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      window.location.hash = "#/login";
+      currentPage = "login";
+    } finally {
+      checkingSuperAdminAuth = false;
+    }
+  }
+
   onMount(async () => {
     // Clean up any leftover dark mode from previous versions
     document.documentElement.classList.remove("dark");
@@ -103,11 +163,21 @@
       return;
     }
 
-    // Listen for hash changes (e.g., user navigates to /#/m/... or /#/reg/...)
+    // Special handling for super-admin page: check authentication first
+    if (currentPage === "super-admin") {
+      await checkSuperAdminAuth();
+      return;
+    }
+
+    // Listen for hash changes (e.g., user navigates to /#/m/... or /#/reg/... or /#/super-admin)
     window.addEventListener("hashchange", () => {
       const h = window.location.hash;
       const m = h.match(/^#\/m\/([a-f0-9]+)$/i);
       const r = h.match(/^#\/reg\/([a-zA-Z0-9_-]+)$/i);
+      if (h === "#/super-admin") {
+        currentPage = "super-admin";
+        checkSuperAdminAuth(); // Check auth when navigating to super-admin
+      }
       if (m) {
         sharedToken = m[1];
         currentPage = "mutawwif";
@@ -200,6 +270,10 @@
       showGlobalUpgradeModal = true;
       // If we are on landing, login, etc., we probably still want to stay there
       // or we can let the user upgrade from within the dashboard context.
+    } else if (page === "super-admin") {
+      // Check auth before showing super admin
+      currentPage = page;
+      checkSuperAdminAuth();
     } else {
       currentPage = page;
     }
@@ -231,7 +305,24 @@
 
 <main class="min-h-screen flex flex-col">
   {#if showSuperAdminPage}
-    <SuperAdminDashboard />
+    {#if checkingSuperAdminAuth}
+      <div class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+          <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto"></div>
+          <p class="mt-4 text-gray-600">Verifying access...</p>
+        </div>
+      </div>
+    {:else if user?.is_super_admin}
+      <SuperAdminDashboard />
+    {:else}
+      <div class="min-h-screen flex items-center justify-center">
+        <div class="text-center">
+          <div class="text-6xl mb-4">🔒</div>
+          <h1 class="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
+          <p class="text-gray-600">You don't have permission to access this page.</p>
+        </div>
+      </div>
+    {/if}
   {:else if currentPage === "landing"}
     <LandingPage
       onGoToLogin={() => (currentPage = "login")}

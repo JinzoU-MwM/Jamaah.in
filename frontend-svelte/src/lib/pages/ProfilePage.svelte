@@ -567,6 +567,17 @@
                             Edit Profil
                         </h2>
 
+                        <!-- Super Admin Access -->
+                        {#if user?.email === 'muk.lisca@gmail.com' || user?.email === 'MUK.LISCA@GMAIL.COM'}
+                            <a href="/#/super-admin" class="admin-link">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8.5-5.5 5.5-5.5 5.5S3 9.5 3 12c0 2.21-1.79 4-4 4-4s4 1.79 4 4 4c0 2.21 1.79 4 4 4 4 1.79 4 4zm5.5 10a1.5 1.5 0 1 1.5-3 1.5 1.5 0 3-1.5 1.5 1.5 0 0 1.5-3 1.5c0-1.21-.679-1.5-1.5-1.5 0-.828.584-1.5 1.5-3.353-1.5-1.5-1.5z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4-6-4 6 6-2-2-2-4 4-2 2-4 6-2 2-4 4-2 2 4 4 2-2 2 4-6-2 2-4 4 2z" />
+                                </svg>
+                                <span class="admin-link-text">Super Admin Dashboard</span>
+                            </a>
+                        {/if}
+
                         <div class="form-fields">
                             <div>
                                 <label for="profile-email" class="field-label"
@@ -887,6 +898,26 @@
 {/if}
 
 <style>
+    /* ---- Admin Link ---- */
+    :global(.admin-link) {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border-radius: 0.5rem;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+    :global(.admin-link:hover) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+    }
+    :global(.admin-link-text) {
+        font-weight: 600;
+    }
     /* ---- Base ---- */
     .profile-page {
         background: #f8fafc;

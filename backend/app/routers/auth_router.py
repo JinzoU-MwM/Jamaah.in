@@ -55,6 +55,7 @@ class UserResponse(BaseModel):
     email: str
     name: str
     is_admin: bool = False
+    is_super_admin: bool = False
     created_at: str
     avatar_color: str = "emerald"
     notify_usage_limit: bool = True
@@ -237,6 +238,7 @@ async def get_me(
         email=user.email,
         name=user.name,
         is_admin=user.is_admin,
+        is_super_admin=user.is_super_admin,
         created_at=user.created_at.isoformat(),
         avatar_color=user.avatar_color or "emerald",
         notify_usage_limit=user.notify_usage_limit if user.notify_usage_limit is not None else True,
