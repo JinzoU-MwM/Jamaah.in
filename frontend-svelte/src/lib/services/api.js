@@ -12,7 +12,7 @@ function getToken() {
 /**
  * Create headers with auth token
  */
-function authHeaders(extra = {}) {
+export function authHeaders(extra = {}) {
     const token = getToken();
     const headers = { ...extra };
     if (token) {
