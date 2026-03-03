@@ -25,7 +25,6 @@ if sentry_dsn:
     )
 
 import logging
-import traceback
 
 # FastAPI
 from fastapi import FastAPI, Request
@@ -85,7 +84,18 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # ---- Config ----
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+ENV = os.getenv("ENV", "development").strip().lower()
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+
+# Prevent insecure wildcard CORS in production.
+if ENV == "production" and "*" in ALLOWED_ORIGINS:
+    raise RuntimeError(
+        "In production, ALLOWED_ORIGINS must be explicit and cannot contain '*'."
+    )
 
 # ---- Rate Limiter ----
 limiter = Limiter(key_func=get_remote_address)
@@ -108,7 +118,7 @@ app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -125,6 +135,19 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' data:; "
+            "connect-src 'self' https:; "
+            "object-src 'none'; "
+            "base-uri 'self'; "
+            "frame-ancestors 'none'"
+        )
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
@@ -169,7 +192,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(error_msg, exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": error_msg, "traceback": traceback.format_exc()},
+        content={"detail": "Internal server error"},
     )
 
 

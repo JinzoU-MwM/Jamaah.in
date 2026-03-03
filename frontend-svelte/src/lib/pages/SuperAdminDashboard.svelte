@@ -20,12 +20,22 @@
 
     let activeTab = 'stats'; // 'stats', 'users', 'tickets'
     let selectedTicket = null;
+    let unreadTicketCount = 0;
+    let unreadMessageCount = 0;
+    let lastUnreadMessageCount = 0;
 
     let loading = true;
     let error = null;
 
     onMount(async () => {
         await loadStats();
+        await loadUnreadCount();
+
+        const interval = setInterval(async () => {
+            await loadUnreadCount();
+        }, 15000);
+
+        return () => clearInterval(interval);
     });
 
     async function loadStats() {
@@ -41,17 +51,45 @@
         }
     }
 
+    async function loadUnreadCount() {
+        try {
+            const res = await SuperAdminApi.getUnreadTicketCount();
+            unreadTicketCount = res?.unread_tickets || 0;
+            unreadMessageCount = res?.unread_messages || 0;
+
+            if (
+                unreadMessageCount > lastUnreadMessageCount &&
+                typeof window !== 'undefined' &&
+                'Notification' in window
+            ) {
+                if (Notification.permission === 'granted') {
+                    new Notification('Pesan Support Baru', {
+                        body: `Ada ${unreadMessageCount} pesan user yang belum dibaca.`,
+                    });
+                } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission();
+                }
+            }
+
+            lastUnreadMessageCount = unreadMessageCount;
+        } catch {
+            // Silent fail: unread polling should not break dashboard UX
+        }
+    }
+
     function selectTab(tab) {
         activeTab = tab;
     }
 
     function openTicket(ticket) {
         selectedTicket = ticket;
+        loadUnreadCount();
     }
 
     function closeTicketDetail() {
         selectedTicket = null;
         loadStats(); // Refresh stats
+        loadUnreadCount();
     }
 </script>
 
@@ -110,6 +148,11 @@
                         class:inactive={activeTab !== 'tickets'}
                         class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         Tickets
+                        {#if unreadTicketCount > 0}
+                            <span class="ml-2 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                                {unreadTicketCount > 99 ? '99+' : unreadTicketCount}
+                            </span>
+                        {/if}
                     </button>
                 </nav>
             </div>

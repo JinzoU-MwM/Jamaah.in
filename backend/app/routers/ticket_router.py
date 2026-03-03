@@ -5,7 +5,7 @@ User-facing endpoints for creating and managing support tickets.
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -64,6 +64,7 @@ class TicketReplyRequest(BaseModel):
 @router.post("")
 async def create_ticket(
     req: CreateTicketRequest,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -104,6 +105,17 @@ async def create_ticket(
     )
     db.add(message)
     db.commit()
+
+    # Notify super admin via email asynchronously.
+    from app.services.email_service import send_support_new_ticket_email
+    background_tasks.add_task(
+        send_support_new_ticket_email,
+        user.name or "User",
+        user.email,
+        ticket.id,
+        ticket.subject,
+        req.message[:500],
+    )
 
     return {"success": True, "ticket_id": ticket.id}
 
@@ -203,6 +215,7 @@ async def get_ticket_detail(
 async def reply_to_ticket(
     ticket_id: int,
     req: TicketReplyRequest,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -229,4 +242,16 @@ async def reply_to_ticket(
         ticket.status = TicketStatus.IN_PROGRESS
 
     db.commit()
+
+    # Notify super admin via email asynchronously for each new user reply.
+    from app.services.email_service import send_support_user_reply_email
+    background_tasks.add_task(
+        send_support_user_reply_email,
+        user.name or "User",
+        user.email,
+        ticket.id,
+        ticket.subject,
+        req.content[:500],
+    )
+
     return {"success": True, "message_id": message.id}

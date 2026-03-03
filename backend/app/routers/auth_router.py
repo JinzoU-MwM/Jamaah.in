@@ -3,9 +3,10 @@ Authentication Router — /auth/*
 Handles user registration, login, email verification, password reset, and profile retrieval.
 """
 from datetime import datetime, timedelta
+import os
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
@@ -16,6 +17,7 @@ from app.auth import (
     create_access_token,
     get_current_user,
     is_super_admin_user,
+    require_super_admin,
     check_access,
     get_usage_count,
     verify_password,
@@ -69,9 +71,17 @@ class UserResponse(BaseModel):
 
 @router.post("/register")
 @limiter.limit("3/minute")
-async def register(request: Request, req: RegisterRequest, db: Session = Depends(get_db)):
+async def register(
+    request: Request,
+    req: RegisterRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     """Register a new user. Sends OTP for email verification."""
-    user = register_user(db, req.email, req.password, req.name)
+    from app.services.email_service import send_otp_email
+
+    user, otp = register_user(db, req.email, req.password, req.name)
+    background_tasks.add_task(send_otp_email, user.email, otp)
     return {
         "success": True,
         "email": user.email,
@@ -163,10 +173,14 @@ async def verify_email(request: Request, req: VerifyEmailRequest, db: Session = 
 
 @router.post("/resend-otp")
 @limiter.limit("3/minute")
-async def resend_otp(request: Request, req: ResendOtpRequest, db: Session = Depends(get_db)):
+async def resend_otp(
+    request: Request,
+    req: ResendOtpRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     """Resend OTP to user's email."""
     from app.services.email_service import generate_otp, send_otp_email
-    import threading
 
     user = db.query(User).filter(User.email == req.email.lower().strip()).first()
     if not user:
@@ -179,16 +193,20 @@ async def resend_otp(request: Request, req: ResendOtpRequest, db: Session = Depe
     user.otp_expires = datetime.utcnow() + timedelta(minutes=10)
     db.commit()
 
-    threading.Thread(target=send_otp_email, args=(user.email, otp), daemon=True).start()
+    background_tasks.add_task(send_otp_email, user.email, otp)
     return {"success": True, "message": "Kode verifikasi baru telah dikirim"}
 
 
 @router.post("/forgot-password")
 @limiter.limit("3/minute")
-async def forgot_password(request: Request, req: ForgotPasswordRequest, db: Session = Depends(get_db)):
+async def forgot_password(
+    request: Request,
+    req: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     """Send password reset code to email."""
     from app.services.email_service import generate_otp, send_reset_email
-    import threading
 
     user = db.query(User).filter(User.email == req.email.lower().strip()).first()
     # Always return success to prevent email enumeration
@@ -200,7 +218,7 @@ async def forgot_password(request: Request, req: ForgotPasswordRequest, db: Sess
     user.reset_expires = datetime.utcnow() + timedelta(minutes=15)
     db.commit()
 
-    threading.Thread(target=send_reset_email, args=(user.email, code), daemon=True).start()
+    background_tasks.add_task(send_reset_email, user.email, code)
     return {"success": True, "message": "Jika email terdaftar, kode reset telah dikirim"}
 
 
@@ -445,13 +463,19 @@ async def verify_phone(
 
 # --- Test Email Endpoint ---
 @router.post("/test-email")
-async def test_email(db: Session = Depends(get_db)):
+async def test_email(
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
     """Test endpoint to send email to specified address (for testing SMTP)."""
+    if os.getenv("ENABLE_TEST_EMAIL_ENDPOINT", "false").strip().lower() != "true":
+        raise HTTPException(status_code=404, detail="Not Found")
+
     from app.services.email_service import _send_email
     import random
     import string
 
-    test_email = "muk.lisca@gmail.com"
+    test_email = os.getenv("TEST_EMAIL_RECIPIENT", admin.email)
     subject = "Test Email - Jamaah.in SMTP Configuration"
     test_code = ''.join(random.choices(string.digits, k=6))
 

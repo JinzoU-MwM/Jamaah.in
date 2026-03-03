@@ -30,6 +30,7 @@
             if (statusFilter !== 'all') filters.status = statusFilter;
             if (priorityFilter !== 'all') filters.priority = priorityFilter;
             tickets = await SuperAdminApi.listTickets(filters);
+            onRefresh();
         } catch (err) {
             error = err.message;
             console.error('Failed to load tickets:', err);
@@ -139,7 +140,14 @@
                             on:click={() => selectTicket(ticket)}
                         >
                             <td class="px-6 py-4">
-                                <div class="font-medium text-gray-900">{ticket.subject}</div>
+                                <div class="font-medium text-gray-900 flex items-center gap-2">
+                                    <span>{ticket.subject}</span>
+                                    {#if !ticket.is_read && ticket.unread_user_messages > 0}
+                                        <span class="px-2 py-0.5 bg-red-100 text-red-700 text-[10px] font-semibold rounded-full">
+                                            NEW {ticket.unread_user_messages}
+                                        </span>
+                                    {/if}
+                                </div>
                             </td>
                             <td class="px-6 py-4">
                                 <div class="text-sm">

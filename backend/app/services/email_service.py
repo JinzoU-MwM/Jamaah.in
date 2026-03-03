@@ -152,3 +152,79 @@ def send_reset_email(to: str, reset_code: str) -> bool:
     </div>
     """
     return _send_email(to, subject, html)
+
+
+def _support_notify_recipient() -> str:
+    """Recipient for support notifications (super admin inbox)."""
+    return (
+        os.getenv("SUPPORT_NOTIFY_EMAIL", "").strip()
+        or os.getenv("SUPER_ADMIN_EMAIL", "").strip()
+    )
+
+
+def send_support_new_ticket_email(
+    user_name: str,
+    user_email: str,
+    ticket_id: int,
+    subject_text: str,
+    message_preview: str,
+) -> bool:
+    """Notify super admin that a user created a new support ticket."""
+    to = _support_notify_recipient()
+    if not to:
+        logger.warning("Support notify recipient not configured; skipping new-ticket email.")
+        return False
+
+    subject = f"[Support] Tiket Baru #{ticket_id} - {subject_text}"
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8fafc;">
+      <div style="background: white; border-radius: 14px; padding: 24px; border: 1px solid #e2e8f0;">
+        <h2 style="margin: 0 0 12px; color: #0f172a;">Tiket Support Baru</h2>
+        <p style="margin: 0 0 6px; color: #334155;"><strong>Ticket ID:</strong> #{ticket_id}</p>
+        <p style="margin: 0 0 6px; color: #334155;"><strong>User:</strong> {user_name} ({user_email})</p>
+        <p style="margin: 0 0 6px; color: #334155;"><strong>Subjek:</strong> {subject_text}</p>
+        <p style="margin: 12px 0 4px; color: #334155;"><strong>Pesan awal:</strong></p>
+        <div style="padding: 12px; background: #f1f5f9; border-radius: 10px; color: #334155;">
+          {message_preview}
+        </div>
+        <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+          Buka Super Admin Dashboard untuk membalas tiket ini.
+        </p>
+      </div>
+    </div>
+    """
+    return _send_email(to, subject, html)
+
+
+def send_support_user_reply_email(
+    user_name: str,
+    user_email: str,
+    ticket_id: int,
+    subject_text: str,
+    message_preview: str,
+) -> bool:
+    """Notify super admin that a user replied on an existing support ticket."""
+    to = _support_notify_recipient()
+    if not to:
+        logger.warning("Support notify recipient not configured; skipping reply-notification email.")
+        return False
+
+    subject = f"[Support] Balasan User pada Ticket #{ticket_id}"
+    html = f"""
+    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; background: #f8fafc;">
+      <div style="background: white; border-radius: 14px; padding: 24px; border: 1px solid #e2e8f0;">
+        <h2 style="margin: 0 0 12px; color: #0f172a;">Balasan User Baru</h2>
+        <p style="margin: 0 0 6px; color: #334155;"><strong>Ticket ID:</strong> #{ticket_id}</p>
+        <p style="margin: 0 0 6px; color: #334155;"><strong>User:</strong> {user_name} ({user_email})</p>
+        <p style="margin: 0 0 6px; color: #334155;"><strong>Subjek:</strong> {subject_text}</p>
+        <p style="margin: 12px 0 4px; color: #334155;"><strong>Pesan terbaru:</strong></p>
+        <div style="padding: 12px; background: #f1f5f9; border-radius: 10px; color: #334155;">
+          {message_preview}
+        </div>
+        <p style="margin-top: 16px; font-size: 13px; color: #64748b;">
+          Buka Super Admin Dashboard untuk membalas tiket ini.
+        </p>
+      </div>
+    </div>
+    """
+    return _send_email(to, subject, html)

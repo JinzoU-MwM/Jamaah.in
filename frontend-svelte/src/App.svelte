@@ -4,6 +4,7 @@
   import Login from "./lib/pages/Login.svelte";
   import Sidebar from "./lib/components/Sidebar.svelte";
   import ProGateScreen from "./lib/components/ProGateScreen.svelte";
+  import SupportChatBubble from "./lib/components/SupportChatBubble.svelte";
   import UpgradeModal from "./lib/components/UpgradeModal.svelte";
   import Toast from "./lib/components/Toast.svelte";
   import { ApiService } from "./lib/services/api";
@@ -327,6 +328,15 @@
 
   // Super admin page (full screen, no sidebar)
   let showSuperAdminPage = $derived(currentPage === "super-admin");
+  let showSupportChat = $derived(
+    !!user &&
+      !showSuperAdminPage &&
+      currentPage !== "landing" &&
+      currentPage !== "login" &&
+      currentPage !== "register" &&
+      currentPage !== "mutawwif" &&
+      currentPage !== "registration",
+  );
 
   $effect(() => {
     // Prefetch only current route and likely next route to reduce render-blocking JS.
@@ -546,5 +556,8 @@
       await loadUserData();
     }}
   />
+  {#if showSupportChat}
+    <SupportChatBubble />
+  {/if}
 </main>
 <Toast />

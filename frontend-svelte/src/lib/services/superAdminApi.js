@@ -44,6 +44,14 @@ export const SuperAdminApi = {
         return await response.json();
     },
 
+    async getUnreadTicketCount() {
+        const response = await fetch(`${API_URL}/super-admin/tickets/unread-count`, {
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
     async getTicketDetail(ticketId) {
         const response = await fetch(`${API_URL}/super-admin/tickets/${ticketId}`, {
             headers: authHeaders(),

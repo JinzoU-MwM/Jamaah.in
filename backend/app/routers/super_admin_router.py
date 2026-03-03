@@ -14,7 +14,7 @@ from sqlalchemy import func
 from app.database import get_db
 from app.auth import require_super_admin
 from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus
-from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority
+from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
 
 router = APIRouter(prefix="/super-admin", tags=["Super Admin"])
 
@@ -44,6 +44,7 @@ class TicketListItem(BaseModel):
     last_message_at: str
     message_count: int
     is_read: bool
+    unread_user_messages: int
 
 
 class TicketMessageResponse(BaseModel):
@@ -71,6 +72,11 @@ class TicketReplyRequest(BaseModel):
 
 class TicketStatusRequest(BaseModel):
     status: str  # "open", "in_progress", "resolved", "closed"
+
+
+class UnreadCountResponse(BaseModel):
+    unread_tickets: int
+    unread_messages: int
 
 
 # --- Endpoints ---
@@ -134,7 +140,7 @@ async def list_tickets(
         except ValueError:
             pass
 
-    tickets = query.order_by(SupportTicket.created_at.desc()).offset(skip).limit(limit).all()
+    tickets = query.order_by(SupportTicket.updated_at.desc()).offset(skip).limit(limit).all()
 
     items = []
     for ticket in tickets:
@@ -145,6 +151,12 @@ async def list_tickets(
         last_message = db.query(TicketMessage).filter(
             TicketMessage.ticket_id == ticket.id
         ).order_by(TicketMessage.created_at.desc()).first()
+
+        unread_user_messages = db.query(func.count(TicketMessage.id)).filter(
+            TicketMessage.ticket_id == ticket.id,
+            TicketMessage.sender_type == SenderType.USER,
+            TicketMessage.is_read == False
+        ).scalar() or 0
 
         items.append(TicketListItem(
             id=ticket.id,
@@ -157,14 +169,33 @@ async def list_tickets(
             created_at=ticket.created_at.isoformat(),
             last_message_at=last_message.created_at.isoformat() if last_message else ticket.created_at.isoformat(),
             message_count=message_count,
-            is_read=not db.query(TicketMessage).filter(
-                TicketMessage.ticket_id == ticket.id,
-                TicketMessage.sender_type == "admin",
-                TicketMessage.is_read == False
-            ).first() is None,
+            is_read=(unread_user_messages == 0),
+            unread_user_messages=unread_user_messages,
         ))
 
     return items
+
+
+@router.get("/tickets/unread-count", response_model=UnreadCountResponse)
+async def get_unread_ticket_count(
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Get unread counts for admin (user messages not yet opened by admin)."""
+    unread_messages = db.query(func.count(TicketMessage.id)).filter(
+        TicketMessage.sender_type == SenderType.USER,
+        TicketMessage.is_read == False
+    ).scalar() or 0
+
+    unread_tickets = db.query(func.count(func.distinct(TicketMessage.ticket_id))).filter(
+        TicketMessage.sender_type == SenderType.USER,
+        TicketMessage.is_read == False
+    ).scalar() or 0
+
+    return UnreadCountResponse(
+        unread_tickets=unread_tickets,
+        unread_messages=unread_messages,
+    )
 
 
 @router.get("/tickets/{ticket_id}", response_model=TicketDetailResponse)

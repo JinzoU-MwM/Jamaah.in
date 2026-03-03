@@ -84,10 +84,9 @@ def decode_token(token: str) -> dict:
 # USER OPERATIONS
 # =============================================================================
 
-def register_user(db: Session, email: str, password: str, name: str) -> User:
-    """Register a new user with a 7-day free trial. Sends OTP for verification."""
-    from app.services.email_service import generate_otp, send_otp_email
-    import threading
+def register_user(db: Session, email: str, password: str, name: str) -> tuple[User, str]:
+    """Register a new user with a 7-day free trial and return (user, plain OTP)."""
+    from app.services.email_service import generate_otp
 
     # Check duplicate
     existing = db.query(User).filter(User.email == email).first()
@@ -122,16 +121,7 @@ def register_user(db: Session, email: str, password: str, name: str) -> User:
     db.commit()
     db.refresh(user)
 
-    # Send OTP email in background thread so registration doesn't block
-    def _send():
-        try:
-            send_otp_email(user.email, otp)
-        except Exception as e:
-            logging.getLogger(__name__).error("Failed to send OTP email to %s: %s", user.email, e)
-
-    threading.Thread(target=_send, daemon=True).start()
-
-    return user
+    return user, otp
 
 
 def authenticate_user(db: Session, email: str, password: str) -> User:
@@ -170,15 +160,6 @@ async def get_current_user(
     user = db.query(User).options(joinedload(User.subscription)).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(status_code=401, detail="User tidak ditemukan")
-    # Keep DB flag aligned with effective super admin identity by email.
-    # If SUPER_ADMIN_EMAIL is not configured, preserve current DB flag.
-    super_admin_email = get_super_admin_email()
-    if super_admin_email:
-        should_be_super_admin = is_super_admin_user(user)
-        if user.is_super_admin != should_be_super_admin:
-            user.is_super_admin = should_be_super_admin
-            db.commit()
-            db.refresh(user)
     return user
 
 
