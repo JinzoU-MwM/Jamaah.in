@@ -4,6 +4,9 @@ from app.models.operational import InventoryMaster, Room, RoomType, GenderType, 
 from app.models.team import Organization, TeamMember, TeamInvite, TeamRole, MemberStatus
 from app.models.itinerary import Itinerary
 from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
+from app.models.registration import RegistrationLink
+from app.models.pending_member import PendingMember
+from app.models.export_template import ExportTemplate
 
 __all__ = [
     # User models
@@ -18,4 +21,9 @@ __all__ = [
     "Itinerary",
     # Support Ticket
     "SupportTicket", "TicketMessage", "TicketStatus", "TicketPriority", "SenderType",
+    # Registration
+    "RegistrationLink",
+    "PendingMember",
+    # Export
+    "ExportTemplate",
 ]

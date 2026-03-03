@@ -1,34 +1,38 @@
-<script>
-  import {
-    UsersRound,
-    ArrowRightToLine,
-    FileSearch,
-    Zap,
-    FileSpreadsheet,
-    Shield,
-    Clock,
-    Star,
-    ChevronRight,
-    Check,
-    X as XIcon,
-    Package,
-    Hotel,
-    ScanLine,
-    Smartphone,
-    Frown,
-    Smile,
-    Sparkles,
-    BadgeCheck,
-    Rocket,
-    CalendarDays,
-  } from "lucide-svelte";
+<script lang="ts">
+  import UsersRound from "lucide-svelte/icons/users-round";
+  import ArrowRightToLine from "lucide-svelte/icons/arrow-right-to-line";
+  import FileSearch from "lucide-svelte/icons/file-search";
+  import Zap from "lucide-svelte/icons/zap";
+  import FileSpreadsheet from "lucide-svelte/icons/file-spreadsheet";
+  import Shield from "lucide-svelte/icons/shield";
+  import Clock from "lucide-svelte/icons/clock";
+  import Star from "lucide-svelte/icons/star";
+  import ChevronRight from "lucide-svelte/icons/chevron-right";
+  import Check from "lucide-svelte/icons/check";
+  import XIcon from "lucide-svelte/icons/x";
+  import Package from "lucide-svelte/icons/package";
+  import Hotel from "lucide-svelte/icons/hotel";
+  import ScanLine from "lucide-svelte/icons/scan-line";
+  import Smartphone from "lucide-svelte/icons/smartphone";
+  import Frown from "lucide-svelte/icons/frown";
+  import Smile from "lucide-svelte/icons/smile";
+  import Sparkles from "lucide-svelte/icons/sparkles";
+  import BadgeCheck from "lucide-svelte/icons/badge-check";
+  import Rocket from "lucide-svelte/icons/rocket";
+  import CalendarDays from "lucide-svelte/icons/calendar-days";
 
-  let { onGoToLogin = () => {}, onGoToRegister = () => {} } = $props();
+  interface Props {
+    onGoToLogin?: () => void;
+    onGoToRegister?: () => void;
+  }
+
+  let { onGoToLogin = () => {}, onGoToRegister = () => {} }: Props = $props();
 </script>
 
-<div class="landing">
-  <!-- Navbar -->
-  <nav class="nav">
+<div class="landing" itemscope itemtype="https://schema.org/WebPage">
+  <!-- Header & Navigation -->
+  <header class="site-header">
+    <nav class="nav" aria-label="Main navigation">
     <div class="nav-inner">
       <a href="/" class="logo">
         <div class="logo-icons">
@@ -63,18 +67,20 @@
       </div>
     </div>
   </nav>
+  </header>
 
+  <main id="main-content">
   <!-- ================================================================== -->
   <!-- 1. HERO SECTION -->
   <!-- ================================================================== -->
-  <section class="hero">
+  <section class="hero" aria-labelledby="hero-title" id="hero">
     <div class="hero-glow"></div>
     <div class="hero-content">
       <div class="hero-badge">
         <Sparkles class="w-4 h-4" />
         <span>All-in-One ERP Ringan untuk Travel Umrah</span>
       </div>
-      <h1 class="hero-title">
+      <h1 class="hero-title" id="hero-title">
         Berhenti Ketik Manual.<br />
         <span class="hero-highlight">Urus Jamaah 10x Lebih Cepat.</span>
       </h1>
@@ -100,7 +106,8 @@
         </button>
       </div>
       <p class="hero-note">
-        <Check class="w-4 h-4" /> 7 hari Pro Trial gratis · Tanpa kartu kredit · Setup 30 detik
+        <Check class="w-4 h-4" /> 7 hari Pro Trial gratis · Tanpa kartu kredit ·
+        Setup 30 detik
       </p>
     </div>
   </section>
@@ -108,10 +115,10 @@
   <!-- ================================================================== -->
   <!-- 2. PAIN vs. GAIN SECTION -->
   <!-- ================================================================== -->
-  <section class="section comparison">
+  <section class="section comparison" aria-labelledby="comparison-title">
     <div class="section-inner">
       <div class="section-header">
-        <h2 class="section-title">
+        <h2 class="section-title" id="comparison-title">
           Masih Urus Jamaah Pakai <span class="text-red-400">Cara Lama</span>?
         </h2>
         <p class="section-desc">
@@ -216,19 +223,21 @@
   <!-- ================================================================== -->
   <!-- 3. CORE FEATURES GRID -->
   <!-- ================================================================== -->
-  <section class="section features" id="features">
+  <section class="section features" id="features" aria-labelledby="features-title">
     <div class="section-inner">
       <div class="section-header">
-        <h2 class="section-title">
-          Semua yang Travel Agency <span class="text-emerald-400">Butuhkan</span>
+        <h2 class="section-title" id="features-title">
+          Semua yang Travel Agency <span class="text-emerald-400">Butuhkan</span
+          >
         </h2>
         <p class="section-desc">
-          Fitur lengkap untuk operasional haji & umrah — dari scan dokumen sampai manifest digital.
+          Fitur lengkap untuk operasional haji & umrah — dari scan dokumen
+          sampai manifest digital.
         </p>
       </div>
       <div class="features-grid features-grid-3x2">
         <!-- Feature 1: AI Document Scanner -->
-        <div class="feature-card">
+        <article class="feature-card">
           <div class="feature-icon blue">
             <ScanLine class="w-6 h-6" />
           </div>
@@ -239,19 +248,21 @@
           </p>
           <ul class="feature-bullets">
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Gemini Flash — akurasi tinggi
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Gemini Flash — akurasi
+              tinggi
             </li>
             <li>
-              <Check class="w-3.5 h-3.5 text-emerald-400" /> Batch upload, proses paralel
+              <Check class="w-3.5 h-3.5 text-emerald-400" /> Batch upload, proses
+              paralel
             </li>
             <li>
               <Check class="w-3.5 h-3.5 text-emerald-400" /> Fuzzy Merge anti duplikat
             </li>
           </ul>
-        </div>
+        </article>
 
         <!-- Feature 2: Smart Auto-Rooming -->
-        <div class="feature-card">
+        <article class="feature-card">
           <div class="feature-icon cyan">
             <Hotel class="w-6 h-6" />
           </div>
@@ -271,10 +282,10 @@
               <Check class="w-3.5 h-3.5 text-emerald-400" /> Drag & drop manual
             </li>
           </ul>
-        </div>
+        </article>
 
         <!-- Feature 3: Mutawwif Mobile Manifest -->
-        <div class="feature-card">
+        <article class="feature-card">
           <div class="feature-icon purple">
             <Smartphone class="w-6 h-6" />
           </div>
@@ -294,10 +305,10 @@
               <Check class="w-3.5 h-3.5 text-emerald-400" /> WhatsApp langsung
             </li>
           </ul>
-        </div>
+        </article>
 
         <!-- Feature 4: Inventory Checklist -->
-        <div class="feature-card">
+        <article class="feature-card">
           <div class="feature-icon amber">
             <Package class="w-6 h-6" />
           </div>
@@ -317,10 +328,10 @@
               <Check class="w-3.5 h-3.5 text-emerald-400" /> Print rooming list
             </li>
           </ul>
-        </div>
+        </article>
 
         <!-- Feature 5: Itinerary Manager -->
-        <div class="feature-card">
+        <article class="feature-card">
           <div class="feature-icon pink">
             <CalendarDays class="w-6 h-6" />
           </div>
@@ -340,10 +351,10 @@
               <Check class="w-3.5 h-3.5 text-emerald-400" /> Share ke tim & jamaah
             </li>
           </ul>
-        </div>
+        </article>
 
         <!-- Feature 6: Team & Analytics -->
-        <div class="feature-card">
+        <article class="feature-card">
           <div class="feature-icon green">
             <Shield class="w-6 h-6" />
           </div>
@@ -363,7 +374,7 @@
               <Check class="w-3.5 h-3.5 text-emerald-400" /> Multi-user support
             </li>
           </ul>
-        </div>
+        </article>
       </div>
     </div>
   </section>
@@ -371,10 +382,10 @@
   <!-- ================================================================== -->
   <!-- 4. PRICING SECTION -->
   <!-- ================================================================== -->
-  <section class="section pricing" id="pricing">
+  <section class="section pricing" id="pricing" aria-labelledby="pricing-title">
     <div class="section-inner">
       <div class="section-header">
-        <h2 class="section-title">
+        <h2 class="section-title" id="pricing-title">
           Investasi <span class="text-emerald-400">Lebih Murah</span> dari Lembur
           1 Malam
         </h2>
@@ -396,10 +407,12 @@
           </p>
           <ul class="price-features">
             <li>
-              <Check class="w-4 h-4 text-emerald-400" /> <strong>7 hari Pro Trial</strong> akses penuh
+              <Check class="w-4 h-4 text-emerald-400" />
+              <strong>7 hari Pro Trial</strong> akses penuh
             </li>
             <li>
-              <Check class="w-4 h-4 text-emerald-400" /> <strong>5 scan</strong> setelah trial
+              <Check class="w-4 h-4 text-emerald-400" /> <strong>5 scan</strong>
+              setelah trial
             </li>
             <li>
               <Check class="w-4 h-4 text-emerald-400" /> AI OCR (Gemini Flash)
@@ -509,11 +522,11 @@
   <!-- ================================================================== -->
   <!-- 5. FINAL CTA -->
   <!-- ================================================================== -->
-  <section class="section final-cta">
+  <section class="section final-cta" aria-labelledby="cta-title">
     <div class="section-inner">
       <div class="cta-box">
         <Rocket class="w-10 h-10 text-emerald-400 mx-auto mb-4" />
-        <h2 class="cta-title">
+        <h2 class="cta-title" id="cta-title">
           Keberangkatan Bulan Ini?<br />
           <span class="hero-highlight">Urus Sekarang Pakai Jamaah.in.</span>
         </h2>
@@ -537,6 +550,7 @@
       </div>
     </div>
   </section>
+  </main>
 
   <!-- Footer -->
   <footer class="footer">
@@ -555,6 +569,16 @@
 </div>
 
 <style>
+  /* Semantic HTML structure */
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  main {
+    display: block;
+  }
+
   .landing {
     font-family:
       "Plus Jakarta Sans",
@@ -838,11 +862,6 @@
   /* ---- FEATURES ---- */
   .features {
     background: #0a0f1a;
-  }
-  .features-grid-2x2 {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
   }
   .features-grid-3x2 {
     display: grid;
@@ -1134,7 +1153,6 @@
       grid-template-columns: 1fr;
       max-width: 440px;
     }
-    .features-grid-2x2,
     .features-grid-3x2 {
       grid-template-columns: 1fr;
     }

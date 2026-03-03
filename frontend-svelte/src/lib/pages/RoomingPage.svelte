@@ -182,9 +182,13 @@
     }
   }
 
-  function handleDragStart(member, roomId) {
+  function handleDragStart(e, member, roomId) {
     draggedMember = member;
     dragSourceRoomId = roomId;
+    if (e.dataTransfer) {
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", member.id);
+    }
   }
 
   function handleDragOver(e) {
@@ -557,7 +561,10 @@
                   room.gender_type,
                 )} p-2.5 text-xs"
                 ondragover={handleDragOver}
-                ondrop={() => handleDrop(room.id)}
+                ondrop={(e) => {
+                  e.preventDefault();
+                  handleDrop(room.id);
+                }}
                 role="region"
                 aria-label="Kamar {room.room_number}"
               >
@@ -619,8 +626,8 @@
                       class="bg-white rounded px-2 py-1 flex items-center justify-between border border-slate-100 cursor-move"
                       draggable="true"
                       role="listitem"
-                      ondragstart={() =>
-                        handleDragStart({ id: member.id }, room.id)}
+                      ondragstart={(e) =>
+                        handleDragStart(e, { id: member.id }, room.id)}
                     >
                       <span class="truncate text-slate-700"
                         >{member.nama || "Tanpa Nama"}</span

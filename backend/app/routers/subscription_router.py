@@ -58,6 +58,7 @@ class ActivateTrialRequest(BaseModel):
 
 class TrialStatusResponse(BaseModel):
     can_activate: bool
+    trial_available: bool  # True if trial not used yet
     phone_verified: bool
     trial_used: bool
     message: str
@@ -112,6 +113,7 @@ async def trial_status(
 
     return TrialStatusResponse(
         can_activate=can_activate,
+        trial_available=not trial_used,  # Available if not used
         phone_verified=phone_verified,
         trial_used=trial_used,
         message=message

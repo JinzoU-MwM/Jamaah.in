@@ -30,6 +30,8 @@ class Group(Base):
     # Relationships
     user = relationship("User", backref="groups")
     members = relationship("GroupMember", back_populates="group", cascade="all, delete-orphan")
+    registration_links = relationship("RegistrationLink", back_populates="group", cascade="all, delete-orphan")
+    pending_members = relationship("PendingMember", back_populates="group", cascade="all, delete-orphan")
 
     @property
     def member_count(self):

@@ -18,6 +18,7 @@
     } from "lucide-svelte";
     import { ApiService } from "../services/api.js";
     import WhatsAppBlast from "./WhatsAppBlast.svelte";
+    import RegistrationLinkModal from "./RegistrationLinkModal.svelte";
 
     let {
         selectedGroup = $bindable(null),
@@ -43,6 +44,10 @@
     let shareResult = $state(null);
     let shareError = $state("");
     let copied = $state(false);
+
+    // --- Registration Link ---
+    let regLinkModal = $state(false);
+    let regLinkGroup = $state(null);
 
     // --- WhatsApp Blast ---
     let waBlastOpen = $state(false);
@@ -88,6 +93,7 @@
     }
 
     async function deleteGroup(groupId) {
+        error = "";
         try {
             await ApiService.deleteGroup(groupId);
             groups = groups.filter((g) => g.id !== groupId);
@@ -95,9 +101,10 @@
                 selectedGroup = null;
                 onGroupSelect(null);
             }
-            deleteConfirm = null;
         } catch (e) {
             error = e.message;
+        } finally {
+            deleteConfirm = null;
         }
     }
 
@@ -142,8 +149,23 @@
         copied = false;
     }
 
+    function openRegistrationLink(group) {
+        regLinkGroup = group;
+        regLinkModal = true;
+    }
+
+    function closeRegistrationLink() {
+        regLinkModal = false;
+        regLinkGroup = null;
+    }
+
     async function handleShare() {
-        if (!sharePin || sharePin.length < 4 || !/^\d+$/.test(sharePin)) {
+        if (
+            !sharePin ||
+            sharePin.length < 4 ||
+            sharePin.length > 6 ||
+            !/^\d+$/.test(sharePin)
+        ) {
             shareError = "PIN harus 4-6 digit angka";
             return;
         }
@@ -305,6 +327,18 @@
                                 </button>
                             {/if}
 
+                            <!-- Link Pendaftaran -->
+                            <button
+                                onclick={(e) => {
+                                    e.stopPropagation();
+                                    openRegistrationLink(group);
+                                }}
+                                class="p-1 text-slate-400 hover:text-emerald-500 rounded transition-colors"
+                                title="Link Pendaftaran"
+                            >
+                                <Link class="h-3.5 w-3.5" />
+                            </button>
+
                             <!-- WhatsApp Blast -->
                             {#if group.member_count > 0}
                                 <button
@@ -377,6 +411,14 @@
                 </div>
             {/each}
         </div>
+    {/if}
+
+    <!-- Self-Service Registration Modal -->
+    {#if regLinkModal && regLinkGroup}
+        <RegistrationLinkModal
+            groupId={regLinkGroup.id}
+            onClose={closeRegistrationLink}
+        />
     {/if}
 </div>
 

@@ -23,6 +23,7 @@ from app.auth import get_current_user, check_access
 from app.models.user import User
 from app.models.group import Group, GroupMember
 from app.models.operational import Room
+from sqlalchemy.orm import joinedload
 
 logger = logging.getLogger(__name__)
 
@@ -181,20 +182,18 @@ async def get_shared_manifest(
     if not group.shared_pin or body.pin != group.shared_pin:
         raise HTTPException(status_code=401, detail="PIN salah")
 
-    # Fetch members with room info
-    members = db.query(GroupMember).filter(
+    # Fetch members with room info (joinedload prevents N+1 query problem)
+    members = db.query(GroupMember).options(
+        joinedload(GroupMember.room)
+    ).filter(
         GroupMember.group_id == group.id
     ).order_by(GroupMember.nama).all()
 
     # Build privacy-safe response
     member_list = []
     for m in members:
-        # Get room number if assigned
-        room_number = None
-        if m.room_id:
-            room = db.query(Room).filter(Room.id == m.room_id).first()
-            if room:
-                room_number = room.room_number
+        # Room info is already eagerly loaded
+        room_number = m.room.room_number if m.room else None
 
         member_list.append(MutawwifMemberResponse(
             id=m.id,

@@ -58,6 +58,8 @@ from app.routers import (
     notification_router,
     super_admin_router,
     ticket_router,
+    registration_router,
+    export_router,
 )
 from app.services.cache import ocr_cache
 from app.error_handlers import (
@@ -149,6 +151,8 @@ app.include_router(document_router)    # Pro: Document Templates
 app.include_router(notification_router) # Smart Notifications
 app.include_router(super_admin_router) # Super Admin Dashboard
 app.include_router(ticket_router)      # Support Tickets
+app.include_router(registration_router) # Self-service Registration
+app.include_router(export_router)       # Custom Export Templates
 
 
 # ---- Startup ----

@@ -1,7 +1,7 @@
 # Jamaah.in — Product Information Document
 
 > **Comprehensive product brief for brainstorming & planning sessions.**
-> Last updated — 28 February 2026 (a11y fixes & warning cleanup).
+> Last updated — 28 February 2026 (Landing page update & Trial Card).
 
 ---
 
@@ -222,10 +222,18 @@ Automatic hotel room allocation for pilgrim groups:
 | Feature | Free (Trial) | Pro |
 |---------|-------------|-----|
 | **Duration** | 7-day trial | 30 days per payment |
-| **Scan Limit** | 50 total scans | Unlimited |
+| **Scan Limit** | 5 total scans (after trial) | Unlimited |
 | **Groups** | 2 groups | Unlimited |
 | **Excel Export** | ✅ | ✅ |
-| **Price** | Free | Rp 40,000/month or Rp 400,000/year (~$2.50/$25 USD) |
+| **Price** | Free | Rp 80,000/month or Rp 800,000/year (~$5/$50 USD) |
+
+#### Trial Awareness
+| Feature | Details |
+|---------|---------|
+| **Sidebar Trial Card** | Purple gradient card ("🎁 FREE Trial 7 Hari!") shown to users who haven't activated trial |
+| **Visibility** | Only shown when `trialAvailable=true` (user hasn't used trial yet) |
+| **CTA** | "Aktifkan Sekarang" button opens UpgradeModal with trial flow |
+| **Post-Trial** | Card replaced with regular Pro CTA (Rp80rb/bulan) after trial activated |
 
 #### Payment Gateway: Pakasir
 | Feature | Details |
@@ -341,7 +349,7 @@ Automatic hotel room allocation for pilgrim groups:
 | **TableResult** | `TableResult.svelte` (16KB) | Editable data table with 32 columns |
 | **GroupSelector** | `GroupSelector.svelte` (10KB) | Group picker with create/select/save |
 | **MutawwifManifest** | `MutawwifManifest.svelte` (16KB) | Public mobile-first PIN-protected manifest view |
-| **Sidebar** | `Sidebar.svelte` (8KB) | Collapsible navigation, clickable user info (accesses Profile) |
+| **Sidebar** | `Sidebar.svelte` (8KB) | Collapsible navigation, clickable user info, Trial Card for free users |
 | **SubscriptionBanner** | `SubscriptionBanner.svelte` (7KB) | Trial/pro status banner |
 | **BrandLogo** | `BrandLogo.svelte` (1KB) | SVG brand logo component |
 
