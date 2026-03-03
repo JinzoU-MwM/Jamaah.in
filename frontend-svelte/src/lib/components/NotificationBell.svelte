@@ -12,6 +12,7 @@
     let count = $state(0);
     let showPanel = $state(false);
     let isLoading = $state(false);
+    let rootEl = $state(null);
 
     async function loadNotifications() {
         isLoading = true;
@@ -31,7 +32,27 @@
         loadNotifications();
         // Refresh every 5 minutes
         const interval = setInterval(loadNotifications, 5 * 60 * 1000);
-        return () => clearInterval(interval);
+
+        const onDocClick = (e) => {
+            if (showPanel && rootEl && !rootEl.contains(e.target)) {
+                showPanel = false;
+            }
+        };
+
+        const onEsc = (e) => {
+            if (e.key === "Escape") {
+                showPanel = false;
+            }
+        };
+
+        document.addEventListener("click", onDocClick, true);
+        window.addEventListener("keydown", onEsc);
+
+        return () => {
+            clearInterval(interval);
+            document.removeEventListener("click", onDocClick, true);
+            window.removeEventListener("keydown", onEsc);
+        };
     });
 
     function getSeverityStyle(severity) {
@@ -49,7 +70,7 @@
     }
 </script>
 
-<div class="relative">
+<div class="relative" bind:this={rootEl}>
     <button
         type="button"
         onclick={() => (showPanel = !showPanel)}
@@ -67,22 +88,12 @@
     </button>
 
     {#if showPanel}
-        <!-- Backdrop -->
-        <div
-            class="fixed inset-0 z-40"
-            onclick={() => (showPanel = false)}
-            onkeydown={(e) => e.key === "Escape" && (showPanel = false)}
-            role="button"
-            tabindex="-1"
-            aria-label="Tutup panel notifikasi"
-        ></div>
-
         <!-- Panel -->
         <div
-            class="fixed right-4 top-16 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-xl shadow-2xl border border-slate-200 z-50 max-h-96 overflow-hidden flex flex-col"
+            class="absolute left-full top-0 ml-3 w-[22rem] max-w-[min(22rem,calc(100vw-5rem))] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 max-h-96 overflow-hidden flex flex-col"
         >
             <div
-                class="flex items-center justify-between px-4 py-3 border-b border-slate-100"
+                class="flex items-center justify-between px-4 py-3 border-b border-slate-100 bg-slate-50/70"
             >
                 <h3 class="text-sm font-semibold text-slate-800">Notifikasi</h3>
                 <button
