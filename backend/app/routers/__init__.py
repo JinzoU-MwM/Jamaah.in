@@ -15,3 +15,5 @@ from app.routers.document_router import router as document_router
 from app.routers.notification_router import router as notification_router
 from app.routers.registration_router import router as registration_router
 from app.routers.export_router import router as export_router
+from app.routers.super_admin_router import router as super_admin_router
+from app.routers.ticket_router import router as ticket_router
