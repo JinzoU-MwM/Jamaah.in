@@ -31,6 +31,20 @@ FREE_USAGE_LIMIT = 5  # Free tier: 5 scans lifetime
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
+def get_super_admin_email() -> Optional[str]:
+    """Return normalized configured super admin email from environment."""
+    raw = os.getenv("SUPER_ADMIN_EMAIL", "").strip().lower()
+    return raw or None
+
+
+def is_super_admin_user(user: User) -> bool:
+    """True only when user email matches configured super admin email."""
+    super_admin_email = get_super_admin_email()
+    if not super_admin_email:
+        return False
+    return (user.email or "").strip().lower() == super_admin_email
+
+
 # =============================================================================
 # PASSWORD HASHING
 # =============================================================================
@@ -156,6 +170,15 @@ async def get_current_user(
     user = db.query(User).options(joinedload(User.subscription)).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(status_code=401, detail="User tidak ditemukan")
+    # Keep DB flag aligned with effective super admin identity by email.
+    # If SUPER_ADMIN_EMAIL is not configured, preserve current DB flag.
+    super_admin_email = get_super_admin_email()
+    if super_admin_email:
+        should_be_super_admin = is_super_admin_user(user)
+        if user.is_super_admin != should_be_super_admin:
+            user.is_super_admin = should_be_super_admin
+            db.commit()
+            db.refresh(user)
     return user
 
 
@@ -175,14 +198,12 @@ async def require_super_admin(
     user: User = Depends(get_current_user),
 ) -> User:
     """FastAPI dependency: require current user to be a super admin (app owner)."""
-    super_admin_email = os.getenv("SUPER_ADMIN_EMAIL")
-    if not super_admin_email:
+    if not get_super_admin_email():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="SUPER_ADMIN_EMAIL not configured",
         )
-    # Check both is_super_admin flag and email match for security
-    if not user.is_super_admin or user.email.lower() != super_admin_email.lower():
+    if not is_super_admin_user(user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Akses super admin diperlukan",

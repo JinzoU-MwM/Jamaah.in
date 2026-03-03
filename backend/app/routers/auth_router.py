@@ -15,6 +15,7 @@ from app.auth import (
     authenticate_user,
     create_access_token,
     get_current_user,
+    is_super_admin_user,
     check_access,
     get_usage_count,
     verify_password,
@@ -93,6 +94,7 @@ async def login(request: Request, req: LoginRequest, db: Session = Depends(get_d
             "email": user.email,
             "name": user.name,
             "is_admin": user.is_admin,
+            "is_super_admin": is_super_admin_user(user),
             "subscription": access_info,
         },
     )
@@ -153,6 +155,7 @@ async def verify_email(request: Request, req: VerifyEmailRequest, db: Session = 
             "email": user.email,
             "name": user.name,
             "is_admin": user.is_admin,
+            "is_super_admin": is_super_admin_user(user),
             "subscription": access_info,
         },
     }
@@ -238,7 +241,7 @@ async def get_me(
         email=user.email,
         name=user.name,
         is_admin=user.is_admin,
-        is_super_admin=user.is_super_admin,
+        is_super_admin=is_super_admin_user(user),
         created_at=user.created_at.isoformat(),
         avatar_color=user.avatar_color or "emerald",
         notify_usage_limit=user.notify_usage_limit if user.notify_usage_limit is not None else True,

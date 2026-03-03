@@ -568,7 +568,7 @@
                         </h2>
 
                         <!-- Super Admin Access -->
-                        {#if user?.email === 'muk.lisca@gmail.com' || user?.email === 'MUK.LISCA@GMAIL.COM'}
+                        {#if user?.is_super_admin}
                             <a href="/#/super-admin" class="admin-link">
                                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 22s8.5-5.5 5.5-5.5 5.5S3 9.5 3 12c0 2.21-1.79 4-4 4-4s4 1.79 4 4 4c0 2.21 1.79 4 4 4 4 1.79 4 4zm5.5 10a1.5 1.5 0 1 1.5-3 1.5 1.5 0 3-1.5 1.5 1.5 0 0 1.5-3 1.5c0-1.21-.679-1.5-1.5-1.5 0-.828.584-1.5 1.5-3.353-1.5-1.5-1.5z" />
