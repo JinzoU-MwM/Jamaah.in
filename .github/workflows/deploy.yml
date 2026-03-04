@@ -85,7 +85,20 @@ jobs:
               echo "DATABASE_URL is not set. Ensure .env exists in /var/www/jamaah.in or /var/www/jamaah.in/backend."
               exit 1
             fi
-            python -m alembic upgrade head
+            set +e
+            MIGRATION_OUTPUT="$(python -m alembic upgrade head 2>&1)"
+            MIGRATION_STATUS=$?
+            set -e
+            if [ $MIGRATION_STATUS -ne 0 ]; then
+              echo "$MIGRATION_OUTPUT"
+              if echo "$MIGRATION_OUTPUT" | grep -q "Can't locate revision identified by"; then
+                echo "Detected unknown alembic revision in DB. Stamping to merge_heads_20260304 and retrying..."
+                python -m alembic stamp merge_heads_20260304
+                python -m alembic upgrade head
+              else
+                exit $MIGRATION_STATUS
+              fi
+            fi
             deactivate
             cd ..
 
