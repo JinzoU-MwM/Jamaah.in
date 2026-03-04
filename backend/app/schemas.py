@@ -120,7 +120,10 @@ class FileResult(BaseModel):
     status: str  # "success", "partial", "failed"
     document_type: str = ""
     error: str = ""
+    error_category: str = ""
     cached: bool = False
+    processing_ms: float = 0.0
+    provenance_json: str = ""  # Internal JSON summary for per-file source provenance
 
 
 class ProcessingPreviewResponse(BaseModel):

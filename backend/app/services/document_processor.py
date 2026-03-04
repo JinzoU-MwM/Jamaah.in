@@ -7,6 +7,7 @@ Pipeline: Upload → Cache Check → OCR → Parse → Sanitize → Fuzzy Merge 
 import io
 import os
 import re
+import json
 import asyncio
 import time
 import logging
@@ -44,6 +45,46 @@ _executor = ThreadPoolExecutor(max_workers=15)
 
 # Semaphore to rate-limit concurrent Gemini API calls (initialized lazily)
 _gemini_semaphore: asyncio.Semaphore = None
+
+
+def categorize_error_message(error_message: str) -> str:
+    """Classify processing errors into stable categories for UI/analytics."""
+    msg = (error_message or "").lower()
+    if not msg:
+        return "unknown"
+    if "invalid file type" in msg:
+        return "invalid_file_type"
+    if "file too large" in msg or "max" in msg and "mb" in msg:
+        return "file_too_large"
+    if "timeout" in msg:
+        return "timeout"
+    if "429" in msg or "rate limit" in msg:
+        return "rate_limit"
+    if "network" in msg or "connection" in msg:
+        return "network_error"
+    if "no usable text" in msg or "ocr failed" in msg:
+        return "ocr_no_text"
+    if "tesseract is not installed" in msg:
+        return "ocr_engine_not_available"
+    return "processing_error"
+
+
+def _build_file_provenance(items: List[ExtractedDataItem], was_cached: bool) -> str:
+    """Build a compact JSON summary of per-file extraction provenance."""
+    source_types = sorted({
+        (item.source_document_type or item.jenis_identitas or "UNKNOWN").upper()
+        for item in items
+    })
+    summary = {
+        "ocr_engine": OCR_ENGINE,
+        "cached": bool(was_cached),
+        "records": len(items),
+        "source_document_types": source_types,
+        "has_passport": any(bool(item.no_paspor) for item in items),
+        "has_identity_number": any(bool(item.no_identitas) for item in items),
+        "has_address": any(bool(item.alamat) for item in items),
+    }
+    return json.dumps(summary, ensure_ascii=True)
 
 
 def _parse_text_to_structured(raw_text: str) -> dict:
@@ -399,7 +440,10 @@ async def process_files(
             ))
             file_results.append(FileResult(
                 filename=filename, status="success",
-                document_type=doc_type_or_error, cached=was_cached
+                document_type=doc_type_or_error,
+                cached=was_cached,
+                processing_ms=round(elapsed_ms, 2),
+                provenance_json=_build_file_provenance(items, was_cached),
             ))
             logger.info(
                 f"OCR file processed: session_id={session_id} file='{filename}' "
@@ -413,7 +457,9 @@ async def process_files(
             ))
             file_results.append(FileResult(
                 filename=filename, status="failed",
-                error=doc_type_or_error
+                error=doc_type_or_error,
+                error_category=categorize_error_message(doc_type_or_error),
+                processing_ms=round(elapsed_ms, 2),
             ))
             logger.warning(
                 f"OCR file processed: session_id={session_id} file='{filename}' "

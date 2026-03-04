@@ -96,7 +96,8 @@ async def process_documents(
             ))
             file_results_early.append(FileResult(
                 filename=file.filename, status="failed",
-                error=f"Invalid file type: {file_ext}"
+                error=f"Invalid file type: {file_ext}",
+                error_category="invalid_file_type",
             ))
             continue
 
@@ -109,7 +110,8 @@ async def process_documents(
             ))
             file_results_early.append(FileResult(
                 filename=file.filename, status="failed",
-                error=f"File too large: {size_mb:.1f}MB (max {MAX_FILE_SIZE_MB}MB)"
+                error=f"File too large: {size_mb:.1f}MB (max {MAX_FILE_SIZE_MB}MB)",
+                error_category="file_too_large",
             ))
             continue
 
