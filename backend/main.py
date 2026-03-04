@@ -5,6 +5,7 @@ Slim app factory: middleware, router registration, startup, error handling.
 # Load .env FIRST — before any imports that read environment variables
 from pathlib import Path
 import os
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 # Initialize Sentry for error tracking
@@ -100,11 +101,20 @@ if ENV == "production" and "*" in ALLOWED_ORIGINS:
 # ---- Rate Limiter ----
 limiter = Limiter(key_func=get_remote_address)
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_db()
+    logger.info("Database initialized")
+    yield
+
+
 # ---- App ----
 app = FastAPI(
     title="Jamaah.in API",
     description="Backend service for Jamaah.in — Siskopatuh Automation Tool with OCR for KTP/KK, Passport, and Visa.",
     version="4.0.0",
+    lifespan=lifespan,
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -178,13 +188,6 @@ app.include_router(registration_router) # Self-service Registration
 app.include_router(export_router)       # Custom Export Templates
 
 
-# ---- Startup ----
-@app.on_event("startup")
-def on_startup():
-    init_db()
-    logger.info("Database initialized")
-
-
 # ---- Global Exception Handler ----
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
@@ -244,4 +247,3 @@ if __name__ == "__main__":
         reload_dirs=[".", parent_services],
         log_level="info",
     )
-

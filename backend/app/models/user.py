@@ -1,11 +1,16 @@
 """
 User, Subscription, and UsageLog models
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
+
+
+def utc_now() -> datetime:
+    """Naive UTC datetime for compatibility with existing DateTime columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class PlanType(str, enum.Enum):
@@ -30,7 +35,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_admin = Column(Boolean, default=False)
     is_super_admin = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     avatar_color = Column(String(30), default="emerald")
     notify_usage_limit = Column(Boolean, default=True)
     notify_expiry = Column(Boolean, default=True)
@@ -68,7 +73,7 @@ class Subscription(Base):
     status = Column(String(20), default=SubscriptionStatus.TRIAL)
 
     # Trial tracking
-    trial_start = Column(DateTime, default=datetime.utcnow)
+    trial_start = Column(DateTime, default=utc_now)
     trial_end = Column(DateTime)
 
     # Paid subscription tracking
@@ -87,7 +92,7 @@ class Subscription(Base):
             return False
         if not self.trial_end:
             return False
-        return datetime.utcnow() < self.trial_end
+        return utc_now() < self.trial_end
 
     @property
     def is_subscription_active(self):
@@ -96,7 +101,7 @@ class Subscription(Base):
             return False
         if not self.expires_at:
             return False
-        return datetime.utcnow() < self.expires_at
+        return utc_now() < self.expires_at
 
     @property
     def has_access(self):
@@ -111,7 +116,7 @@ class UsageLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     action = Column(String(50), default="document_scan")
     count = Column(Integer, default=1)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     user = relationship("User", back_populates="usage_logs")
 
@@ -132,7 +137,7 @@ class Payment(Base):
     amount = Column(Integer, nullable=False)
     status = Column(String(20), default=PaymentStatus.PENDING)
     pakasir_ref = Column(String(255), nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     paid_at = Column(DateTime, nullable=True)
 
     user = relationship("User")

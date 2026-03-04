@@ -378,8 +378,8 @@ def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataIt
                          existing.nama = new_item.nama
 
                 # 2. Fill missing fields
-                # Use dict() for Pydantic v1 compatibility (v2 uses model_dump)
-                new_dict = new_item.dict() if hasattr(new_item, 'dict') else new_item.model_dump()
+                # Prefer Pydantic v2 API to avoid deprecation warnings.
+                new_dict = new_item.model_dump() if hasattr(new_item, "model_dump") else new_item.dict()
                 for field, value in new_dict.items():
                     current_val = getattr(existing, field)
                     if not current_val and value:

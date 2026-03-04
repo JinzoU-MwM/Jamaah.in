@@ -472,32 +472,16 @@ class TestRoomingSummary:
         
         rooms = [room1, room2]
         
-        # Create mock members (7 assigned, 1 unassigned) with gender property
-        assigned_members = []
-        for _ in range(3):
-            m = Mock()
-            m.room_id = 1
-            m.gender = "male"
-            assigned_members.append(m)
-        for _ in range(4):
-            m = Mock()
-            m.room_id = 2
-            m.gender = "female"
-            assigned_members.append(m)
-        unassigned_members = [Mock(room_id=None, gender="male")]
-        all_members = assigned_members + unassigned_members
-        
-        # Setup mock to return rooms first, then members
-        query_count = [0]
-        def mock_query_side_effect(model):
-            query_count[0] += 1
+        # Setup mock query chain to match current implementation:
+        # 1) scalar total_members, 2) scalar assigned_count, 3) rooms query with options().filter().all()
+        scalar_values = iter([8, 7])
+
+        def mock_query_side_effect(*_args, **_kwargs):
             mock_q = Mock()
-            if query_count[0] == 1:
-                mock_q.filter.return_value.all.return_value = rooms
-            else:
-                mock_q.filter.return_value.all.return_value = all_members
+            mock_q.filter.return_value.scalar.side_effect = lambda: next(scalar_values)
+            mock_q.options.return_value.filter.return_value.all.return_value = rooms
             return mock_q
-        
+
         mock_db.query.side_effect = mock_query_side_effect
         
         result = rooming_service.get_rooming_summary(mock_db, group_id=1)

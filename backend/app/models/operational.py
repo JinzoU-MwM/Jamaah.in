@@ -3,10 +3,14 @@ Operational models: InventoryMaster and Room for Pro features.
 These are internal-use models NOT exported to Siskopatuh Excel.
 """
 import enum
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SAEnum, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class RoomType(str, enum.Enum):
@@ -53,8 +57,8 @@ class InventoryMaster(Base):
     distributed_count = Column(Integer, default=0)
     
     # Metadata
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     user = relationship("User", backref="inventory_items")
@@ -95,8 +99,8 @@ class Room(Base):
     
     # Assignment metadata
     is_auto_assigned = Column(Boolean, default=False)  # True if auto-rooming was used
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
     
     # Relationships
     group = relationship("Group", backref="rooms")

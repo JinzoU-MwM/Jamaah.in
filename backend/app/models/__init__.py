@@ -7,6 +7,8 @@ from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus
 from app.models.registration import RegistrationLink
 from app.models.pending_member import PendingMember
 from app.models.export_template import ExportTemplate
+from app.models.ocr_review import OcrProcessingLog, OcrReviewItem
+from app.models.audit_log import AuditLog
 
 __all__ = [
     # User models
@@ -26,4 +28,9 @@ __all__ = [
     "PendingMember",
     # Export
     "ExportTemplate",
+    # OCR review/metrics
+    "OcrProcessingLog",
+    "OcrReviewItem",
+    # Audit
+    "AuditLog",
 ]

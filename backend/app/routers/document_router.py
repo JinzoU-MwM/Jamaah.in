@@ -2,7 +2,7 @@
 Document Router — /documents/*
 Generates printable HTML documents for groups (rooming list, group manifest).
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
@@ -12,11 +12,6 @@ from app.models.user import User
 from app.models.group import Group, GroupMember
 
 router = APIRouter(prefix="/documents", tags=["Documents"])
-
-
-def get_user_from_token_or_header(token: str = Query(None), user: User = Depends(get_current_user)):
-    """Allow auth via query param (for new-tab links) or header."""
-    return user
 
 
 def get_user_group(group_id: int, user: User, db: Session) -> Group:

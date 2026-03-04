@@ -25,6 +25,7 @@ from app.auth import (
     FREE_USAGE_LIMIT,
 )
 from app.models.user import User
+from app.models.audit_log import AuditLog
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -361,6 +362,38 @@ async def get_activity(
             }
             for log in logs
         ]
+    }
+
+
+@router.get("/audit")
+async def get_audit_logs(
+    limit: int = 50,
+    offset: int = 0,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get audit logs for current user."""
+    logs = (
+        db.query(AuditLog)
+        .filter(AuditLog.user_id == user.id)
+        .order_by(AuditLog.created_at.desc())
+        .offset(max(0, offset))
+        .limit(min(max(1, limit), 200))
+        .all()
+    )
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "action": log.action,
+                "resource_type": log.resource_type,
+                "resource_id": log.resource_id,
+                "details_json": log.details_json,
+                "created_at": log.created_at.isoformat() if log.created_at else None,
+            }
+            for log in logs
+        ],
+        "count": len(logs),
     }
 
 

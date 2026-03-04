@@ -2,7 +2,7 @@
 Pydantic models for request/response validation
 """
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import date
 
 
@@ -53,8 +53,7 @@ class ExcelRow(BaseModel):
     jenis_identitas: Optional[str] = Field(None, alias="Jenis Identitas")
     kewarganegaraan: Optional[str] = Field(None, alias="KewargaNegaraan")
 
-    class Config:
-        populate_by_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class ProcessingResult(BaseModel):

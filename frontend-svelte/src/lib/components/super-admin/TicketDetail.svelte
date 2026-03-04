@@ -2,6 +2,7 @@
     import { onMount } from 'svelte';
     import { SuperAdminApi } from '../../services/superAdminApi.js';
 
+    /** @type {any | null} */
     export let selectedTicket = null;
     export let onClose = () => {};
 
@@ -12,9 +13,9 @@
     let replyContent = '';
     let newStatus = 'open';
 
-    onMount(async () => {
-        if (selectedTicket) {
-            await loadTicketDetail(selectedTicket.id);
+    onMount(() => {
+        if (selectedTicket?.id) {
+            loadTicketDetail(selectedTicket.id);
         }
     });
 
@@ -88,11 +89,11 @@
     <div class="p-6 border-b border-gray-200">
         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div class="flex-1">
-                <h2 class="text-xl font-semibold text-gray-900 mb-2">{ticketDetail?.subject || selectedTicket?.subject}</h2>
+                <h2 class="text-xl font-semibold text-gray-900 mb-2">{ticketDetail?.subject || selectedTicket?.subject || '-'}</h2>
                 <div class="flex flex-wrap items-center gap-3 text-sm">
                     <span class="text-gray-500">
-                        <span class="font-medium text-gray-700">{ticketDetail?.user_name || selectedTicket?.user_name}</span>
-                        ({ticketDetail?.user_email || selectedTicket?.user_email})
+                        <span class="font-medium text-gray-700">{ticketDetail?.user_name || selectedTicket?.user_name || '-'}</span>
+                        ({ticketDetail?.user_email || selectedTicket?.user_email || '-'})
                     </span>
                     {#if ticketDetail}
                         {@html getStatusBadge(ticketDetail.status)}
@@ -158,8 +159,9 @@
 
     <!-- Reply Form -->
     <div class="p-6">
-        <label class="block text-sm font-medium text-gray-700 mb-2">Your Reply</label>
+        <label for="ticket-reply" class="block text-sm font-medium text-gray-700 mb-2">Your Reply</label>
         <textarea
+            id="ticket-reply"
             bind:value={replyContent}
             rows="3"
             placeholder="Type your reply..."

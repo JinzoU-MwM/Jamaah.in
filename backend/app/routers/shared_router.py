@@ -11,7 +11,7 @@ Two endpoints:
 import os
 import uuid
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -30,6 +30,11 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Shared Manifest"])
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+
+
+def utc_now() -> datetime:
+    """Return naive UTC datetime to stay compatible with existing DB columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 # =============================================================================
@@ -131,7 +136,7 @@ async def share_group(
         group.shared_token = uuid.uuid4().hex  # 32-char hex string
 
     group.shared_pin = body.pin
-    group.shared_expires_at = datetime.utcnow() + timedelta(days=body.expires_in_days)
+    group.shared_expires_at = utc_now() + timedelta(days=body.expires_in_days)
 
     db.commit()
     db.refresh(group)
@@ -172,7 +177,7 @@ async def get_shared_manifest(
         raise HTTPException(status_code=404, detail="Link tidak ditemukan atau sudah kedaluwarsa")
 
     # Check expiry
-    if group.shared_expires_at and group.shared_expires_at < datetime.utcnow():
+    if group.shared_expires_at and group.shared_expires_at < utc_now():
         raise HTTPException(
             status_code=401,
             detail="Link sudah kedaluwarsa. Hubungi admin untuk memperpanjang."

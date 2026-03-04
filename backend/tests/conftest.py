@@ -15,9 +15,11 @@ from sqlalchemy.pool import StaticPool
 
 from main import app
 from app.database import get_db, Base
-from app.models.user import User
+from app.models.user import User, Subscription, PlanType, SubscriptionStatus
 from app.models.group import Group, GroupMember
 from app.auth import create_access_token, hash_password
+from datetime import timedelta
+from app.models.user import utc_now
 
 # Test database (in-memory SQLite for speed)
 TEST_DATABASE_URL = "sqlite:///:memory:"
@@ -70,13 +72,23 @@ def test_user(db_session: Session):
     db_session.add(user)
     db_session.commit()
     db_session.refresh(user)
+
+    subscription = Subscription(
+        user_id=user.id,
+        plan=PlanType.FREE,
+        status=SubscriptionStatus.TRIAL,
+        trial_start=utc_now(),
+        trial_end=utc_now() + timedelta(days=7),
+    )
+    db_session.add(subscription)
+    db_session.commit()
     return user
 
 
 @pytest.fixture
 def auth_headers(test_user: User):
     """Create authentication headers for requests."""
-    token = create_access_token(data={"sub": test_user.email})
+    token = create_access_token(data={"sub": str(test_user.id), "email": test_user.email})
     return {"Authorization": f"Bearer {token}"}
 
 

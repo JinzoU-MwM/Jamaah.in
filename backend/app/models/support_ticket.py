@@ -1,11 +1,15 @@
 """
 Support Ticket Models - Customer support system
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SAEnum, Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class TicketStatus(str, enum.Enum):
@@ -36,8 +40,8 @@ class SupportTicket(Base):
     subject = Column(String(255), nullable=False)
     status = Column(SAEnum(TicketStatus), default=TicketStatus.OPEN, nullable=False, index=True)
     priority = Column(SAEnum(TicketPriority), default=TicketPriority.MEDIUM, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=utc_now, nullable=False, index=True)
+    updated_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
 
     # Relationships
     messages = relationship("TicketMessage", back_populates="ticket", cascade="all, delete-orphan")
@@ -53,7 +57,7 @@ class TicketMessage(Base):
     sender_type = Column(SAEnum(SenderType), nullable=False, index=True)
     content = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    created_at = Column(DateTime, default=utc_now, nullable=False, index=True)
 
     # Relationships
     ticket = relationship("SupportTicket", back_populates="messages")

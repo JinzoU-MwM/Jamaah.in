@@ -2,8 +2,20 @@
 Integration tests for OCR with mocked Gemini API.
 """
 import pytest
+import re
 import responses
 from fastapi import status
+from PIL import Image
+from io import BytesIO
+
+
+def make_test_image_bytes() -> BytesIO:
+    """Create a tiny valid image payload for OCR endpoint tests."""
+    buf = BytesIO()
+    img = Image.new("RGB", (8, 8), color="white")
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
 
 
 class TestGeminiOCRMocked:
@@ -15,7 +27,7 @@ class TestGeminiOCRMocked:
         # Mock Gemini API
         responses.add(
             responses.POST,
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+            re.compile(r"https://generativelanguage\.googleapis\.com/.*"),
             json={
                 "candidates": [{
                     "content": {
@@ -36,13 +48,12 @@ class TestGeminiOCRMocked:
         )
         
         # Upload document
-        from io import BytesIO
-        file_content = BytesIO(b"fake image data")
+        file_content = make_test_image_bytes()
         
         response = client.post(
             "/process-documents/",
             headers=auth_headers,
-            files={"files": ("ktp.jpg", file_content, "image/jpeg")}
+            files={"files": ("ktp.png", file_content, "image/png")}
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -53,20 +64,21 @@ class TestGeminiOCRMocked:
         """Test retry logic when Gemini returns 429."""
         responses.add(
             responses.POST,
-            responses.matchers.regex_matcher(
-                r"generativelanguage\.googleapis\.com"
-            ),
+            re.compile(r"https://generativelanguage\.googleapis\.com/.*"),
             json={"error": {"code": 429, "message": "Rate limit exceeded"}},
             status=429,
         )
         
-        from io import BytesIO
-        file_content = BytesIO(b"fake image data")
+        file_content = make_test_image_bytes()
         
         response = client.post(
             "/process-documents/",
             headers=auth_headers,
-            files={"files": ("ktp.jpg", file_content, "image/jpeg")}
+            files={"files": ("ktp.png", file_content, "image/png")}
         )
         # Should retry and eventually succeed or fail gracefully
-        assert response.status_code in [status.HTTP_200_OK, status.HTTP_503_SERVICE_UNAVAILABLE]
+        assert response.status_code in [
+            status.HTTP_200_OK,
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ]

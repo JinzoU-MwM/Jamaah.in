@@ -6,7 +6,7 @@ Authentication & Authorization Module
 - Subscription/usage gating
 """
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status
@@ -29,6 +29,11 @@ TRIAL_DAYS = 7
 FREE_USAGE_LIMIT = 5  # Free tier: 5 scans lifetime
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+def utc_now() -> datetime:
+    """Return naive UTC datetime to stay compatible with existing DB columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def get_super_admin_email() -> Optional[str]:
@@ -66,7 +71,7 @@ def verify_password(plain: str, hashed: str) -> bool:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS))
+    expire = utc_now() + (expires_delta or timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -98,7 +103,7 @@ def register_user(db: Session, email: str, password: str, name: str) -> tuple[Us
 
     # Generate OTP
     otp = generate_otp()
-    now = datetime.utcnow()
+    now = utc_now()
 
     # Create user (unverified)
     user = User(
@@ -305,7 +310,7 @@ def activate_pro(db: Session, user: User, payment_ref: str = None, duration_days
         sub = Subscription(user_id=user.id)
         db.add(sub)
 
-    now = datetime.utcnow()
+    now = utc_now()
     sub.plan = PlanType.PRO
     sub.status = SubscriptionStatus.ACTIVE
     sub.subscribed_at = now

@@ -26,7 +26,10 @@
             loading = true;
             error = null;
             // Use the existing admin endpoint
-            const params = new URLSearchParams({ skip: (page - 1) * limit, limit });
+            const params = new URLSearchParams({
+                skip: String((page - 1) * limit),
+                limit: String(limit)
+            });
             if (search) params.append('search', search);
             const result = await fetch(`/api/admin/users?${params}`, {
                 headers: {

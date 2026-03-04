@@ -2,7 +2,7 @@
     import { onMount } from 'svelte';
     import { SuperAdminApi } from '../../services/superAdminApi.js';
 
-    export let onSelect = () => {};
+    export let onSelect = (_ticket) => {};
     export let onRefresh = () => {};
 
     let tickets = [];

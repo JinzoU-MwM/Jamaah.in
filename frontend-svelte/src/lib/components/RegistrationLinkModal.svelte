@@ -99,8 +99,14 @@
   }
 </script>
 
-<div class="modal-overlay" onclick={onClose} role="button" tabindex="-1">
-  <div class="modal" onclick={(e) => e.stopPropagation()}>
+<div class="modal-overlay">
+  <button
+    type="button"
+    class="modal-backdrop"
+    aria-label="Tutup modal"
+    onclick={onClose}
+  ></button>
+  <div class="modal" role="dialog" aria-modal="true" aria-label="Link pendaftaran">
     <div class="modal-header">
       <div class="header-title">
         <Link class="w-5 h-5 text-emerald-500" />
@@ -124,9 +130,9 @@
         </div>
       {:else if link}
         <div class="link-info">
-          <label>Link Pendaftaran</label>
+          <label for="registration-link-input">Link Pendaftaran</label>
           <div class="link-box">
-            <input type="text" value={link.link} readonly />
+            <input id="registration-link-input" type="text" value={link.link} readonly />
             <button type="button" class="copy-btn" onclick={copyLink}>
               {#if copied}
                 <Check class="w-4 h-4 text-emerald-500" />
@@ -183,7 +189,6 @@
   .modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -191,7 +196,19 @@
     padding: 1rem;
   }
 
+  .modal-backdrop {
+    position: absolute;
+    inset: 0;
+    border: none;
+    padding: 0;
+    margin: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: default;
+  }
+
   .modal {
+    position: relative;
+    z-index: 1;
     background: white;
     border-radius: 0.75rem;
     width: 100%;

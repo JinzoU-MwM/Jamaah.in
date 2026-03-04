@@ -4,12 +4,16 @@ Organization / Team models for multi-user access.
 Organization → TeamMembers (users with roles)
 Groups can optionally belong to an Organization (shared across team).
 """
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import uuid
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Enum as SAEnum
 from sqlalchemy.orm import relationship
 from app.database import Base
 import enum
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class TeamRole(str, enum.Enum):
@@ -31,7 +35,7 @@ class Organization(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
 
     # Relationships
     team_members = relationship("TeamMember", back_populates="organization", cascade="all, delete-orphan")
@@ -52,7 +56,7 @@ class TeamMember(Base):
     role = Column(String(20), default=TeamRole.VIEWER)
     status = Column(String(20), default=MemberStatus.ACTIVE)
     invited_by = Column(Integer, ForeignKey("users.id"), nullable=True)
-    joined_at = Column(DateTime, default=datetime.utcnow)
+    joined_at = Column(DateTime, default=utc_now)
 
     # Relationships
     organization = relationship("Organization", back_populates="team_members")
@@ -70,8 +74,8 @@ class TeamInvite(Base):
     role = Column(String(20), default=TeamRole.VIEWER)
     token = Column(String(64), unique=True, index=True, default=lambda: uuid.uuid4().hex)
     invited_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    expires_at = Column(DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
+    created_at = Column(DateTime, default=utc_now)
+    expires_at = Column(DateTime, default=lambda: utc_now() + timedelta(days=7))
     status = Column(String(20), default="pending")  # pending | accepted | expired
 
     # Relationships

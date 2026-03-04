@@ -126,3 +126,7 @@
         <span class="text-sm text-gray-600">Revenue (Rp)</span>
     </div>
 </div>
+
+<div class="mt-3 text-center text-xs text-gray-500">
+    Total users: {stats.total_users} · Pro: {stats.pro_users} · Free: {stats.free_users}
+</div>

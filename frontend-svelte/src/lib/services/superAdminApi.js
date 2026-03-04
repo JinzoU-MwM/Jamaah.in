@@ -1,18 +1,7 @@
 // Super Admin API Service
 // Provides API methods for the super admin dashboard
 
-import { API_URL, authHeaders } from './api.js';
-import { mapError } from './toast.svelte.js';
-
-async function parseError(response) {
-    const errText = await response.text();
-    let message = errText;
-    try {
-        const json = JSON.parse(errText);
-        if (json.detail) message = json.detail;
-    } catch (e) { /* ignore */ }
-    return mapError(message || 'Request failed');
-}
+import { API_URL, authHeaders, parseError } from './apiCore.js';
 
 export const SuperAdminApi = {
     // ========================================================================

@@ -16,6 +16,7 @@ from app.auth import get_current_user, check_access
 from app.models.user import User
 from app.models.group import Group, GroupMember
 from app.models.team import TeamMember, MemberStatus
+from app.services.audit import record_audit_event
 from sqlalchemy import or_
 
 logger = logging.getLogger(__name__)
@@ -209,6 +210,26 @@ def _find_matching_member(incoming: dict, members: list[GroupMember]) -> Optiona
     return None
 
 
+def _duplicate_key_candidates(member: GroupMember) -> list[tuple[str, str]]:
+    """Return normalized duplicate detection keys for one member."""
+    keys: list[tuple[str, str]] = []
+    for label, raw in (
+        ("passport", member.no_paspor),
+        ("identity", member.no_identitas),
+        ("visa", member.no_visa),
+    ):
+        value = _normalize_id(raw)
+        if value:
+            keys.append((label, value))
+
+    name = _normalize_name(member.nama or member.nama_paspor)
+    birth = _normalize_text(member.tanggal_lahir)
+    if name and birth:
+        keys.append(("name_birth", f"{name}|{birth}"))
+
+    return keys
+
+
 # =============================================================================
 # ENDPOINTS
 # =============================================================================
@@ -305,6 +326,46 @@ async def get_group(
     }
 
 
+@router.get("/{group_id}/duplicates")
+async def get_group_duplicates(
+    group_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Detect likely duplicate members inside a group."""
+    group = _get_user_group(db, user, group_id)
+    members = (
+        db.query(GroupMember)
+        .filter(GroupMember.group_id == group.id)
+        .all()
+    )
+
+    bucket: dict[tuple[str, str], list[GroupMember]] = {}
+    for member in members:
+        for key in _duplicate_key_candidates(member):
+            bucket.setdefault(key, []).append(member)
+
+    duplicates = []
+    for (key_type, key_value), grouped_members in bucket.items():
+        unique_members = {m.id: m for m in grouped_members}
+        if len(unique_members) < 2:
+            continue
+        duplicates.append({
+            "key_type": key_type,
+            "key_value": key_value,
+            "count": len(unique_members),
+            "members": [m.to_dict_full() for m in unique_members.values()],
+        })
+
+    duplicates.sort(key=lambda x: x["count"], reverse=True)
+    return {
+        "group_id": group.id,
+        "group_name": group.name,
+        "duplicate_groups": duplicates,
+        "total_duplicate_groups": len(duplicates),
+    }
+
+
 @router.put("/{group_id}")
 async def update_group(
     group_id: int,
@@ -392,6 +453,20 @@ async def add_members(
         len(added),
         len(updated),
     )
+    record_audit_event(
+        db,
+        user_id=user.id,
+        action="group_members_upsert",
+        resource_type="group",
+        resource_id=group.id,
+        details={
+            "group_name": group.name,
+            "added_count": len(added),
+            "updated_count": len(updated),
+            "input_count": len(body.members),
+        },
+    )
+    db.commit()
     return {
         "status": "ok",
         "count": len(added) + len(updated),
@@ -423,6 +498,15 @@ async def update_member(
 
     db.commit()
     db.refresh(member)
+    record_audit_event(
+        db,
+        user_id=user.id,
+        action="group_member_update",
+        resource_type="group_member",
+        resource_id=member.id,
+        details={"group_id": group.id},
+    )
+    db.commit()
     return member.to_dict()
 
 
@@ -442,5 +526,14 @@ async def delete_member(
         raise HTTPException(status_code=404, detail="Member not found")
 
     db.delete(member)
+    db.commit()
+    record_audit_event(
+        db,
+        user_id=user.id,
+        action="group_member_delete",
+        resource_type="group_member",
+        resource_id=member_id,
+        details={"group_id": group.id},
+    )
     db.commit()
     return {"status": "deleted", "id": member_id}

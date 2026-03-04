@@ -1,7 +1,11 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from app.database import Base
+
+
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class ExportTemplate(Base):
@@ -16,7 +20,7 @@ class ExportTemplate(Base):
     column_mapping = Column(JSON, nullable=False)
     header_row = Column(Integer, default=1)
     data_start_row = Column(Integer, default=2)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=utc_now)
     is_default = Column(Boolean, default=False)
 
     # Relationships

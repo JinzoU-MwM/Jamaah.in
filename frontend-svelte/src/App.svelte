@@ -9,6 +9,142 @@
   import Toast from "./lib/components/Toast.svelte";
   import { ApiService } from "./lib/services/api";
 
+  const BASE_URL = "https://jamaah.web.id";
+  const DEFAULT_SEO = {
+    title: "Software Travel Umrah | Scan KTP/KK ke Siskopatuh - Jamaah.in",
+    description:
+      "Otomatisasi input data jamaah 10x lebih cepat. Scan KTP/KK langsung jadi Excel Siskopatuh 32 kolom, auto rooming hotel, manifest digital mutawwif.",
+    robots: "index,follow",
+    canonical: `${BASE_URL}/`,
+  };
+
+  const PAGE_SEO = {
+    landing: DEFAULT_SEO,
+    login: {
+      title: "Login - Jamaah.in",
+      description: "Login ke dashboard Jamaah.in untuk kelola data jamaah dan operasional umrah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    register: {
+      title: "Daftar - Jamaah.in",
+      description: "Daftar akun Jamaah.in untuk mulai otomatisasi data jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    mutawwif: {
+      title: "Manifest Mutawwif - Jamaah.in",
+      description: "Manifest jamaah untuk operasional mutawwif.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    registration: {
+      title: "Form Pendaftaran Jamaah - Jamaah.in",
+      description: "Form pendaftaran jamaah online.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    dashboard: {
+      title: "Dashboard - Jamaah.in",
+      description: "Dashboard operasional jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    scanner: {
+      title: "Scanner Dokumen - Jamaah.in",
+      description: "Scan KTP/KK, paspor, dan visa untuk ekstraksi data otomatis.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    profile: {
+      title: "Profil - Jamaah.in",
+      description: "Pengaturan akun Jamaah.in.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    inventory: {
+      title: "Inventory - Jamaah.in",
+      description: "Manajemen inventory perlengkapan jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    rooming: {
+      title: "Rooming - Jamaah.in",
+      description: "Pengaturan rooming jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    team: {
+      title: "Tim - Jamaah.in",
+      description: "Manajemen tim operasional.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    itinerary: {
+      title: "Itinerary - Jamaah.in",
+      description: "Jadwal perjalanan jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    "super-admin": {
+      title: "Super Admin - Jamaah.in",
+      description: "Panel super admin.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+  };
+
+  function upsertMeta(selector, attrs) {
+    let el = document.head.querySelector(selector);
+    if (!el) {
+      el = document.createElement("meta");
+      document.head.appendChild(el);
+    }
+    Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
+  }
+
+  function upsertLinkRel(rel, href) {
+    let el = document.head.querySelector(`link[rel="${rel}"]`);
+    if (!el) {
+      el = document.createElement("link");
+      el.setAttribute("rel", rel);
+      document.head.appendChild(el);
+    }
+    el.setAttribute("href", href);
+  }
+
+  function updateSeoMeta(page) {
+    if (typeof document === "undefined") return;
+    const seo = PAGE_SEO[page] || DEFAULT_SEO;
+    document.title = seo.title;
+    upsertMeta('meta[name="description"]', {
+      name: "description",
+      content: seo.description,
+    });
+    upsertMeta('meta[name="robots"]', { name: "robots", content: seo.robots });
+    upsertMeta('meta[property="og:title"]', {
+      property: "og:title",
+      content: seo.title,
+    });
+    upsertMeta('meta[property="og:description"]', {
+      property: "og:description",
+      content: seo.description,
+    });
+    upsertMeta('meta[property="og:url"]', {
+      property: "og:url",
+      content: seo.canonical,
+    });
+    upsertMeta('meta[name="twitter:title"]', {
+      name: "twitter:title",
+      content: seo.title,
+    });
+    upsertMeta('meta[name="twitter:description"]', {
+      name: "twitter:description",
+      content: seo.description,
+    });
+    upsertLinkRel("canonical", seo.canonical);
+  }
+
   // Lazy-loaded page components (reduces initial bundle for mobile/Landing)
   let DashboardPage = $state(null);
   let ProfilePage = $state(null);
@@ -325,6 +461,10 @@
       currentPage === "team" ||
       currentPage === "itinerary",
   );
+
+  $effect(() => {
+    updateSeoMeta(currentPage);
+  });
 
   // Super admin page (full screen, no sidebar)
   let showSuperAdminPage = $derived(currentPage === "super-admin");

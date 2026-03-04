@@ -67,13 +67,13 @@
       <!-- Actions -->
       <div class="flex gap-3">
         <button 
-          on:click={skip}
+          onclick={skip}
           class="flex-1 rounded-lg border px-4 py-2 text-gray-600 hover:bg-gray-100 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
         >
           Lewati
         </button>
         <button 
-          on:click={next}
+          onclick={next}
           class="flex-1 rounded-lg bg-emerald-500 px-4 py-2 text-white hover:bg-emerald-600"
         >
           {step === steps.length - 1 ? 'Mulai!' : 'Lanjut'}

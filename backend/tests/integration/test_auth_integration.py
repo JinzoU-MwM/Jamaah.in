@@ -20,8 +20,9 @@ class TestAuthRegistration:
         )
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "access_token" in data
-        assert data["user"]["email"] == "newuser@example.com"
+        assert data["success"] is True
+        assert data["email"] == "newuser@example.com"
+        assert data["email_verified"] is False
     
     def test_register_duplicate_email(self, client, test_user):
         """Duplicate email should return 400."""
@@ -45,7 +46,7 @@ class TestAuthRegistration:
                 "name": "Weak User"
             }
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestAuthLogin:

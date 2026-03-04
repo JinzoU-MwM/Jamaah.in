@@ -19,6 +19,7 @@
     };
 
     let activeTab = 'stats'; // 'stats', 'users', 'tickets'
+    /** @type {any | null} */
     let selectedTicket = null;
     let unreadTicketCount = 0;
     let unreadMessageCount = 0;
@@ -27,12 +28,12 @@
     let loading = true;
     let error = null;
 
-    onMount(async () => {
-        await loadStats();
-        await loadUnreadCount();
+    onMount(() => {
+        loadStats();
+        loadUnreadCount();
 
-        const interval = setInterval(async () => {
-            await loadUnreadCount();
+        const interval = setInterval(() => {
+            loadUnreadCount();
         }, 15000);
 
         return () => clearInterval(interval);
@@ -104,7 +105,7 @@
                         SUPER ADMIN
                     </span>
                 </div>
-                <button on:click={() => { localStorage.removeItem('token'); window.location.href = '/'; }}
+                <button onclick={() => { localStorage.removeItem('token'); window.location.href = '/'; }}
                     class="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
                     Logout
                 </button>
@@ -116,7 +117,7 @@
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                 {error}
-                <button on:click={loadStats} class="ml-4 underline hover:no-underline">Retry</button>
+                <button onclick={loadStats} class="ml-4 underline hover:no-underline">Retry</button>
             </div>
         </div>
     {:else if loading}
@@ -129,21 +130,21 @@
             <div class="max-w-7xl mx-auto px-4">
                 <nav class="flex space-x-8">
                     <button
-                        on:click={() => selectTab('stats')}
+                        onclick={() => selectTab('stats')}
                         class:active={activeTab === 'stats'}
                         class:inactive={activeTab !== 'stats'}
                         class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         Dashboard
                     </button>
                     <button
-                        on:click={() => selectTab('users')}
+                        onclick={() => selectTab('users')}
                         class:active={activeTab === 'users'}
                         class:inactive={activeTab !== 'users'}
                         class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
                         Users
                     </button>
                     <button
-                        on:click={() => selectTab('tickets')}
+                        onclick={() => selectTab('tickets')}
                         class:active={activeTab === 'tickets'}
                         class:inactive={activeTab !== 'tickets'}
                         class="py-4 px-1 border-b-2 font-medium text-sm transition-colors">
@@ -166,21 +167,21 @@
                     <Charts {stats} />
                 </div>
             {:else if activeTab === 'users'}
-                <UserManagement on:update={loadStats} />
+                <UserManagement onUpdate={loadStats} />
             {:else if activeTab === 'tickets'}
                 {#if selectedTicket}
                     <div>
-                        <button on:click={closeTicketDetail}
+                        <button onclick={closeTicketDetail}
                             class="mb-4 flex items-center text-gray-600 hover:text-gray-900 transition">
                             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                             </svg>
                             Back to Tickets
                         </button>
-                        <TicketDetail {selectedTicket} on:close={closeTicketDetail} />
+                        <TicketDetail {selectedTicket} onClose={closeTicketDetail} />
                     </div>
                 {:else}
-                    <TicketList on:select={openTicket} on:refresh={loadStats} />
+                    <TicketList onSelect={openTicket} onRefresh={loadStats} />
                 {/if}
             {/if}
         </div>

@@ -6,7 +6,7 @@ import sys
 import os
 import uuid
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock, patch
 
 # Add backend directory to python path
@@ -27,17 +27,21 @@ mock_user = User(id=1, email="test@example.com", is_active=True)
 def override_require_pro_plan():
     return mock_user
 
-app.dependency_overrides[require_pro_plan] = override_require_pro_plan
-
 client = TestClient(app)
+
+
+def utc_now():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 class TestSharedRouter:
     def setup_method(self):
         self.mock_db = Mock()
         app.dependency_overrides[get_db] = lambda: self.mock_db
+        app.dependency_overrides[require_pro_plan] = override_require_pro_plan
 
     def teardown_method(self):
         app.dependency_overrides.pop(get_db, None)
+        app.dependency_overrides.pop(require_pro_plan, None)
 
     def test_share_group_success(self):
         # Mock group
@@ -69,19 +73,20 @@ class TestSharedRouter:
 
     def test_get_shared_manifest_success(self):
         token = uuid.uuid4().hex
-        group = Group(id=1, name="Umroh Trip VIP", shared_token=token, shared_pin="1234", shared_expires_at=datetime.utcnow() + timedelta(days=10))
+        group = Group(id=1, name="Umroh Trip VIP", shared_token=token, shared_pin="1234", shared_expires_at=utc_now() + timedelta(days=10))
         
         member1 = GroupMember(id=1, group_id=1, nama="Ahmad", title="Mr", no_paspor="A123", no_hp="0812", baju_size="L", room_id=1, is_equipment_received=True)
         member2 = GroupMember(id=2, group_id=1, nama="Siti", title="Mrs", no_paspor="B456", no_hp="0813", baju_size="M", room_id=None, is_equipment_received=False)
-        
+
         room = Room(id=1, room_number="101")
+        member1.room = room
         
         def mock_query(model):
             q = Mock()
             if model == Group:
                 q.filter.return_value.first.return_value = group
             elif model == GroupMember:
-                q.filter.return_value.order_by.return_value.all.return_value = [member1, member2]
+                q.options.return_value.filter.return_value.order_by.return_value.all.return_value = [member1, member2]
             elif model == Room:
                 q.filter.return_value.first.return_value = room
             return q
@@ -110,7 +115,7 @@ class TestSharedRouter:
 
     def test_get_shared_manifest_invalid_pin(self):
         token = "some-token"
-        group = Group(id=1, name="Umroh VIP", shared_token=token, shared_pin="1234", shared_expires_at=datetime.utcnow() + timedelta(days=10))
+        group = Group(id=1, name="Umroh VIP", shared_token=token, shared_pin="1234", shared_expires_at=utc_now() + timedelta(days=10))
         
         def mock_query(model):
             q = Mock()
@@ -131,7 +136,7 @@ class TestSharedRouter:
     def test_get_shared_manifest_expired(self):
         token = "expired-token"
         # Set expiry to past
-        group = Group(id=1, name="Umroh VIP", shared_token=token, shared_pin="1234", shared_expires_at=datetime.utcnow() - timedelta(days=1))
+        group = Group(id=1, name="Umroh VIP", shared_token=token, shared_pin="1234", shared_expires_at=utc_now() - timedelta(days=1))
         
         def mock_query(model):
             q = Mock()
@@ -150,7 +155,7 @@ class TestSharedRouter:
         assert "kedaluwarsa" in str(response.json())
 
     def test_revoke_share(self):
-        group = Group(id=1, user_id=1, name="Umroh Trip", shared_token="token", shared_pin="1234", shared_expires_at=datetime.utcnow() + timedelta(days=1))
+        group = Group(id=1, user_id=1, name="Umroh Trip", shared_token="token", shared_pin="1234", shared_expires_at=utc_now() + timedelta(days=1))
         self.mock_db.query.return_value.filter.return_value.first.return_value = group
         
         response = client.delete("/groups/1/share")

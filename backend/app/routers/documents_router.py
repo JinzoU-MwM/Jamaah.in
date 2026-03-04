@@ -5,11 +5,14 @@ Handles file upload validation and delegates to DocumentProcessor.
 import uuid
 import time
 import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Request, Depends
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -24,13 +27,19 @@ from app.services.document_processor import (
     MAX_FILE_SIZE_BYTES,
     MAX_FILE_SIZE_MB,
     MAX_FILES_PER_REQUEST,
+    OCR_ENGINE,
+    OCR_FALLBACK_ENABLED,
 )
+from app.services.gemini_ocr import GEMINI_API_KEY, GEMINI_MODEL
 from app.services.progress import update_progress, create_progress_stream
 from app.services.cache import ocr_cache
+from app.services import ocr_engine
 from app.config import ALLOWED_EXTENSIONS
 from app.database import get_db
 from app.auth import get_current_user, check_access, record_usage
 from app.models.user import User
+from app.models.ocr_review import OcrProcessingLog, OcrReviewItem
+from app.services.audit import record_audit_event
 
 logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
@@ -38,10 +47,174 @@ limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(tags=["Documents"])
 
 
+def utc_now() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+class OcrReviewDecisionRequest(BaseModel):
+    action: str = Field(..., pattern="^(approve|reject)$")
+    notes: str = ""
+
+
 @router.get("/progress/{session_id}")
 async def progress_stream(session_id: str):
     """SSE endpoint for real-time progress updates."""
     return await create_progress_stream(session_id)
+
+
+@router.get("/ocr/status")
+async def get_ocr_status(user: User = Depends(get_current_user)):
+    """
+    Return OCR engine runtime status and provider readiness.
+    Useful for diagnosing provider config before running document scans.
+    """
+    return {
+        "primary_engine": OCR_ENGINE,
+        "fallback_enabled": OCR_FALLBACK_ENABLED,
+        "providers": {
+            "gemini": {
+                "configured": bool(GEMINI_API_KEY),
+                "model": GEMINI_MODEL,
+            },
+            "tesseract": {
+                "available": bool(ocr_engine.TESSERACT_AVAILABLE),
+            },
+        },
+        "cache": ocr_cache.stats,
+        "requested_by": user.email,
+    }
+
+
+@router.get("/ocr/review-queue")
+async def get_ocr_review_queue(
+    status: str = "pending",
+    limit: int = 50,
+    offset: int = 0,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return OCR manual review queue items for current user."""
+    query = db.query(OcrReviewItem).filter(OcrReviewItem.user_id == user.id)
+    if status != "all":
+        query = query.filter(OcrReviewItem.status == status)
+    items = (
+        query.order_by(OcrReviewItem.created_at.desc())
+        .offset(max(0, offset))
+        .limit(min(max(1, limit), 200))
+        .all()
+    )
+    return {
+        "items": [
+            {
+                "id": item.id,
+                "session_id": item.session_id,
+                "filename": item.filename,
+                "status": item.status,
+                "reason": item.reason,
+                "document_type": item.document_type,
+                "error_category": item.error_category,
+                "confidence_score": item.confidence_score,
+                "notes": item.notes,
+                "created_at": item.created_at.isoformat() if item.created_at else None,
+                "reviewed_at": item.reviewed_at.isoformat() if item.reviewed_at else None,
+                "reviewed_by": item.reviewed_by,
+            }
+            for item in items
+        ],
+        "count": len(items),
+        "status_filter": status,
+    }
+
+
+@router.patch("/ocr/review-queue/{item_id}")
+async def review_ocr_item(
+    item_id: int,
+    body: OcrReviewDecisionRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Approve/reject an OCR manual review queue item."""
+    item = db.query(OcrReviewItem).filter(
+        OcrReviewItem.id == item_id,
+        OcrReviewItem.user_id == user.id,
+    ).first()
+    if not item:
+        raise HTTPException(status_code=404, detail="Review item not found")
+
+    item.status = "approved" if body.action == "approve" else "rejected"
+    item.notes = (body.notes or "").strip()
+    item.reviewed_at = utc_now()
+    item.reviewed_by = user.id
+    record_audit_event(
+        db,
+        user_id=user.id,
+        action="ocr_review_decision",
+        resource_type="ocr_review_item",
+        resource_id=item.id,
+        details={
+            "decision": item.status,
+            "session_id": item.session_id,
+            "filename": item.filename,
+        },
+    )
+    db.commit()
+    db.refresh(item)
+    return {
+        "id": item.id,
+        "status": item.status,
+        "notes": item.notes,
+        "reviewed_at": item.reviewed_at.isoformat() if item.reviewed_at else None,
+    }
+
+
+@router.get("/ocr/dashboard")
+async def get_ocr_dashboard(
+    days: int = 7,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return OCR quality/performance metrics for dashboard cards/charts."""
+    window_days = min(max(1, days), 90)
+    since = utc_now() - timedelta(days=window_days)
+
+    base = db.query(OcrProcessingLog).filter(
+        OcrProcessingLog.user_id == user.id,
+        OcrProcessingLog.created_at >= since,
+    )
+    total = base.count()
+    success_count = base.filter(OcrProcessingLog.status == "success").count()
+    failed_count = base.filter(OcrProcessingLog.status == "failed").count()
+    partial_count = base.filter(OcrProcessingLog.status == "partial").count()
+
+    avg_processing_ms = base.with_entities(func.avg(OcrProcessingLog.processing_ms)).scalar() or 0.0
+    cached_count = base.filter(OcrProcessingLog.cached.is_(True)).count()
+
+    error_rows = (
+        base.with_entities(OcrProcessingLog.error_category, func.count(OcrProcessingLog.id))
+        .filter(OcrProcessingLog.error_category != "")
+        .group_by(OcrProcessingLog.error_category)
+        .all()
+    )
+    pending_review = db.query(OcrReviewItem).filter(
+        OcrReviewItem.user_id == user.id,
+        OcrReviewItem.status == "pending",
+    ).count()
+
+    return {
+        "window_days": window_days,
+        "total_files": total,
+        "success_count": success_count,
+        "failed_count": failed_count,
+        "partial_count": partial_count,
+        "success_rate": (success_count / total) if total else 0.0,
+        "cache_hit_rate": (cached_count / total) if total else 0.0,
+        "avg_processing_ms": round(float(avg_processing_ms), 2),
+        "pending_review_count": pending_review,
+        "error_categories": [
+            {"category": category, "count": count}
+            for category, count in error_rows
+        ],
+    }
 
 
 @router.post("/process-documents/", response_model=ProcessingPreviewResponse)
@@ -139,6 +312,32 @@ async def process_documents(
         final_data, all_warnings = run_pipeline(extracted_data, session_id)
 
         update_progress(session_id, done=True, status="complete")
+
+        # Persist per-file telemetry and create manual review queue items for problematic files.
+        for fr in file_results:
+            db.add(OcrProcessingLog(
+                user_id=user.id,
+                session_id=session_id,
+                filename=fr.filename,
+                status=fr.status,
+                document_type=fr.document_type or "",
+                error_category=fr.error_category or "",
+                processing_ms=float(fr.processing_ms or 0.0),
+                cached=bool(fr.cached),
+                provenance_json=fr.provenance_json or "",
+            ))
+            if fr.status in {"failed", "partial"}:
+                reason = fr.error or "Perlu review manual karena hasil OCR belum stabil"
+                db.add(OcrReviewItem(
+                    user_id=user.id,
+                    session_id=session_id,
+                    filename=fr.filename,
+                    status="pending",
+                    reason=reason,
+                    document_type=fr.document_type or "",
+                    error_category=fr.error_category or "",
+                ))
+        db.commit()
 
         # Record usage (counts towards free tier limit)
         record_usage(db, user.id, count=successful)
