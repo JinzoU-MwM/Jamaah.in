@@ -84,3 +84,69 @@ def test_fuzzy_merge():
     # Should merge fields
     assert result.no_identitas == "123"
     assert result.alamat == "Jl. Sudirman"
+
+
+def test_passport_prioritized_for_identity_fields():
+    item = ExtractedDataItem(
+        nama="BUDI SANTOSO",
+        jenis_identitas="KTP",
+        no_identitas="3175090101010001",
+        no_paspor="C1234567",
+    )
+    merged = fuzzy_merge_data([item])
+    assert len(merged) == 1
+    assert merged[0].jenis_identitas == "PASPOR"
+    assert merged[0].no_identitas == "C1234567"
+
+
+def test_kk_enrichment_fills_father_and_address():
+    kk_item = ExtractedDataItem(
+        nama="SUTRISNO",
+        nama_ayah="SUTRISNO",
+        alamat="JL. MELATI NO. 10",
+        source_document_type="KK",
+        kk_member_names="BUDI SANTOSO; SITI AMINAH",
+    )
+    passport_item = ExtractedDataItem(
+        nama="BUDI SANTOSO",
+        jenis_identitas="PASPOR",
+        no_paspor="A1234567",
+    )
+
+    merged = fuzzy_merge_data([kk_item, passport_item])
+    target = next(x for x in merged if x.nama == "BUDI SANTOSO")
+    assert target.nama_ayah == "SUTRISNO"
+    assert target.alamat == "JL. MELATI NO. 10"
+
+
+def test_title_assignment_tuan_for_male():
+    item = ExtractedDataItem(
+        nama="AHMAD",
+        tanggal_lahir="1990-01-01",
+        jenis_kelamin="LAKI-LAKI",
+        status_pernikahan="KAWIN",
+    )
+    merged = fuzzy_merge_data([item])
+    assert merged[0].title == "TUAN"
+
+
+def test_title_assignment_nona_for_underage_female():
+    item = ExtractedDataItem(
+        nama="SITI",
+        tanggal_lahir="2012-01-01",
+        jenis_kelamin="PEREMPUAN",
+        status_pernikahan="BELUM KAWIN",
+    )
+    merged = fuzzy_merge_data([item])
+    assert merged[0].title == "NONA"
+
+
+def test_title_assignment_nyonya_for_married_adult_female():
+    item = ExtractedDataItem(
+        nama="RINA",
+        tanggal_lahir="1992-05-10",
+        jenis_kelamin="PEREMPUAN",
+        status_pernikahan="KAWIN",
+    )
+    merged = fuzzy_merge_data([item])
+    assert merged[0].title == "NYONYA"

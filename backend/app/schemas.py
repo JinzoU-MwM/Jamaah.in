@@ -100,6 +100,9 @@ class ExtractedDataItem(BaseModel):
     tanggal_awal_polis: str = ""       # Col 30: Tanggal Awal Polis (yyyy-mm-dd)
     tanggal_akhir_polis: str = ""      # Col 31: Tanggal Akhir Polis (yyyy-mm-dd)
     no_bpjs: str = ""                  # Col 32: No BPJS
+    source_document_type: str = ""     # Internal: OCR source type (e.g. KK/KTP/PASPOR/VISA)
+    kk_member_names: str = ""          # Internal: KK member names separated by ';'
+    jenis_kelamin: str = ""            # Internal: gender hint for title assignment
 
 
 class ValidationWarning(BaseModel):

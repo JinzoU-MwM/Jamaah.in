@@ -21,13 +21,15 @@ EXTRACT_PROMPT = """Kamu adalah OCR specialist untuk dokumen identitas Indonesia
 Analisis gambar ini dan ekstrak SEMUA informasi yang terlihat.
 
 Tentukan jenis dokumen: KTP, KK, PASPOR, atau VISA.
-Jika dokumen adalah KK (Kartu Keluarga), isi "document_type" sebagai "KTP" agar kompatibel
-dengan alur identitas. Untuk KK, isi "no_identitas" dengan NIK anggota utama/pertama yang
-terbaca dan isi "alamat" dengan alamat KK.
+Jika dokumen adalah KK (Kartu Keluarga), isi:
+- "document_type" = "KK"
+- "kk_member_names" = daftar nama anggota keluarga dipisahkan titik koma (;)
+- "nama_ayah" = nama ayah/kepala keluarga (jika ada)
+- "alamat" = alamat KK
 
 Kembalikan HANYA JSON (tanpa markdown, tanpa backticks) dengan format berikut:
 {
-  "document_type": "KTP" atau "PASPOR" atau "VISA",
+  "document_type": "KTP" atau "KK" atau "PASPOR" atau "VISA",
   "nama": "nama lengkap",
   "no_identitas": "NIK atau nomor identitas",
   "tempat_lahir": "kota lahir",
@@ -52,6 +54,7 @@ Kembalikan HANYA JSON (tanpa markdown, tanpa backticks) dengan format berikut:
   "tanggal_visa_akhir": "tanggal berakhir visa DD-MM-YYYY",
   "provider_visa": "provider/embassy visa",
   "nama_ayah": "nama ayah (jika ada)",
+  "kk_member_names": "nama anggota KK dipisahkan ';' (khusus KK)",
   "no_telepon": "nomor telepon (jika ada)",
   "no_hp": "nomor HP (jika ada)"
 }

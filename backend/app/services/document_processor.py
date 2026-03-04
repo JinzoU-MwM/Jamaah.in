@@ -83,15 +83,9 @@ def _parse_text_to_structured(raw_text: str) -> dict:
     }
 
     # Detect document type
-    # KK is treated as KTP-compatible so it can fill identity/address fields.
-    if (
-        "KARTU KELUARGA" in text
-        or "NO. KK" in text
-        or "NOMOR KK" in text
-        or "NIK" in text
-        or "KARTU TANDA PENDUDUK" in text
-        or "KTP" in text
-    ):
+    if "KARTU KELUARGA" in text or "NO. KK" in text or "NOMOR KK" in text:
+        data["document_type"] = "KK"
+    elif "NIK" in text or "KARTU TANDA PENDUDUK" in text or "KTP" in text:
         data["document_type"] = "KTP"
     elif "PASSPORT" in text or "PASPOR" in text or "REPUBLIC OF INDONESIA" in text:
         data["document_type"] = "PASPOR"

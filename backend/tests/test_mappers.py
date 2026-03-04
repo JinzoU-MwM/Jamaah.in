@@ -9,9 +9,14 @@ def test_doc_data_to_item_normalizes_kk_to_ktp():
             "nama": "BUDI",
             "no_identitas": "1234567890123456",
             "alamat": "JL. MELATI 1",
+            "kk_member_names": "BUDI; SITI",
+            "jenis_kelamin": "LAKI-LAKI",
         }
     )
     assert item.jenis_identitas == "KTP"
+    assert item.source_document_type == "KK"
+    assert item.kk_member_names == "BUDI; SITI"
+    assert item.jenis_kelamin == "LAKI-LAKI"
     assert item.no_identitas == "1234567890123456"
     assert item.alamat == "JL. MELATI 1"
 

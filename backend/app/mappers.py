@@ -12,6 +12,16 @@ def _normalize_identity_type(doc_type: str) -> str:
     return normalized
 
 
+def _normalize_source_document_type(doc_type: str, kk_member_names: str = "") -> str:
+    """Track original source type for special enrichment logic."""
+    normalized = (doc_type or "").strip().upper()
+    if normalized:
+        return normalized
+    if kk_member_names:
+        return "KK"
+    return "UNKNOWN"
+
+
 def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
     """Convert a raw OCR dict (from Gemini) to an ExtractedDataItem (32 columns).
     
@@ -19,7 +29,10 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
     that match the Siskopatuh Excel column structure.
     """
     nama = doc_data.get('nama') or ""
-    identity_type = _normalize_identity_type(doc_data.get('document_type', 'UNKNOWN'))
+    kk_member_names = (doc_data.get('kk_member_names') or "").strip()
+    raw_doc_type = doc_data.get('document_type', 'UNKNOWN')
+    identity_type = _normalize_identity_type(raw_doc_type)
+    source_document_type = _normalize_source_document_type(raw_doc_type, kk_member_names)
     return ExtractedDataItem(
         title=doc_data.get('title') or "",
         nama=nama,
@@ -53,4 +66,7 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
         tanggal_awal_polis=doc_data.get('tanggal_awal_polis') or "",
         tanggal_akhir_polis=doc_data.get('tanggal_akhir_polis') or "",
         no_bpjs=doc_data.get('no_bpjs') or "",
+        source_document_type=source_document_type,
+        kk_member_names=kk_member_names,
+        jenis_kelamin=doc_data.get('jenis_kelamin') or "",
     )

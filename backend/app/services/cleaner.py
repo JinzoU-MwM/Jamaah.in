@@ -4,6 +4,7 @@ Data Cleaning and Validation Services
 import re
 from typing import Optional, List
 from difflib import SequenceMatcher
+from datetime import date, datetime
 from ..schemas import ExtractedDataItem
 # Actually parser uses validate_and_clean_name.
 # cleaner uses standardize_date on ExtractedDataItem.
@@ -202,9 +203,71 @@ def clean_entry(entry: ExtractedDataItem) -> Optional[ExtractedDataItem]:
     return entry
 
 
+def _parse_birth_date(value: str) -> Optional[date]:
+    """Parse supported birth date formats into date."""
+    if not value:
+        return None
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y", "%Y/%m/%d"):
+        try:
+            return datetime.strptime(value.strip(), fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def _calculate_age_years(birth_value: str) -> Optional[int]:
+    """Calculate age in full years from birth date text."""
+    dob = _parse_birth_date(birth_value)
+    if not dob:
+        return None
+    today = date.today()
+    years = today.year - dob.year
+    if (today.month, today.day) < (dob.month, dob.day):
+        years -= 1
+    return max(0, years)
+
+
+def _derive_title(item: ExtractedDataItem) -> str:
+    """
+    Determine title using age + marital status + gender hint.
+    Rules:
+    - Male -> TUAN
+    - Female < 17 -> NONA
+    - Female >= 17 and married -> NYONYA
+    - Female >= 17 and not married -> NONA
+    - Unknown gender: < 17 -> NONA, married -> NYONYA, else -> TUAN
+    """
+    age = _calculate_age_years(item.tanggal_lahir or "")
+    status = (item.status_pernikahan or "").upper()
+    gender = (item.jenis_kelamin or "").upper()
+    is_married = ("KAWIN" in status) and ("BELUM" not in status)
+
+    if "LAKI" in gender or gender in {"M", "MALE", "PRIA"}:
+        return "TUAN"
+
+    if "PEREM" in gender or gender in {"F", "FEMALE", "WANITA"}:
+        if age is not None and age < 17:
+            return "NONA"
+        if is_married:
+            return "NYONYA"
+        return "NONA"
+
+    if age is not None and age < 17:
+        return "NONA"
+    if is_married:
+        return "NYONYA"
+    return "TUAN"
+
+
 def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataItem]:
     """Merge similar records using fuzzy logic"""
     consolidated = []
+
+    def normalize_name(name: str) -> str:
+        if not name:
+            return ""
+        cleaned = re.sub(r'[^A-Z\s]', ' ', name.upper())
+        return re.sub(r'\s+', ' ', cleaned).strip()
 
     def is_similar(n1: str, n2: str, threshold: float = 0.80) -> bool:
         if not n1 or not n2: return False
@@ -217,6 +280,36 @@ def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataIt
                 return True
         # Sequence Matcher
         return SequenceMatcher(None, n1, n2).ratio() > threshold
+
+    def parse_kk_members(raw_members: str) -> List[str]:
+        if not raw_members:
+            return []
+        parts = re.split(r'[;\n|,]+', raw_members)
+        members = []
+        for part in parts:
+            normalized = normalize_name(part)
+            if len(normalized) >= 3:
+                members.append(normalized)
+        return members
+
+    def name_exists_in_kk(person_name: str, kk_item: ExtractedDataItem) -> bool:
+        target = normalize_name(person_name)
+        if len(target) < 3:
+            return False
+
+        member_names = parse_kk_members(kk_item.kk_member_names)
+        # Fallback: if model doesn't return kk_member_names, at least use KK's primary name.
+        if not member_names and kk_item.nama:
+            member_names = [normalize_name(kk_item.nama)]
+
+        for member in member_names:
+            if target == member:
+                return True
+            if len(target) > 3 and len(member) > 3 and (target in member or member in target):
+                return True
+            if SequenceMatcher(None, target, member).ratio() >= 0.88:
+                return True
+        return False
 
     for new_item in data_list:
         matched = False
@@ -249,15 +342,40 @@ def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataIt
         if not matched:
             consolidated.append(new_item)
 
-    # 3. Post-merge: Ensure consistency between jenis_identitas, no_identitas, and no_paspor
+    # 3. Passport priority for identity fields:
+    #    If passport number exists, use passport as jenis_identitas and no_identitas.
     for item in consolidated:
-        # If jenis_identitas is Paspor, no_identitas should equal no_paspor
-        if item.jenis_identitas and item.jenis_identitas.upper() in ('PASPOR', 'PASSPORT', 'VISA'):
-            if item.no_paspor:
-                item.no_identitas = item.no_paspor
-        # If we have passport number but no_identitas is empty, use passport number
-        elif item.no_paspor and not item.no_identitas:
+        if item.no_paspor:
             item.no_identitas = item.no_paspor
-            item.jenis_identitas = "Paspor"
+            item.jenis_identitas = "PASPOR"
+
+    # 4. KK enrichment:
+    #    For non-KK records (Visa/KTP/Paspor), if the name exists in a KK member list,
+    #    fill nama_ayah and alamat from that KK record.
+    kk_sources = [
+        x for x in consolidated
+        if (x.source_document_type or "").upper() == "KK" or bool(x.kk_member_names)
+    ]
+
+    for item in consolidated:
+        source_type = (item.source_document_type or "").upper()
+        if source_type == "KK":
+            continue
+        if not item.nama:
+            continue
+
+        for kk_item in kk_sources:
+            if not name_exists_in_kk(item.nama, kk_item):
+                continue
+
+            if kk_item.nama_ayah and (not item.nama_ayah or len(kk_item.nama_ayah) > len(item.nama_ayah)):
+                item.nama_ayah = kk_item.nama_ayah
+            if kk_item.alamat and (not item.alamat or len(kk_item.alamat) > len(item.alamat)):
+                item.alamat = kk_item.alamat
+            break
+
+    # 5. Auto title assignment: TUAN / NONA / NYONYA based on birth date.
+    for item in consolidated:
+        item.title = _derive_title(item)
 
     return consolidated
