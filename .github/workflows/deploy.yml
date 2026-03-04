@@ -30,6 +30,8 @@ jobs:
           pip install -r backend/requirements.txt
 
       - name: Backend smoke test
+        env:
+          JWT_SECRET_KEY: ci-test-secret
         run: |
           python -m pytest -q backend/tests/test_shared_router.py backend/tests/test_ocr_status_router.py backend/tests/test_ocr_review_router.py backend/tests/integration/test_group_duplicates.py backend/tests/integration/test_audit_log.py
 
