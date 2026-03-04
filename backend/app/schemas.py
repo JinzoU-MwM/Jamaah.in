@@ -104,6 +104,8 @@ class ExtractedDataItem(BaseModel):
     kk_member_names: str = ""          # Internal: KK member names separated by ';'
     kk_member_fathers: str = ""        # Internal: "NAMA_ANGGOTA:NAMA_AYAH;..." from KK
     jenis_kelamin: str = ""            # Internal: gender hint for title assignment
+    field_source_json: str = ""        # Internal: JSON map field->source
+    field_confidence_json: str = ""    # Internal: JSON map field->confidence (0..1)
 
 
 class ValidationWarning(BaseModel):

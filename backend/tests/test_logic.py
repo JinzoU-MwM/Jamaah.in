@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import pytest
+import json
 
 # Add backend directory to path so we can import app
 sys.path.append(str(Path(__file__).parent.parent))
@@ -97,6 +98,10 @@ def test_passport_prioritized_for_identity_fields():
     assert len(merged) == 1
     assert merged[0].jenis_identitas == "PASPOR"
     assert merged[0].no_identitas == "C1234567"
+    field_source = json.loads(merged[0].field_source_json or "{}")
+    field_conf = json.loads(merged[0].field_confidence_json or "{}")
+    assert field_source.get("no_identitas") == "PASPOR"
+    assert field_conf.get("no_identitas", 0) >= 0.90
 
 
 def test_kk_enrichment_fills_address_and_not_generic_father():
@@ -160,6 +165,9 @@ def test_kk_enrichment_uses_member_specific_father_mapping():
     out_siti = next(x for x in merged if x.nama == "SITI AMINAH")
     assert out_budi.nama_ayah == "SUPARMAN"
     assert out_siti.nama_ayah == "DARWIS"
+    source_budi = json.loads(out_budi.field_source_json or "{}")
+    assert source_budi.get("alamat") == "KK"
+    assert source_budi.get("nama_ayah") == "KK"
 
 
 def test_title_assignment_tuan_for_male():

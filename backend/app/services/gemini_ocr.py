@@ -76,23 +76,40 @@ def _get_api_url() -> str:
 MAX_API_RETRIES = 3
 
 def _call_gemini(payload: dict) -> dict:
-    """Call Gemini API with automatic retry on 429/5xx errors."""
+    """Call Gemini API with automatic retry on rate limit/network/server errors."""
     url = _get_api_url()
     for attempt in range(1, MAX_API_RETRIES + 1):
-        resp = requests.post(url, json=payload, timeout=60)
-        if resp.status_code == 429 or resp.status_code >= 500:
-            delay = 2 ** attempt  # 2s, 4s, 8s backoff
-            logger.warning(f"Gemini API {resp.status_code} — retry {attempt}/{MAX_API_RETRIES} in {delay}s")
+        try:
+            resp = requests.post(url, json=payload, timeout=60)
+        except requests.Timeout:
+            delay = min(10, 2 ** attempt)
+            logger.warning(f"Gemini API timeout - retry {attempt}/{MAX_API_RETRIES} in {delay}s")
             time.sleep(delay)
             continue
+        except requests.RequestException as e:
+            delay = min(10, 2 ** attempt)
+            logger.warning(f"Gemini API network error ({type(e).__name__}) - retry {attempt}/{MAX_API_RETRIES} in {delay}s")
+            time.sleep(delay)
+            continue
+
+        if resp.status_code == 429:
+            delay = min(20, 2 ** attempt + 2)  # extra cool-down for rate limits
+            logger.warning(f"Gemini API 429 - retry {attempt}/{MAX_API_RETRIES} in {delay}s")
+            time.sleep(delay)
+            continue
+        if resp.status_code >= 500:
+            delay = min(10, 2 ** attempt)
+            logger.warning(f"Gemini API {resp.status_code} - retry {attempt}/{MAX_API_RETRIES} in {delay}s")
+            time.sleep(delay)
+            continue
+
         resp.raise_for_status()
         return resp.json()
-    # Final attempt — let it raise
+
+    # Final attempt - let it raise
     resp = requests.post(url, json=payload, timeout=60)
     resp.raise_for_status()
     return resp.json()
-
-
 def _image_to_base64(img_bytes: bytes) -> tuple:
     """Convert image bytes to base64 and detect MIME type."""
     img = Image.open(io.BytesIO(img_bytes))
@@ -214,3 +231,4 @@ def extract_document_data(text_or_bytes, filename: str = "") -> dict:
             data = {"document_type": "UNKNOWN", "_raw": raw_text}
 
     return data
+

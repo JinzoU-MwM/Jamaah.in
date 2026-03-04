@@ -71,4 +71,6 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
         kk_member_names=kk_member_names,
         kk_member_fathers=kk_member_fathers,
         jenis_kelamin=doc_data.get('jenis_kelamin') or "",
+        field_source_json=doc_data.get('field_source_json') or "",
+        field_confidence_json=doc_data.get('field_confidence_json') or "",
     )

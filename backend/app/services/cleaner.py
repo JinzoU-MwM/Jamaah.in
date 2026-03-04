@@ -2,6 +2,7 @@
 Data Cleaning and Validation Services
 """
 import re
+import json
 from typing import Optional, List
 from difflib import SequenceMatcher
 from datetime import date, datetime
@@ -58,8 +59,9 @@ def standardize_date(raw_text: str | None) -> str | None:
     if not raw_text:
         return None
         
-    # 1. CLEAN UP TYPOS
-    text = raw_text.upper().strip()
+    # 1. PREPARE TEXT
+    text_raw = raw_text.upper().strip()
+    text = text_raw
     replacements = {
         'l': '1', 'I': '1', 'O': '0', 'o': '0', 
         '?': '7', ':': '-', '.': '-', ',': '-',
@@ -67,7 +69,7 @@ def standardize_date(raw_text: str | None) -> str | None:
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
-        
+
     # 2. INDONESIAN MONTH MAPPING
     month_map = {
         'JAN': '01', 'FEB': '02', 'PEB': '02', 'MAR': '03', 
@@ -80,9 +82,15 @@ def standardize_date(raw_text: str | None) -> str | None:
     
     # Strategy A: Text Month (16 MEI 1977 or 16-MEI-1977)
     # Pattern: Digit(1-2) + Separator + Alpha(3+) + Separator + Digit(4)
-    match_text = re.search(r'(\d{1,2})[\s\-]+([A-Z]{3,})[\s\-]+(\d{4})', text)
+    # IMPORTANT: use raw uppercase text so month token (e.g. MEI) is not corrupted by OCR digit fixes.
+    text_month = text_raw.replace('/', '-').replace('.', '-').replace(',', '-')
+    match_text = re.search(r'([0-9IOL\?]{1,2})[\s\-]+([A-Z]{3,})[\s\-]+([0-9IOL\?]{4})', text_month)
     if match_text:
         d, m_str, y = match_text.groups()
+        d = re.sub(r'[^0-9IOL\?]', '', d).replace('I', '1').replace('O', '0').replace('L', '1').replace('?', '7')
+        y = re.sub(r'[^0-9IOL\?]', '', y).replace('I', '1').replace('O', '0').replace('L', '1').replace('?', '7')
+        if not (d.isdigit() and y.isdigit()):
+            return None
         # Find month number
         for k, v in month_map.items():
             if k in m_str:
@@ -262,6 +270,8 @@ def _derive_title(item: ExtractedDataItem) -> str:
 def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataItem]:
     """Merge similar records using fuzzy logic"""
     consolidated = []
+    kk_enriched_address_ids = set()
+    kk_enriched_father_ids = set()
 
     def normalize_name(name: str) -> str:
         if not name:
@@ -408,15 +418,62 @@ def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataIt
             # Alamat harus konsisten untuk semua anggota dalam KK yang sama.
             if kk_item.alamat:
                 item.alamat = kk_item.alamat
+                kk_enriched_address_ids.add(id(item))
 
             # Nama ayah harus spesifik per anggota; jangan disamaratakan dari satu nilai KK.
             member_father = get_member_father_from_kk(item.nama, kk_item)
             if member_father:
                 item.nama_ayah = member_father
+                kk_enriched_father_ids.add(id(item))
             break
 
     # 5. Auto title assignment: TUAN / NONA / NYONYA based on birth date.
     for item in consolidated:
         item.title = _derive_title(item)
+
+    # 6. Attach provenance + confidence metadata (internal only).
+    for item in consolidated:
+        base_source = (item.source_document_type or item.jenis_identitas or "UNKNOWN").upper()
+        field_source = {}
+
+        if item.nama:
+            field_source["nama"] = base_source
+
+        if item.no_identitas:
+            if item.no_paspor:
+                field_source["no_identitas"] = "PASPOR"
+            elif base_source == "KK":
+                field_source["no_identitas"] = "KK"
+            else:
+                field_source["no_identitas"] = base_source
+
+        if item.alamat:
+            field_source["alamat"] = "KK" if id(item) in kk_enriched_address_ids else base_source
+
+        if item.nama_ayah:
+            field_source["nama_ayah"] = "KK" if id(item) in kk_enriched_father_ids else base_source
+
+        if item.title:
+            field_source["title"] = "DERIVED"
+
+        field_confidence = {}
+        if item.nama:
+            field_confidence["nama"] = 0.85 if len(item.nama.strip()) >= 6 else 0.70
+        if item.no_identitas:
+            if field_source.get("no_identitas") == "PASPOR":
+                field_confidence["no_identitas"] = 0.95
+            elif re.fullmatch(r"\d{16}", item.no_identitas or ""):
+                field_confidence["no_identitas"] = 0.92
+            else:
+                field_confidence["no_identitas"] = 0.65
+        if item.alamat:
+            field_confidence["alamat"] = 0.90 if field_source.get("alamat") == "KK" else 0.75
+        if item.nama_ayah:
+            field_confidence["nama_ayah"] = 0.88 if field_source.get("nama_ayah") == "KK" else 0.70
+        if item.title:
+            field_confidence["title"] = 0.85 if _parse_birth_date(item.tanggal_lahir or "") else 0.60
+
+        item.field_source_json = json.dumps(field_source, ensure_ascii=True)
+        item.field_confidence_json = json.dumps(field_confidence, ensure_ascii=True)
 
     return consolidated
