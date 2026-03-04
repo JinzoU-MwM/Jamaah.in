@@ -92,8 +92,8 @@ jobs:
             if [ $MIGRATION_STATUS -ne 0 ]; then
               echo "$MIGRATION_OUTPUT"
               if echo "$MIGRATION_OUTPUT" | grep -q "Can't locate revision identified by"; then
-                echo "Detected unknown alembic revision in DB. Stamping to merge_heads_20260304 and retrying..."
-                python -m alembic stamp merge_heads_20260304
+                echo "Detected unknown alembic revision in DB. Purging version table, stamping to merge_heads_20260304, and retrying..."
+                python -m alembic stamp --purge merge_heads_20260304
                 python -m alembic upgrade head
               else
                 exit $MIGRATION_STATUS
