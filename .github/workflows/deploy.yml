@@ -77,6 +77,14 @@ jobs:
             cd backend
             source venv/bin/activate
             pip install -r requirements.txt --quiet
+            set -a
+            [ -f ../.env ] && . ../.env
+            [ -f .env ] && . .env
+            set +a
+            if [ -z "${DATABASE_URL:-}" ]; then
+              echo "DATABASE_URL is not set. Ensure .env exists in /var/www/jamaah.in or /var/www/jamaah.in/backend."
+              exit 1
+            fi
             python -m alembic upgrade head
             deactivate
             cd ..
