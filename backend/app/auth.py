@@ -38,7 +38,10 @@ def get_super_admin_email() -> Optional[str]:
 
 
 def is_super_admin_user(user: User) -> bool:
-    """True only when user email matches configured super admin email."""
+    """True when DB super-admin flag is set or email matches configured owner email."""
+    if getattr(user, "is_super_admin", False):
+        return True
+
     super_admin_email = get_super_admin_email()
     if not super_admin_email:
         return False
@@ -179,11 +182,6 @@ async def require_super_admin(
     user: User = Depends(get_current_user),
 ) -> User:
     """FastAPI dependency: require current user to be a super admin (app owner)."""
-    if not get_super_admin_email():
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="SUPER_ADMIN_EMAIL not configured",
-        )
     if not is_super_admin_user(user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
