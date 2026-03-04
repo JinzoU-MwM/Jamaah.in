@@ -111,8 +111,20 @@ jobs:
             # Restart backend service
             sudo systemctl restart jamaah-backend
 
-            # Health check (fail deploy if unhealthy)
-            sleep 3
-            curl -fsS http://127.0.0.1:8000/health > /dev/null
+            # Health check with retries (fail deploy if unhealthy)
+            HEALTH_OK=0
+            for i in $(seq 1 20); do
+              if curl -fsS http://127.0.0.1:8000/health > /dev/null; then
+                HEALTH_OK=1
+                break
+              fi
+              sleep 3
+            done
+            if [ "$HEALTH_OK" -ne 1 ]; then
+              echo "Health check failed. Service diagnostics:"
+              sudo systemctl status jamaah-backend --no-pager -l || true
+              sudo journalctl -u jamaah-backend -n 150 --no-pager || true
+              exit 1
+            fi
 
             echo "Deployment complete"
