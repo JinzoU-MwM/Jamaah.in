@@ -3,6 +3,7 @@ Groups Router — CRUD for groups + member management.
 Lets users organize jamaah data into named groups/trips.
 """
 import logging
+import re
 from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/groups", tags=["Groups"])
 
 # --- Free tier limit ---
 MAX_GROUPS_FREE = 2
+PASSPORT_IDENTITY_TYPE = "PASPOR"
 
 
 # =============================================================================
@@ -113,6 +115,98 @@ def _group_to_dict(group: Group, member_count: int = None) -> dict:
         "created_at": group.created_at.isoformat() if group.created_at else None,
         "updated_at": group.updated_at.isoformat() if group.updated_at else None,
     }
+
+
+def _normalize_text(value: str) -> str:
+    return (value or "").strip()
+
+
+def _normalize_id(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9]", "", _normalize_text(value))
+    return cleaned.upper()
+
+
+def _normalize_name(value: str) -> str:
+    cleaned = re.sub(r"[^A-Za-z0-9\s]", " ", _normalize_text(value).upper())
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
+def _member_identifier_values(member: GroupMember) -> set[str]:
+    return {
+        _normalize_id(member.no_paspor),
+        _normalize_id(member.no_identitas),
+        _normalize_id(member.no_visa),
+    }
+
+
+def _apply_identity_priority(member: GroupMember):
+    """
+    Passport is the highest-trust identity source:
+    when no_paspor exists, force jenis_identitas/no_identitas to PASPOR/passport_number.
+    """
+    passport_number = _normalize_text(member.no_paspor)
+    if not passport_number:
+        return
+
+    if _normalize_text(member.jenis_identitas).upper() != PASSPORT_IDENTITY_TYPE:
+        member.jenis_identitas = PASSPORT_IDENTITY_TYPE
+    if _normalize_id(member.no_identitas) != _normalize_id(passport_number):
+        member.no_identitas = passport_number
+
+
+def _merge_member_fields(member: GroupMember, incoming: dict) -> bool:
+    changed = False
+
+    for field, raw_value in incoming.items():
+        new_value = _normalize_text(raw_value)
+        if not new_value:
+            continue
+
+        current_value = _normalize_text(getattr(member, field, ""))
+        if not current_value:
+            setattr(member, field, new_value)
+            changed = True
+
+    before_identity_type = member.jenis_identitas
+    before_identity_number = member.no_identitas
+    _apply_identity_priority(member)
+    if member.jenis_identitas != before_identity_type or member.no_identitas != before_identity_number:
+        changed = True
+
+    return changed
+
+
+def _find_matching_member(incoming: dict, members: list[GroupMember]) -> Optional[GroupMember]:
+    incoming_ids = {
+        _normalize_id(incoming.get("no_paspor")),
+        _normalize_id(incoming.get("no_identitas")),
+        _normalize_id(incoming.get("no_visa")),
+    }
+    incoming_ids.discard("")
+
+    if incoming_ids:
+        for existing in members:
+            existing_ids = _member_identifier_values(existing)
+            existing_ids.discard("")
+            if incoming_ids.intersection(existing_ids):
+                return existing
+
+    incoming_name = _normalize_name(incoming.get("nama") or incoming.get("nama_paspor"))
+    incoming_birth_date = _normalize_text(incoming.get("tanggal_lahir"))
+    if not incoming_name:
+        return None
+
+    for existing in members:
+        existing_name = _normalize_name(existing.nama or existing.nama_paspor)
+        if not existing_name or existing_name != incoming_name:
+            continue
+
+        existing_birth_date = _normalize_text(existing.tanggal_lahir)
+        if incoming_birth_date and existing_birth_date and incoming_birth_date != existing_birth_date:
+            continue
+        return existing
+
+    return None
 
 
 # =============================================================================
@@ -261,26 +355,49 @@ async def add_members(
     if not body.members:
         raise HTTPException(status_code=400, detail="No members provided")
 
+    existing_members = (
+        db.query(GroupMember)
+        .filter(GroupMember.group_id == group.id)
+        .all()
+    )
+
     added = []
+    updated = []
     for m in body.members:
-        member = GroupMember(
-            group_id=group.id,
-            **m.model_dump(),
-        )
+        incoming = m.model_dump()
+        matched = _find_matching_member(incoming, existing_members)
+        if matched:
+            if _merge_member_fields(matched, incoming):
+                updated.append(matched)
+            continue
+
+        member = GroupMember(group_id=group.id, **incoming)
+        _apply_identity_priority(member)
         db.add(member)
         added.append(member)
+        existing_members.append(member)
 
     db.commit()
 
     # Refresh to get IDs
     for member in added:
         db.refresh(member)
+    for member in updated:
+        db.refresh(member)
 
-    logger.info(f"Added {len(added)} members to group '{group.name}' (id={group.id})")
+    logger.info(
+        "Processed members for group '%s' (id=%s): added=%s updated=%s",
+        group.name,
+        group.id,
+        len(added),
+        len(updated),
+    )
     return {
-        "status": "added",
-        "count": len(added),
-        "members": [m.to_dict() for m in added],
+        "status": "ok",
+        "count": len(added) + len(updated),
+        "added_count": len(added),
+        "updated_count": len(updated),
+        "members": [m.to_dict() for m in [*added, *updated]],
     }
 
 

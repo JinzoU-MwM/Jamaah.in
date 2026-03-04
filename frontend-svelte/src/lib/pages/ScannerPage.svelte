@@ -208,12 +208,15 @@
     isSavingToGroup = true;
     errorMessage = "";
     try {
-      await ApiService.addGroupMembers(selectedGroup.id, previewData);
-      groupSaveSuccess = `${previewData.length} data berhasil disimpan ke grup "${selectedGroup.name}"`;
+      const result = await ApiService.addGroupMembers(selectedGroup.id, previewData);
+      const addedCount = result?.added_count ?? previewData.length;
+      const updatedCount = result?.updated_count ?? 0;
+
+      groupSaveSuccess = `${addedCount} data baru dan ${updatedCount} data update berhasil diproses ke grup "${selectedGroup.name}"`;
       // Update the group's member count in the selector
       selectedGroup = {
         ...selectedGroup,
-        member_count: (selectedGroup.member_count || 0) + previewData.length,
+        member_count: (selectedGroup.member_count || 0) + addedCount,
       };
       showModal = false;
       files = [];
