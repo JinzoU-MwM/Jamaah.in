@@ -2,12 +2,14 @@
 Unit tests for validator functions.
 """
 import pytest
+import json
 from app.services.validators import (
     validate_nik,
     validate_passport_number,
     validate_date,
     validate_kewarganegaraan,
     validate_visa_number,
+    validate_row,
 )
 
 
@@ -141,3 +143,26 @@ class TestValidateVisaNumber:
         """Empty visa should pass (optional field)."""
         assert validate_visa_number("") is None
         assert validate_visa_number(None) is None
+
+
+class TestValidateRowConfidence:
+    """Test confidence-driven review warnings."""
+
+    def test_low_confidence_warning_emitted(self):
+        row = {
+            "nama": "BUDI",
+            "jenis_identitas": "KTP",
+            "field_confidence_json": json.dumps({"nama": 0.60, "no_identitas": 0.90}),
+            "field_source_json": json.dumps({"nama": "KTP", "no_identitas": "KTP"}),
+        }
+        warnings = validate_row(row)
+        assert any(w["field"] == "nama" and "Confidence OCR rendah" in w["message"] for w in warnings)
+
+    def test_high_confidence_no_extra_warning(self):
+        row = {
+            "nama": "BUDI SANTOSO",
+            "field_confidence_json": json.dumps({"nama": 0.95}),
+            "field_source_json": json.dumps({"nama": "PASPOR"}),
+        }
+        warnings = validate_row(row)
+        assert not any(w["field"] == "nama" and "Confidence OCR rendah" in w["message"] for w in warnings)

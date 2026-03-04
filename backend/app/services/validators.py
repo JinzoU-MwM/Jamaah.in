@@ -3,6 +3,7 @@ Field-level validation rules for extracted document data.
 Returns warnings (non-blocking) so users can fix in preview.
 """
 import re
+import json
 from typing import List, Dict, Optional
 from datetime import datetime
 
@@ -106,5 +107,47 @@ def validate_row(row_data: dict) -> List[Dict[str, str]]:
     # Required field: nama
     if not row_data.get('nama', '').strip():
         warnings.append({"field": "nama", "message": "Nama tidak boleh kosong"})
+
+    # OCR confidence-based warnings (internal metadata from merge pipeline)
+    raw_conf = row_data.get("field_confidence_json") or ""
+    raw_source = row_data.get("field_source_json") or ""
+    conf_map = {}
+    source_map = {}
+    try:
+        if isinstance(raw_conf, dict):
+            conf_map = raw_conf
+        elif isinstance(raw_conf, str) and raw_conf.strip():
+            conf_map = json.loads(raw_conf)
+    except Exception:
+        conf_map = {}
+    try:
+        if isinstance(raw_source, dict):
+            source_map = raw_source
+        elif isinstance(raw_source, str) and raw_source.strip():
+            source_map = json.loads(raw_source)
+    except Exception:
+        source_map = {}
+
+    # Thresholds tuned to highlight uncertain OCR fields for manual review.
+    confidence_thresholds = {
+        "nama": 0.75,
+        "no_identitas": 0.85,
+        "alamat": 0.70,
+        "nama_ayah": 0.75,
+        "title": 0.70,
+    }
+    for field, threshold in confidence_thresholds.items():
+        if field not in conf_map:
+            continue
+        try:
+            score = float(conf_map[field])
+        except (TypeError, ValueError):
+            continue
+        if score < threshold:
+            src = source_map.get(field, "UNKNOWN")
+            warnings.append({
+                "field": field,
+                "message": f"Confidence OCR rendah ({score:.2f}) untuk '{field}' dari sumber {src}; mohon verifikasi manual."
+            })
 
     return warnings

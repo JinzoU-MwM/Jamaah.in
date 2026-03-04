@@ -298,6 +298,7 @@ async def process_files(
 
     async def _process_one(filename: str, file_ext: str, content: bytes):
         """Process a single file (PDF or image) with cache check."""
+        started_at = time.perf_counter()
         file_hash = ocr_cache.compute_hash(content)
         cached_result = ocr_cache.get(file_hash)
         was_cached = cached_result is not None
@@ -337,7 +338,8 @@ async def process_files(
                     if items:
                         ocr_cache.put(file_hash, items)
 
-                return filename, True, "PDF", items, was_cached
+                elapsed_ms = (time.perf_counter() - started_at) * 1000
+                return filename, True, "PDF", items, was_cached, elapsed_ms
             else:
                 # Image processing
                 if cached_result:
@@ -346,17 +348,20 @@ async def process_files(
                     doc_data = await _rate_limited_ocr(content, filename)
 
                     if doc_data.get('_partial'):
-                        return filename, False, doc_data.get('_error', 'OCR failed'), [], False
+                        elapsed_ms = (time.perf_counter() - started_at) * 1000
+                        return filename, False, doc_data.get('_error', 'OCR failed'), [], False, elapsed_ms
 
                     items = [doc_data_to_item(doc_data)]
                     ocr_cache.put(file_hash, items)
 
                 doc_type = items[0].jenis_identitas if items else "UNKNOWN"
-                return filename, True, doc_type, items, was_cached
+                elapsed_ms = (time.perf_counter() - started_at) * 1000
+                return filename, True, doc_type, items, was_cached, elapsed_ms
 
         except Exception as e:
             logger.error(f"Error processing {filename}: {e}", exc_info=True)
-            return filename, False, str(e), [], False
+            elapsed_ms = (time.perf_counter() - started_at) * 1000
+            return filename, False, str(e), [], False, elapsed_ms
 
     # --- Batch Processing ---
     update_progress(session_id, total=len(file_data), status="processing")
@@ -375,11 +380,16 @@ async def process_files(
     results: List[ProcessingResult] = []
     extracted_data: List[ExtractedDataItem] = []
     file_results: List[FileResult] = []
+    total_elapsed_ms = 0.0
+    cache_hits = 0
 
     completed = 0
     for coro in asyncio.as_completed(tasks):
-        filename, success, doc_type_or_error, items, was_cached = await coro
+        filename, success, doc_type_or_error, items, was_cached, elapsed_ms = await coro
         completed += 1
+        total_elapsed_ms += elapsed_ms
+        if was_cached:
+            cache_hits += 1
 
         if success:
             extracted_data.extend(items)
@@ -391,6 +401,11 @@ async def process_files(
                 filename=filename, status="success",
                 document_type=doc_type_or_error, cached=was_cached
             ))
+            logger.info(
+                f"OCR file processed: session_id={session_id} file='{filename}' "
+                f"status=success doc_type={doc_type_or_error} cache_hit={was_cached} "
+                f"elapsed_ms={elapsed_ms:.1f} extracted_items={len(items)}"
+            )
         else:
             results.append(ProcessingResult(
                 filename=filename, success=False,
@@ -400,6 +415,11 @@ async def process_files(
                 filename=filename, status="failed",
                 error=doc_type_or_error
             ))
+            logger.warning(
+                f"OCR file processed: session_id={session_id} file='{filename}' "
+                f"status=failed error='{doc_type_or_error}' cache_hit={was_cached} "
+                f"elapsed_ms={elapsed_ms:.1f}"
+            )
 
         update_progress(
             session_id,
@@ -408,6 +428,15 @@ async def process_files(
             status="processing" if completed < len(file_data) else "post-processing",
             completed_files=[fr.filename for fr in file_results if fr.status == "success"],
             failed_files=[fr.filename for fr in file_results if fr.status == "failed"],
+        )
+
+    if len(file_data) > 0:
+        avg_ms = total_elapsed_ms / len(file_data)
+        logger.info(
+            f"OCR batch summary: session_id={session_id} total_files={len(file_data)} "
+            f"success={len([r for r in results if r.success])} failed={len([r for r in results if not r.success])} "
+            f"cache_hits={cache_hits} cache_hit_rate={(cache_hits/len(file_data)):.2f} "
+            f"avg_file_ms={avg_ms:.1f}"
         )
 
     return results, extracted_data, file_results
