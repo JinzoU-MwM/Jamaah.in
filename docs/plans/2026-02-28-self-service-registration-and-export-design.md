@@ -35,7 +35,7 @@ TRAVEL AGENCY (Admin):
 JAMAAH:
 1. Buka link di HP
 2. Input No HP (wajib) - untuk auto-register di database
-3. Upload KTP (wajib) → OCR otomatis via Gemini
+3. Upload KTP/KK (wajib) → OCR otomatis via Gemini
 4. Upload Paspor (opsional) - travel bisa input nanti
 5. Upload Visa (opsional) - travel bisa input nanti
 6. Klik "Kirim Data"

@@ -611,7 +611,7 @@ git commit -m "feat: add pending member review endpoints (approve/reject)"
         </div>
         
         <div class="field">
-          <label>Upload KTP (Wajib)</label>
+          <label>Upload KTP/KK (Wajib)</label>
           <div class="upload-area">
             <input
               type="file"
@@ -620,7 +620,7 @@ git commit -m "feat: add pending member review endpoints (approve/reject)"
               required
             />
             <Upload class="w-8 h-8" />
-            <span>Klik atau foto KTP Anda</span>
+            <span>Klik atau foto KTP/KK Anda</span>
           </div>
         </div>
         

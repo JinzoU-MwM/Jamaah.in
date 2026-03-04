@@ -1,12 +1,12 @@
 # 🕌 Jamaah.in — Automasi Input Data Jamaah untuk Siskopatuh
 
-SaaS web application yang mengotomatisasi proses input data jamaah Haji & Umrah dari dokumen identitas (KTP, Paspor, Visa) ke format Excel yang kompatibel dengan **Siskopatuh** (Sistem Kementerian Agama RI).
+SaaS web application yang mengotomatisasi proses input data jamaah Haji & Umrah dari dokumen identitas (KTP/KK, Paspor, Visa) ke format Excel yang kompatibel dengan **Siskopatuh** (Sistem Kementerian Agama RI).
 
 ## ✨ Fitur Utama
 
 - **🤖 AI-Powered OCR** — Google Gemini 2.5 Flash Vision API untuk ekstraksi data dengan akurasi tinggi
-- **📄 Multi-Dokumen** — Mendukung KTP, Paspor, dan Visa Indonesia
-- **🔀 Smart Merge** — Otomatis menggabungkan data KTP + Paspor + Visa milik orang yang sama (fuzzy matching 80%+)
+- **📄 Multi-Dokumen** — Mendukung KTP/KK, Paspor, dan Visa Indonesia
+- **🔀 Smart Merge** — Otomatis menggabungkan data KTP/KK + Paspor + Visa milik orang yang sama (fuzzy matching 80%+)
 - **✅ Validasi Data** — Verifikasi NIK (16 digit), nomor paspor, format tanggal, dan lainnya
 - **📊 32-Kolom Siskopatuh** — Output langsung sesuai format resmi Siskopatuh
 - **📥 Excel Export** — Download file `.xlsm` siap upload ke Siskopatuh
@@ -174,7 +174,7 @@ Upload Files → Validate (type, size)
 → Gemini Vision OCR (concurrent, rate-limited)
 → Structured JSON Extraction
 → Data Cleaning (name sanitization, date standardization)
-→ Fuzzy Merge (KTP + Passport + Visa → 1 row)
+→ Fuzzy Merge (KTP/KK + Passport + Visa → 1 row)
 → Field Validation (NIK, passport no, dates)
 → Preview in editable table
 → Export to Excel or Save to Group
@@ -199,3 +199,4 @@ See `tests/` directory for test examples.
 ## 📄 License
 
 Private — All rights reserved.
+

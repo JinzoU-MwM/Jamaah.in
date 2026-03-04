@@ -48,13 +48,13 @@ async def progress_stream(session_id: str):
 @limiter.limit("10/minute")
 async def process_documents(
     request: Request,
-    files: List[UploadFile] = File(..., description="Identity document images"),
+    files: List[UploadFile] = File(..., description="Identity document images (KTP/KK, Passport, Visa)"),
     session_id: str = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
-    Process documents and return extracted data as JSON for preview.
+    Process KTP/KK, Passport, and Visa documents and return extracted data as JSON for preview.
     
     Pipeline: Upload → Cache Check → OCR → Sanitize → Fuzzy Merge → Validate
     Rate limited to 10 requests/minute. Max 10MB per file, 50 files per request.

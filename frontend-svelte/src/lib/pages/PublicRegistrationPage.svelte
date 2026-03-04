@@ -116,7 +116,7 @@
         <div class="field">
           <label>
             <Camera class="w-4 h-4" />
-            Foto KTP <span class="required">*</span>
+            Foto KTP/KK <span class="required">*</span>
           </label>
           <div class="upload-area">
             <input
@@ -132,7 +132,7 @@
               </div>
             {:else}
               <Upload class="w-8 h-8 text-slate-400" />
-              <span>Klik untuk foto atau pilih file KTP</span>
+              <span>Klik untuk foto atau pilih file KTP/KK</span>
             {/if}
           </div>
         </div>

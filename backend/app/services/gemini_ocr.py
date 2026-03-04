@@ -1,6 +1,6 @@
 """
 Gemini AI OCR Service — Extracts text and structured data from ID documents
-Uses the Google Gemini API for high-accuracy OCR on KTP, Passport, and Visa images.
+Uses the Google Gemini API for high-accuracy OCR on KTP/KK, Passport, and Visa images.
 """
 import os
 import io
@@ -20,7 +20,10 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 EXTRACT_PROMPT = """Kamu adalah OCR specialist untuk dokumen identitas Indonesia.
 Analisis gambar ini dan ekstrak SEMUA informasi yang terlihat.
 
-Tentukan jenis dokumen: KTP, PASPOR, atau VISA.
+Tentukan jenis dokumen: KTP, KK, PASPOR, atau VISA.
+Jika dokumen adalah KK (Kartu Keluarga), isi "document_type" sebagai "KTP" agar kompatibel
+dengan alur identitas. Untuk KK, isi "no_identitas" dengan NIK anggota utama/pertama yang
+terbaca dan isi "alamat" dengan alamat KK.
 
 Kembalikan HANYA JSON (tanpa markdown, tanpa backticks) dengan format berikut:
 {
@@ -58,7 +61,7 @@ PENTING: Kembalikan HANYA JSON, tanpa teks lain."""
 
 EXTRACT_TEXT_PROMPT = """Extract ALL text visible in this image. 
 Return the raw text exactly as it appears, preserving layout where possible.
-This is an Indonesian identity document (KTP, Passport, or Visa)."""
+This is an Indonesian identity document (KTP, KK, Passport, or Visa)."""
 
 
 def _get_api_url() -> str:

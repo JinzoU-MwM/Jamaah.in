@@ -2,7 +2,7 @@
 Document Parser - Thin Orchestrator
 
 Detects document type and delegates extraction to the appropriate parser:
-- parsers/ktp_parser.py       → KTP (Indonesian ID)
+- parsers/ktp_parser.py       → KTP/KK (Indonesian ID / Family Card)
 - parsers/passport_parser.py  → Passport
 - parsers/visa_parser.py      → Visa
 
@@ -49,19 +49,24 @@ def detect_document_type(text: str) -> str:
     if sum(1 for kw in visa_keywords if kw in text_upper) >= 2:
         return "VISA"
 
-    # 2. Check for KTP keywords
+    # 2. Check for KK keywords (treat as KTP-compatible identity source)
+    kk_keywords = ['KARTU KELUARGA', 'NO. KK', 'NOMOR KK', 'KEPALA KELUARGA']
+    if any(kw in text_upper for kw in kk_keywords):
+        return "KTP"
+
+    # 3. Check for KTP keywords
     ktp_keywords = ['PROVINSI', 'KABUPATEN', 'KECAMATAN', 'KELURAHAN', 
                     'NIK', 'RT/RW', 'BERLAKU HINGGA', 'KARTU TANDA PENDUDUK']
     if sum(1 for kw in ktp_keywords if kw in text_upper) >= 2:
         return "KTP"
 
-    # 3. Check for PASSPORT keywords
+    # 4. Check for PASSPORT keywords
     passport_keywords = ['PASSPORT', 'PASPOR', 'DATE OF ISSUE', 'DATE OF EXPIRY', 
                          'REPUBLIC OF INDONESIA', 'TANGGAL HABIS BERLAKU', 'IMIGRASI']
     if sum(1 for kw in passport_keywords if kw in text_upper) >= 2:
         return "PASSPORT"
 
-    # 4. Check for MRZ (Machine Readable Zone)
+    # 5. Check for MRZ (Machine Readable Zone)
     if 'P<' in text_upper or 'P<IDN' in text_upper:
         return "PASSPORT"
     if 'V<' in text_upper or 'V<IDN' in text_upper:
@@ -73,7 +78,7 @@ def detect_document_type(text: str) -> str:
             return "VISA"
         return "PASSPORT"
     
-    # 5. Default fallback - try to identify by patterns
+    # 6. Default fallback - try to identify by patterns
     if re.search(r'\d{16}', text):
         return "KTP"
     if re.search(r'[A-Z]\d{7}', text):
@@ -104,3 +109,4 @@ def extract_document_data(text: str) -> Dict[str, Optional[str]]:
         result = empty_result()
         result['document_type'] = doc_type
         return result
+

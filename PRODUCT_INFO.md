@@ -46,7 +46,7 @@
 
 | Capability | Details |
 |-----------|---------|
-| **Supported Documents** | KTP (Indonesian ID Card), Passport, Visa |
+| **Supported Documents** | KTP/KK (Indonesian ID & Family Card), Passport, Visa |
 | **AI Engine** | Google Gemini 2.5 Flash (Vision API) |
 | **Fallback Engine** | Tesseract OCR + OpenCV (local, for when Gemini is unavailable) |
 | **Input Formats** | JPEG, PNG, WebP, PDF (multi-page) |
@@ -58,7 +58,7 @@
 ```
 Upload → Validate Files → Cache Check → Gemini Vision OCR
 → Structured JSON Extraction → Data Cleaning & Sanitization
-→ Fuzzy Merge (KTP+Passport+Visa for same person)
+→ Fuzzy Merge (KTP/KK+Passport+Visa for same person)
 → Field Validation → Preview Table
 ```
 
@@ -76,7 +76,7 @@ Upload → Validate Files → Cache Check → Gemini Vision OCR
 |---------|---------|
 | **Name Cleaning** | Blacklist filter (removes "PROVINSI", "KABUPATEN" etc. misreads), sanitization, minimum length check |
 | **Date Standardization** | Handles Indonesian months ("MEI", "AGUSTUS"), DD-MM-YYYY ↔ YYYY-MM-DD, OCR typo correction (l→1, O→0) |
-| **Fuzzy Merge** | Automatically merges KTP + Passport + Visa records for the same person using `SequenceMatcher` (≥80% name similarity) |
+| **Fuzzy Merge** | Automatically merges KTP/KK + Passport + Visa records for the same person using `SequenceMatcher` (≥80% name similarity) |
 | **Field Validation** | NIK (16 digits), passport number (letter + 6-7 digits), visa number, date formats, citizenship (WNI/WNA) |
 | **Validation Warnings** | Non-blocking warnings shown in preview — user can fix before exporting |
 
@@ -472,9 +472,9 @@ Every `GroupMember` row and `ExtractedDataItem` contains these 32 fields:
 | # | Field | Description |
 |---|-------|-------------|
 | 1 | `title` | Mr/Mrs/Ms |
-| 2 | `nama` | Full name (from KTP/Passport) |
+| 2 | `nama` | Full name (from KTP/KK/Passport) |
 | 3 | `nama_ayah` | Father's name |
-| 4 | `jenis_identitas` | ID type: KTP or PASPOR |
+| 4 | `jenis_identitas` | ID type: KTP (incl. KK) or PASPOR |
 | 5 | `no_identitas` | NIK (16 digits) |
 | 6 | `nama_paspor` | Name as on passport |
 | 7 | `no_paspor` | Passport number |
@@ -921,7 +921,7 @@ Automaton Input Jamaah SaaS/
 
 2. **Direct Image-to-JSON**: Instead of OCR → text → parse, the system sends raw images to Gemini with a structured prompt and gets JSON back. This eliminates regex parsing errors.
 
-3. **Fuzzy Merge**: Travel agents upload KTP + Passport + Visa for the same person as separate files. The system auto-merges them into one row using name similarity matching.
+3. **Fuzzy Merge**: Travel agents upload KTP/KK + Passport + Visa for the same person as separate files. The system auto-merges them into one row using name similarity matching.
 
 4. **32-Column Standard**: The data schema exactly mirrors Siskopatuh's Excel format — no transformation needed at export time.
 
@@ -948,3 +948,4 @@ Automaton Input Jamaah SaaS/
 ---
 
 *Document generated from codebase analysis — Jamaah.in v5.0 (P3), February 2026*
+

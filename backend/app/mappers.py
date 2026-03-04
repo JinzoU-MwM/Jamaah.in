@@ -4,6 +4,14 @@ Data Mappers — Convert raw OCR output dicts to Pydantic models.
 from .schemas import ExtractedDataItem
 
 
+def _normalize_identity_type(doc_type: str) -> str:
+    """Normalize OCR document type for downstream compatibility."""
+    normalized = (doc_type or "UNKNOWN").strip().upper()
+    if normalized in {"KK", "KARTU KELUARGA", "FAMILY_CARD"}:
+        return "KTP"
+    return normalized
+
+
 def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
     """Convert a raw OCR dict (from Gemini) to an ExtractedDataItem (32 columns).
     
@@ -11,11 +19,12 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
     that match the Siskopatuh Excel column structure.
     """
     nama = doc_data.get('nama') or ""
+    identity_type = _normalize_identity_type(doc_data.get('document_type', 'UNKNOWN'))
     return ExtractedDataItem(
         title=doc_data.get('title') or "",
         nama=nama,
         nama_ayah=doc_data.get('nama_ayah') or "",
-        jenis_identitas=doc_data.get('document_type', 'UNKNOWN'),
+        jenis_identitas=identity_type,
         no_identitas=doc_data.get('no_identitas') or "",
         nama_paspor=nama,  # Same as nama by default
         no_paspor=doc_data.get('no_paspor') or "",

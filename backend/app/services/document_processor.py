@@ -1,7 +1,7 @@
 """
 Document Processor — Orchestrates OCR, caching, batching, and the data pipeline.
 
-This is the core business logic for processing identity documents (KTP, Passport, Visa).
+This is the core business logic for processing identity documents (KTP/KK, Passport, Visa).
 Pipeline: Upload → Cache Check → OCR → Parse → Sanitize → Fuzzy Merge → Validate
 """
 import io
@@ -49,7 +49,7 @@ _gemini_semaphore: asyncio.Semaphore = None
 def _parse_text_to_structured(raw_text: str) -> dict:
     """
     Parse raw OCR text (from Tesseract) into structured document fields using regex.
-    This is a best-effort parser for KTP, Passport, and Visa documents.
+    This is a best-effort parser for KTP/KK, Passport, and Visa documents.
     """
     text = raw_text.upper()
     data = {
@@ -83,7 +83,15 @@ def _parse_text_to_structured(raw_text: str) -> dict:
     }
 
     # Detect document type
-    if "NIK" in text or "KARTU TANDA PENDUDUK" in text or "KTP" in text:
+    # KK is treated as KTP-compatible so it can fill identity/address fields.
+    if (
+        "KARTU KELUARGA" in text
+        or "NO. KK" in text
+        or "NOMOR KK" in text
+        or "NIK" in text
+        or "KARTU TANDA PENDUDUK" in text
+        or "KTP" in text
+    ):
         data["document_type"] = "KTP"
     elif "PASSPORT" in text or "PASPOR" in text or "REPUBLIC OF INDONESIA" in text:
         data["document_type"] = "PASPOR"

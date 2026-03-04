@@ -333,7 +333,7 @@
             <p class="text-sm text-slate-500">
               {readOnly
                 ? "Upgrade ke Pro untuk mengedit dan mengunduh Excel."
-                : "Klik sel manapun untuk mengedit. Data dari KTP, Paspor, dan Visa sudah digabung otomatis."}
+                : "Klik sel manapun untuk mengedit. Data dari KTP/KK, Paspor, dan Visa sudah digabung otomatis."}
             </p>
           </div>
         </div>
@@ -761,7 +761,7 @@
               >Digabung Otomatis</span
             >
             <span class="text-xs text-slate-400"
-              >KTP + Paspor + Visa → 1 Baris</span
+              >KTP/KK + Paspor + Visa → 1 Baris</span
             >
           </div>
           {#if totalWarnings > 0}

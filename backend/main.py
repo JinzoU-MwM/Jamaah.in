@@ -103,7 +103,7 @@ limiter = Limiter(key_func=get_remote_address)
 # ---- App ----
 app = FastAPI(
     title="Jamaah.in API",
-    description="Backend service for Jamaah.in — Siskopatuh Automation Tool. Modular Architecture.",
+    description="Backend service for Jamaah.in — Siskopatuh Automation Tool with OCR for KTP/KK, Passport, and Visa.",
     version="4.0.0",
 )
 app.state.limiter = limiter
@@ -208,7 +208,7 @@ async def root():
         "endpoints": {
             "POST /auth/register": "Register new user",
             "POST /auth/login": "Login and get JWT token",
-            "POST /process-documents/": "Process images and return JSON preview",
+            "POST /process-documents/": "Process KTP/KK, Passport, Visa images and return JSON preview",
             "POST /generate-excel/": "Generate Excel from verified data",
             "GET /progress/{session_id}": "SSE progress stream",
             "GET /download/{filename}": "Download generated file",
@@ -244,3 +244,4 @@ if __name__ == "__main__":
         reload_dirs=[".", parent_services],
         log_level="info",
     )
+

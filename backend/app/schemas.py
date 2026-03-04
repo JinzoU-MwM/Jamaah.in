@@ -8,7 +8,7 @@ from datetime import date
 
 class DocumentData(BaseModel):
     """Base model for extracted document data"""
-    document_type: str  # "KTP", "PASSPORT", or "VISA"
+    document_type: str  # "KTP" (includes KK), "PASSPORT", or "VISA"
     
     # Common fields
     name: Optional[str] = None
@@ -71,7 +71,7 @@ class ExtractedDataItem(BaseModel):
     title: str = ""                    # Col 1: Title (Mr/Mrs/Ms)
     nama: str = ""                     # Col 2: Nama (Sesuai Dengan nama Pada Kartu Vaksin)
     nama_ayah: str = ""                # Col 3: Nama Ayah
-    jenis_identitas: str = ""          # Col 4: Jenis Identitas (KTP/PASPOR)
+    jenis_identitas: str = ""          # Col 4: Jenis Identitas (KTP incl. KK/PASPOR)
     no_identitas: str = ""             # Col 5: No Identitas
     nama_paspor: str = ""              # Col 6: Nama Paspor
     no_paspor: str = ""                # Col 7: No Paspor

@@ -7,7 +7,7 @@
   const steps = [
     {
       title: 'Upload Dokumen',
-      description: 'Foto KTP, Paspor, atau Visa Anda. AI akan otomatis mengisi data.',
+      description: 'Foto KTP/KK, Paspor, atau Visa Anda. AI akan otomatis mengisi data.',
       icon: '📄'
     },
     {

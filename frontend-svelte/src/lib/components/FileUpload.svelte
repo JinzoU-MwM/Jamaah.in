@@ -132,7 +132,7 @@
         Upload Dokumen Jamaah
       </h2>
       <p class="text-slate-500 text-sm sm:text-base">
-        Ekstrak data dari KTP, Paspor, dan Visa secara otomatis.
+        Ekstrak data dari KTP, KK, Paspor, dan Visa secara otomatis.
       </p>
     </div>
 

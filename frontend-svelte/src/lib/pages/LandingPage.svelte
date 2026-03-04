@@ -182,7 +182,7 @@
             <li>
               <Check class="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span
-                ><strong>Scan KTP → langsung jadi Excel</strong> Siskopatuh 32 kolom,
+                ><strong>Scan KTP/KK → langsung jadi Excel</strong> Siskopatuh 32 kolom,
                 selesai 30 detik</span
               >
             </li>
@@ -244,7 +244,7 @@
           <div class="feature-label">AI-Powered</div>
           <h3>AI Document Scanner</h3>
           <p class="feature-tagline">
-            Scan KTP, Paspor, Visa → langsung jadi Excel Siskopatuh 32 kolom.
+            Scan KTP/KK, Paspor, Visa → langsung jadi Excel Siskopatuh 32 kolom.
           </p>
           <ul class="feature-bullets">
             <li>
