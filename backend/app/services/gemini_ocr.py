@@ -24,7 +24,7 @@ Tentukan jenis dokumen: KTP, KK, PASPOR, atau VISA.
 Jika dokumen adalah KK (Kartu Keluarga), isi:
 - "document_type" = "KK"
 - "kk_member_names" = daftar nama anggota keluarga dipisahkan titik koma (;)
-- "nama_ayah" = nama ayah/kepala keluarga (jika ada)
+- "kk_member_fathers" = mapping per anggota format "NAMA_ANGGOTA:NAMA_AYAH" dipisahkan titik koma (;)
 - "alamat" = alamat KK
 
 Kembalikan HANYA JSON (tanpa markdown, tanpa backticks) dengan format berikut:
@@ -55,6 +55,7 @@ Kembalikan HANYA JSON (tanpa markdown, tanpa backticks) dengan format berikut:
   "provider_visa": "provider/embassy visa",
   "nama_ayah": "nama ayah (jika ada)",
   "kk_member_names": "nama anggota KK dipisahkan ';' (khusus KK)",
+  "kk_member_fathers": "mapping anggota ke ayah: NAMA:NAMA_AYAH dipisahkan ';' (khusus KK)",
   "no_telepon": "nomor telepon (jika ada)",
   "no_hp": "nomor HP (jika ada)"
 }

@@ -30,6 +30,7 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
     """
     nama = doc_data.get('nama') or ""
     kk_member_names = (doc_data.get('kk_member_names') or "").strip()
+    kk_member_fathers = (doc_data.get('kk_member_fathers') or "").strip()
     raw_doc_type = doc_data.get('document_type', 'UNKNOWN')
     identity_type = _normalize_identity_type(raw_doc_type)
     source_document_type = _normalize_source_document_type(raw_doc_type, kk_member_names)
@@ -68,5 +69,6 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
         no_bpjs=doc_data.get('no_bpjs') or "",
         source_document_type=source_document_type,
         kk_member_names=kk_member_names,
+        kk_member_fathers=kk_member_fathers,
         jenis_kelamin=doc_data.get('jenis_kelamin') or "",
     )

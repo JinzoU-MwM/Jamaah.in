@@ -292,6 +292,43 @@ def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataIt
                 members.append(normalized)
         return members
 
+    def parse_kk_member_fathers(raw_map: str) -> dict:
+        """
+        Parse "NAMA_ANGGOTA:NAMA_AYAH;..." into normalized name->father mapping.
+        """
+        result = {}
+        if not raw_map:
+            return result
+        pairs = re.split(r'[;\n|]+', raw_map)
+        for pair in pairs:
+            if ':' not in pair:
+                continue
+            member_raw, father_raw = pair.split(':', 1)
+            member = normalize_name(member_raw)
+            father = normalize_name(father_raw)
+            if len(member) >= 3 and len(father) >= 3:
+                result[member] = father
+        return result
+
+    def get_member_father_from_kk(person_name: str, kk_item: ExtractedDataItem) -> str:
+        target = normalize_name(person_name)
+        if len(target) < 3:
+            return ""
+        mapping = parse_kk_member_fathers(kk_item.kk_member_fathers)
+        if not mapping:
+            return ""
+        if target in mapping:
+            return mapping[target]
+
+        best_match = ""
+        best_score = 0.0
+        for member_name, father_name in mapping.items():
+            score = SequenceMatcher(None, target, member_name).ratio()
+            if score > best_score:
+                best_score = score
+                best_match = father_name
+        return best_match if best_score >= 0.90 else ""
+
     def name_exists_in_kk(person_name: str, kk_item: ExtractedDataItem) -> bool:
         target = normalize_name(person_name)
         if len(target) < 3:
@@ -368,10 +405,14 @@ def fuzzy_merge_data(data_list: List[ExtractedDataItem]) -> List[ExtractedDataIt
             if not name_exists_in_kk(item.nama, kk_item):
                 continue
 
-            if kk_item.nama_ayah and (not item.nama_ayah or len(kk_item.nama_ayah) > len(item.nama_ayah)):
-                item.nama_ayah = kk_item.nama_ayah
-            if kk_item.alamat and (not item.alamat or len(kk_item.alamat) > len(item.alamat)):
+            # Alamat harus konsisten untuk semua anggota dalam KK yang sama.
+            if kk_item.alamat:
                 item.alamat = kk_item.alamat
+
+            # Nama ayah harus spesifik per anggota; jangan disamaratakan dari satu nilai KK.
+            member_father = get_member_father_from_kk(item.nama, kk_item)
+            if member_father:
+                item.nama_ayah = member_father
             break
 
     # 5. Auto title assignment: TUAN / NONA / NYONYA based on birth date.

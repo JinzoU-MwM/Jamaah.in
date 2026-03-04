@@ -99,7 +99,7 @@ def test_passport_prioritized_for_identity_fields():
     assert merged[0].no_identitas == "C1234567"
 
 
-def test_kk_enrichment_fills_father_and_address():
+def test_kk_enrichment_fills_address_and_not_generic_father():
     kk_item = ExtractedDataItem(
         nama="SUTRISNO",
         nama_ayah="SUTRISNO",
@@ -115,8 +115,51 @@ def test_kk_enrichment_fills_father_and_address():
 
     merged = fuzzy_merge_data([kk_item, passport_item])
     target = next(x for x in merged if x.nama == "BUDI SANTOSO")
-    assert target.nama_ayah == "SUTRISNO"
     assert target.alamat == "JL. MELATI NO. 10"
+    assert target.nama_ayah == ""
+
+
+def test_kk_enrichment_keeps_same_address_for_all_matched_members():
+    kk_item = ExtractedDataItem(
+        nama="KEPALA KELUARGA",
+        alamat="JL. KENANGA NO. 7",
+        source_document_type="KK",
+        kk_member_names="BUDI SANTOSO; SITI AMINAH",
+    )
+    budi = ExtractedDataItem(
+        nama="BUDI SANTOSO",
+        alamat="ALAMAT LAMA BUDI",
+        no_paspor="A1234567",
+    )
+    siti = ExtractedDataItem(
+        nama="SITI AMINAH",
+        alamat="ALAMAT LAMA SITI",
+        no_identitas="3175090101010002",
+    )
+
+    merged = fuzzy_merge_data([kk_item, budi, siti])
+    out_budi = next(x for x in merged if x.nama == "BUDI SANTOSO")
+    out_siti = next(x for x in merged if x.nama == "SITI AMINAH")
+    assert out_budi.alamat == "JL. KENANGA NO. 7"
+    assert out_siti.alamat == "JL. KENANGA NO. 7"
+
+
+def test_kk_enrichment_uses_member_specific_father_mapping():
+    kk_item = ExtractedDataItem(
+        nama="KEPALA KELUARGA",
+        alamat="JL. MAWAR NO. 9",
+        source_document_type="KK",
+        kk_member_names="BUDI SANTOSO; SITI AMINAH",
+        kk_member_fathers="BUDI SANTOSO:SUPARMAN;SITI AMINAH:DARWIS",
+    )
+    budi = ExtractedDataItem(nama="BUDI SANTOSO", no_paspor="C1234567")
+    siti = ExtractedDataItem(nama="SITI AMINAH", no_identitas="3175090101010003")
+
+    merged = fuzzy_merge_data([kk_item, budi, siti])
+    out_budi = next(x for x in merged if x.nama == "BUDI SANTOSO")
+    out_siti = next(x for x in merged if x.nama == "SITI AMINAH")
+    assert out_budi.nama_ayah == "SUPARMAN"
+    assert out_siti.nama_ayah == "DARWIS"
 
 
 def test_title_assignment_tuan_for_male():

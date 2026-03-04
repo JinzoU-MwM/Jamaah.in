@@ -102,6 +102,7 @@ class ExtractedDataItem(BaseModel):
     no_bpjs: str = ""                  # Col 32: No BPJS
     source_document_type: str = ""     # Internal: OCR source type (e.g. KK/KTP/PASPOR/VISA)
     kk_member_names: str = ""          # Internal: KK member names separated by ';'
+    kk_member_fathers: str = ""        # Internal: "NAMA_ANGGOTA:NAMA_AYAH;..." from KK
     jenis_kelamin: str = ""            # Internal: gender hint for title assignment
 
 

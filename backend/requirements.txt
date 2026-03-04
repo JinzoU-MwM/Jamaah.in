@@ -21,6 +21,7 @@ bcrypt==4.1.2
 # ======================
 # Document Processing
 # ======================
+numpy<2
 pandas==2.2.3
 openpyxl==3.1.5
 pillow==11.0.0
@@ -33,6 +34,7 @@ pytesseract==0.3.10
 # HTTP / External APIs
 # ======================
 requests==2.31.0
+sse-starlette>=2.1.3
 
 # ======================
 # Testing
