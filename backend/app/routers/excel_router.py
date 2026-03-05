@@ -15,6 +15,10 @@ from app.config import OUTPUT_DIR
 from app.database import get_db
 from app.auth import get_current_user, check_access
 from app.models.user import User
+from app.services.siskopatuh_validation import (
+    normalize_items_to_siskopatuh_dropdowns,
+    validate_items_against_siskopatuh_dropdowns,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +96,18 @@ async def generate_excel(
 
         if not request.data:
             raise HTTPException(status_code=400, detail="No data provided")
+
+        normalize_items_to_siskopatuh_dropdowns(request.data)
+        dropdown_errors = validate_items_against_siskopatuh_dropdowns(request.data)
+        if dropdown_errors:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": "Data tidak sesuai opsi dropdown template Siskopatuh.",
+                    "errors": dropdown_errors[:50],
+                    "total_errors": len(dropdown_errors),
+                },
+            )
 
         from openpyxl import Workbook
 
