@@ -42,6 +42,13 @@
   let isGenerating = $state(false);
   let validationWarnings = $state([]);
   let fileResults = $state([]);
+  let processingCacheMode = $state("default");
+  const cacheModeLabels = {
+    default: "Default (hemat biaya, read/write cache)",
+    refresh: "Refresh (skip read, tulis hasil terbaru)",
+    bypass: "Bypass (tanpa read/write cache)",
+  };
+  const cacheModeHint = $derived(cacheModeLabels[processingCacheMode] || cacheModeLabels.default);
 
   // Track failed files for retry
   let failedFileNames = $state([]);
@@ -145,7 +152,9 @@
     }
 
     try {
-      const result = await ApiService.uploadDocuments(uploadFiles, sessionId);
+      const result = await ApiService.uploadDocuments(uploadFiles, sessionId, {
+        cacheMode: processingCacheMode,
+      });
       if (eventSource) eventSource.close();
 
       previewData = result.data;
@@ -340,6 +349,27 @@
         </div>
       </div>
     {/if}
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-4">
+      <details class="bg-white border border-slate-200 rounded-xl px-4 py-3">
+        <summary class="text-sm font-semibold text-slate-700 cursor-pointer select-none">
+          Advanced OCR Settings
+        </summary>
+        <div class="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <label class="text-sm text-slate-600" for="cache-mode">Mode cache AI (Gemini)</label>
+          <select
+            id="cache-mode"
+            bind:value={processingCacheMode}
+            class="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white"
+          >
+            <option value="default">default</option>
+            <option value="refresh">refresh</option>
+            <option value="bypass">bypass</option>
+          </select>
+        </div>
+        <p class="mt-2 text-xs text-slate-500">{cacheModeHint}</p>
+      </details>
+    </div>
 
     <FileUpload
       bind:files

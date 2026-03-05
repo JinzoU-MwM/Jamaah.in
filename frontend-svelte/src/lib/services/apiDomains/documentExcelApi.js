@@ -4,14 +4,22 @@ export const documentExcelApi = {
     /**
      * Upload documents for OCR processing (auth required)
      */
-    async uploadDocuments(files, sessionId = null) {
+    async uploadDocuments(files, sessionId = null, options = {}) {
         const formData = new FormData();
         files.forEach((file) => {
             formData.append('files', file);
         });
 
-        const url = sessionId
-            ? `${API_URL}/process-documents/?session_id=${sessionId}`
+        const normalizedCacheMode = String(options.cacheMode || 'default').trim().toLowerCase();
+        if (!['default', 'refresh', 'bypass'].includes(normalizedCacheMode)) {
+            throw new Error(`Invalid cache mode: ${normalizedCacheMode}`);
+        }
+        const params = new URLSearchParams();
+        if (sessionId) params.set('session_id', sessionId);
+        params.set('cache_mode', normalizedCacheMode);
+        const query = params.toString();
+        const url = query
+            ? `${API_URL}/process-documents/?${query}`
             : `${API_URL}/process-documents/`;
 
         try {

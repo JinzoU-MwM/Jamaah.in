@@ -103,7 +103,7 @@ describe('API domain modules', () => {
         expect(api.getDocumentUrl(7, 'group-manifest')).toBe('/api/documents/7/group-manifest');
     });
 
-    it('documentExcelApi.uploadDocuments uses session query when provided', async () => {
+    it('documentExcelApi.uploadDocuments uses session and cache mode query when provided', async () => {
         fetchMock.mockResolvedValue({
             ok: true,
             json: async () => ({ processed: 1 }),
@@ -114,13 +114,28 @@ describe('API domain modules', () => {
 
         expect(res.processed).toBe(1);
         expect(fetchMock).toHaveBeenCalledWith(
-            '/api/process-documents/?session_id=sess-1',
+            '/api/process-documents/?session_id=sess-1&cache_mode=default',
             expect.objectContaining({
                 method: 'POST',
                 headers: expect.objectContaining({
                     Authorization: 'Bearer test-token',
                 }),
             })
+        );
+    });
+
+    it('documentExcelApi.uploadDocuments accepts explicit cache mode', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({ processed: 1 }),
+        });
+
+        const blob = new Blob(['abc'], { type: 'text/plain' });
+        await documentExcelApi.uploadDocuments([blob], null, { cacheMode: 'bypass' });
+
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/process-documents/?cache_mode=bypass',
+            expect.objectContaining({ method: 'POST' })
         );
     });
 
