@@ -4,6 +4,8 @@ Repository helpers for persistent AI result cache.
 from __future__ import annotations
 
 import json
+import os
+import threading
 from datetime import timedelta
 from typing import Any
 
@@ -11,6 +13,22 @@ from sqlalchemy.orm import Session
 
 from app.models.ai_result_cache import AIResultCache
 from app.models.user import utc_now
+
+_PURGE_EVERY_WRITES = int(os.getenv("AI_CACHE_PURGE_EVERY_WRITES", "100"))
+_write_counter = 0
+_write_counter_lock = threading.Lock()
+
+
+def _should_purge_after_write() -> bool:
+    global _write_counter
+    if _PURGE_EVERY_WRITES <= 0:
+        return False
+    with _write_counter_lock:
+        _write_counter += 1
+        if _write_counter >= _PURGE_EVERY_WRITES:
+            _write_counter = 0
+            return True
+    return False
 
 
 def get_ai_cache(
@@ -78,6 +96,10 @@ def put_ai_cache(
 
     db.commit()
     db.refresh(row)
+
+    # Housekeeping: periodically purge expired rows to keep table size bounded.
+    if _should_purge_after_write():
+        purge_expired_ai_cache(db)
     return row
 
 
@@ -104,4 +126,3 @@ def get_ai_cache_stats(db: Session) -> dict[str, int]:
         "active": int(active),
         "expired": int(expired),
     }
-

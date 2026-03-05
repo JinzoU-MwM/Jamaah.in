@@ -30,9 +30,17 @@ from app.services.document_processor import (
     OCR_ENGINE,
     OCR_FALLBACK_ENABLED,
 )
-from app.services.gemini_ocr import GEMINI_API_KEY, GEMINI_MODEL
+from app.services.gemini_ocr import (
+    EXTRACT_PROMPT_VERSION,
+    EXTRACT_TEXT_PROMPT_VERSION,
+    GEMINI_API_KEY,
+    GEMINI_CACHE_TTL_SECONDS,
+    GEMINI_MODEL,
+    GEMINI_TEXT_CACHE_TTL_SECONDS,
+)
 from app.services.progress import update_progress, create_progress_stream
 from app.services.cache import ocr_cache
+from app.services.ai_result_cache_repo import get_ai_cache_stats
 from app.services import ocr_engine
 from app.config import ALLOWED_EXTENSIONS
 from app.database import get_db
@@ -63,11 +71,19 @@ async def progress_stream(session_id: str):
 
 
 @router.get("/ocr/status")
-async def get_ocr_status(user: User = Depends(get_current_user)):
+async def get_ocr_status(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """
     Return OCR engine runtime status and provider readiness.
     Useful for diagnosing provider config before running document scans.
     """
+    try:
+        ai_cache_stats = get_ai_cache_stats(db)
+    except Exception:
+        ai_cache_stats = {"total": -1, "active": -1, "expired": -1}
+
     return {
         "primary_engine": OCR_ENGINE,
         "fallback_enabled": OCR_FALLBACK_ENABLED,
@@ -75,12 +91,17 @@ async def get_ocr_status(user: User = Depends(get_current_user)):
             "gemini": {
                 "configured": bool(GEMINI_API_KEY),
                 "model": GEMINI_MODEL,
+                "prompt_version": EXTRACT_PROMPT_VERSION,
+                "text_prompt_version": EXTRACT_TEXT_PROMPT_VERSION,
+                "cache_ttl_seconds": GEMINI_CACHE_TTL_SECONDS,
+                "text_cache_ttl_seconds": GEMINI_TEXT_CACHE_TTL_SECONDS,
             },
             "tesseract": {
                 "available": bool(ocr_engine.TESSERACT_AVAILABLE),
             },
         },
         "cache": ocr_cache.stats,
+        "ai_cache": ai_cache_stats,
         "requested_by": user.email,
     }
 
