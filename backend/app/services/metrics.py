@@ -29,7 +29,7 @@ class MetricsStore:
             lambda: [0 for _ in HISTOGRAM_BUCKETS]
         )  # (method, path) -> per-bucket counts
         self._gemini_calls_total = defaultdict(int)  # task_type -> count
-        self._gemini_cache_requests_total = defaultdict(int)  # (task_type, result) -> count
+        self._gemini_cache_requests_total = defaultdict(int)  # (task_type, result, cache_mode) -> count
 
     def observe_http_request(self, method: str, path: str, status_code: int, duration_seconds: float) -> None:
         request_key = (method, path, str(status_code))
@@ -51,10 +51,11 @@ class MetricsStore:
         with self._lock:
             self._gemini_calls_total[task_type] += 1
 
-    def observe_gemini_cache_result(self, task_type: str, hit: bool) -> None:
+    def observe_gemini_cache_result(self, task_type: str, hit: bool, cache_mode: str = "default") -> None:
         result = "hit" if hit else "miss"
+        normalized_mode = (cache_mode or "default").strip().lower()
         with self._lock:
-            self._gemini_cache_requests_total[(task_type, result)] += 1
+            self._gemini_cache_requests_total[(task_type, result, normalized_mode)] += 1
 
     def reset(self) -> None:
         """Reset in-memory metrics (used by tests)."""
@@ -126,10 +127,10 @@ class MetricsStore:
 
             lines.append("# HELP gemini_cache_requests_total Gemini cache result counts.")
             lines.append("# TYPE gemini_cache_requests_total counter")
-            for (task_type, result), value in sorted(self._gemini_cache_requests_total.items()):
+            for (task_type, result, cache_mode), value in sorted(self._gemini_cache_requests_total.items()):
                 lines.append(
-                    'gemini_cache_requests_total{task_type="%s",result="%s"} %s'
-                    % (_escape_label(task_type), _escape_label(result), value)
+                    'gemini_cache_requests_total{task_type="%s",result="%s",cache_mode="%s"} %s'
+                    % (_escape_label(task_type), _escape_label(result), _escape_label(cache_mode), value)
                 )
 
         lines.append("")

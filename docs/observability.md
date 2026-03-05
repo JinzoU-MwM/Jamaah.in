@@ -26,7 +26,7 @@ On unhandled exceptions, the `http_request_failed` log includes stack trace plus
   - `http_errors_total`
   - `http_request_duration_seconds` (histogram)
   - `gemini_calls_total`
-  - `gemini_cache_requests_total` (`result=hit|miss`)
+  - `gemini_cache_requests_total` (`result=hit|miss`, `cache_mode=default|refresh|bypass`)
 
 ## Example
 

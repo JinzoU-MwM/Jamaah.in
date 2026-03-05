@@ -155,13 +155,14 @@ def _resolve_cached_or_compute(
     task_type: str,
     ttl_seconds: int,
     compute_fn,
+    cache_mode: str = "default",
     allow_cache_read: bool = True,
     allow_cache_write: bool = True,
 ) -> dict:
     if allow_cache_read:
         cached = _load_persistent_cache(cache_key)
         if cached is not None:
-            metrics_store.observe_gemini_cache_result(task_type, True)
+            metrics_store.observe_gemini_cache_result(task_type, True, cache_mode=cache_mode)
             logger.info("Gemini persistent cache HIT task=%s key=%s...", task_type, cache_key[:12])
             return cached
 
@@ -170,7 +171,7 @@ def _resolve_cached_or_compute(
         if allow_cache_read:
             cached = _load_persistent_cache(cache_key)
             if cached is not None:
-                metrics_store.observe_gemini_cache_result(task_type, True)
+                metrics_store.observe_gemini_cache_result(task_type, True, cache_mode=cache_mode)
                 logger.info(
                     "Gemini persistent cache HIT(after-wait) task=%s key=%s...",
                     task_type,
@@ -178,7 +179,7 @@ def _resolve_cached_or_compute(
                 )
                 return cached
 
-        metrics_store.observe_gemini_cache_result(task_type, False)
+        metrics_store.observe_gemini_cache_result(task_type, False, cache_mode=cache_mode)
         metrics_store.observe_gemini_api_call(task_type)
         logger.info("Gemini persistent cache MISS task=%s key=%s... calling upstream", task_type, cache_key[:12])
         result = compute_fn()
@@ -309,6 +310,7 @@ def extract_text_from_image(image_bytes: bytes, filename: str = "", cache_mode: 
         task_type=task_type,
         ttl_seconds=GEMINI_TEXT_CACHE_TTL_SECONDS,
         compute_fn=_compute_result,
+        cache_mode=cache_mode,
         allow_cache_read=allow_cache_read,
         allow_cache_write=allow_cache_write,
     )
@@ -417,6 +419,7 @@ def extract_document_data(text_or_bytes, filename: str = "", cache_mode: str = "
         task_type=task_type,
         ttl_seconds=GEMINI_CACHE_TTL_SECONDS,
         compute_fn=_compute_result,
+        cache_mode=cache_mode,
         allow_cache_read=allow_cache_read,
         allow_cache_write=allow_cache_write,
     )

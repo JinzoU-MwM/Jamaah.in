@@ -112,12 +112,19 @@ def test_extract_document_data_updates_gemini_metrics(monkeypatch):
 
     body = metrics_store.render_prometheus()
     assert 'gemini_calls_total{task_type="extract_document_data:image"} 1' in body
-    assert 'gemini_cache_requests_total{task_type="extract_document_data:image",result="miss"} 1' in body
-    assert 'gemini_cache_requests_total{task_type="extract_document_data:image",result="hit"} 1' in body
+    assert (
+        'gemini_cache_requests_total{task_type="extract_document_data:image",result="miss",cache_mode="default"} 1'
+        in body
+    )
+    assert (
+        'gemini_cache_requests_total{task_type="extract_document_data:image",result="hit",cache_mode="default"} 1'
+        in body
+    )
 
 
 def test_extract_document_data_bypass_skips_read_and_write(monkeypatch):
     storage = _setup_fake_persistent_cache(monkeypatch)
+    metrics_store.reset()
     monkeypatch.setattr(gemini_ocr, "GEMINI_API_KEY", "test-key")
     monkeypatch.setattr(gemini_ocr, "_image_to_base64", lambda _: ("abc", "image/png"))
 
@@ -142,10 +149,16 @@ def test_extract_document_data_bypass_skips_read_and_write(monkeypatch):
     assert second["nama"] == "Bypass User"
     assert calls["count"] == 2
     assert storage == {}
+    body = metrics_store.render_prometheus()
+    assert (
+        'gemini_cache_requests_total{task_type="extract_document_data:image",result="miss",cache_mode="bypass"} 2'
+        in body
+    )
 
 
 def test_extract_document_data_refresh_skips_read_but_writes(monkeypatch):
     storage = _setup_fake_persistent_cache(monkeypatch)
+    metrics_store.reset()
     monkeypatch.setattr(gemini_ocr, "GEMINI_API_KEY", "test-key")
     monkeypatch.setattr(gemini_ocr, "_image_to_base64", lambda _: ("abc", "image/png"))
 
@@ -177,3 +190,12 @@ def test_extract_document_data_refresh_skips_read_but_writes(monkeypatch):
     assert refreshed["nama"] == "Fresh Cache"
     assert cached["nama"] == "Fresh Cache"
     assert calls["count"] == 1
+    body = metrics_store.render_prometheus()
+    assert (
+        'gemini_cache_requests_total{task_type="extract_document_data:image",result="miss",cache_mode="refresh"} 1'
+        in body
+    )
+    assert (
+        'gemini_cache_requests_total{task_type="extract_document_data:image",result="hit",cache_mode="default"} 1'
+        in body
+    )

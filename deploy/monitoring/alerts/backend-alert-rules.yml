@@ -27,16 +27,16 @@ groups:
       - alert: LowGeminiCacheHitRatio
         expr: |
           (
-            sum(rate(gemini_cache_requests_total{result="hit"}[15m])) /
-            clamp_min(sum(rate(gemini_cache_requests_total[15m])), 1)
+            sum(rate(gemini_cache_requests_total{result="hit",cache_mode="default"}[15m])) /
+            clamp_min(sum(rate(gemini_cache_requests_total{cache_mode="default"}[15m])), 1)
           ) < 0.40
         for: 30m
         labels:
           severity: warning
           service: jamaah-backend
         annotations:
-          summary: "Gemini cache hit ratio < 40% (30m)"
-          description: "AI cache efficiency dropped. Inspect prompt/model version churn and cache TTL policy."
+          summary: "Gemini default-cache hit ratio < 40% (30m)"
+          description: "AI default cache efficiency dropped. Check cache_mode usage, prompt/model churn, and TTL policy."
 
       - alert: HighGeminiCallVolume
         expr: |

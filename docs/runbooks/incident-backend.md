@@ -24,6 +24,7 @@ Gunakan runbook ini saat terjadi incident backend produksi: error spike, latency
    - `http_request_duration_seconds`
 3. Untuk incident AI:
    - cek rasio `gemini_cache_requests_total{result="hit|miss"}`
+   - breakdown mode: `gemini_cache_requests_total{cache_mode="default|refresh|bypass"}`
    - cek apakah ada perubahan `prompt_version` / `model`.
 
 ## 3) Mitigasi

@@ -50,8 +50,18 @@
       "title": "Gemini Cache Hit Ratio",
       "targets": [
         {
-          "expr": "sum(rate(gemini_cache_requests_total{result=\"hit\"}[5m])) / clamp_min(sum(rate(gemini_cache_requests_total[5m])), 1)",
+          "expr": "sum(rate(gemini_cache_requests_total{result=\"hit\",cache_mode=\"default\"}[5m])) / clamp_min(sum(rate(gemini_cache_requests_total{cache_mode=\"default\"}[5m])), 1)",
           "legendFormat": "hit_ratio"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Gemini Cache Mode Mix",
+      "targets": [
+        {
+          "expr": "sum(rate(gemini_cache_requests_total[5m])) by (cache_mode)",
+          "legendFormat": "{{cache_mode}}"
         }
       ]
     }
