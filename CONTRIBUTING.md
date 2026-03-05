@@ -20,6 +20,14 @@ cd frontend-svelte
 npm install
 ```
 
+### Pre-commit Hooks
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files
+```
+
 ### Database
 
 Ensure `.env` is configured with `DATABASE_URL`.
@@ -38,6 +46,12 @@ pytest tests/test_validators.py  # Specific file
 
 - Python: Follow PEP 8, formatted with Black, linted with Ruff
 - Svelte: Use Svelte 5 Runes, follow existing patterns
+- Run local hooks before push using root `.pre-commit-config.yaml`
+
+## CI Workflow
+
+- `Deploy to VPS` runs on push to `main` and includes verify + deploy.
+- `CI` runs on `pull_request` to `main` and push to non-`main` branches (verify only, no deploy).
 
 ## Adding New Features
 
