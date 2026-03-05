@@ -3,10 +3,13 @@ Super Admin Router — /super-admin/*
 Provides super admin-only endpoints for managing the entire application.
 Super admin is the app owner, separate from regular admins.
 """
+import csv
 from datetime import datetime
+from io import StringIO
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -16,7 +19,11 @@ from app.auth import require_super_admin
 from app.models.ai_result_cache import AIResultCache
 from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus, utc_now
 from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
-from app.services.ai_result_cache_repo import get_ai_cache_stats, purge_expired_ai_cache
+from app.services.ai_result_cache_repo import (
+    delete_ai_cache_by_key,
+    get_ai_cache_stats,
+    purge_expired_ai_cache,
+)
 
 router = APIRouter(prefix="/super-admin", tags=["Super Admin"])
 
@@ -91,6 +98,11 @@ class AICachePurgeResponse(BaseModel):
     deleted: int
     before: AICacheStatsResponse
     after: AICacheStatsResponse
+
+
+class AICacheDeleteResponse(BaseModel):
+    cache_key: str
+    deleted: bool
 
 
 class AICacheRecentItem(BaseModel):
@@ -408,3 +420,72 @@ async def ai_cache_recent(
         for row in rows
     ]
     return AICacheRecentResponse(total=total, limit=limit, offset=offset, items=items)
+
+
+@router.get("/ai-cache/recent/export")
+async def ai_cache_recent_export(
+    expired_only: bool = False,
+    limit: int = Query(5000, ge=1, le=50000),
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Export recent persistent AI cache rows as CSV."""
+    del admin
+    now = utc_now()
+    query = db.query(AIResultCache)
+    if expired_only:
+        query = query.filter(AIResultCache.expires_at <= now)
+
+    rows = query.order_by(AIResultCache.last_accessed_at.desc()).limit(limit).all()
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(
+        [
+            "cache_key",
+            "task_type",
+            "model",
+            "prompt_version",
+            "hits",
+            "created_at",
+            "last_accessed_at",
+            "expires_at",
+            "is_expired",
+        ]
+    )
+    for row in rows:
+        writer.writerow(
+            [
+                row.cache_key,
+                row.task_type,
+                row.model,
+                row.prompt_version,
+                row.hits,
+                row.created_at.isoformat(),
+                row.last_accessed_at.isoformat(),
+                row.expires_at.isoformat(),
+                str(row.expires_at <= now).lower(),
+            ]
+        )
+
+    filename = f"ai-cache-recent-{now.strftime('%Y%m%d-%H%M%S')}.csv"
+    headers = {"Content-Disposition": f'attachment; filename=\"{filename}\"'}
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv; charset=utf-8",
+        headers=headers,
+    )
+
+
+@router.delete("/ai-cache/{cache_key}", response_model=AICacheDeleteResponse)
+async def ai_cache_delete_key(
+    cache_key: str,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Delete a specific persistent AI cache row by cache key."""
+    del admin
+    deleted = delete_ai_cache_by_key(db, cache_key=cache_key)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="AI cache key not found")
+    return AICacheDeleteResponse(cache_key=cache_key, deleted=True)

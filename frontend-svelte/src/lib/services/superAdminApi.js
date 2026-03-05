@@ -51,6 +51,26 @@ export const SuperAdminApi = {
         return await response.json();
     },
 
+    async exportAICacheRecentCsv({ expiredOnly = false, limit = 5000 } = {}) {
+        const params = new URLSearchParams({ limit: String(limit) });
+        if (expiredOnly) params.append('expired_only', 'true');
+
+        const response = await fetch(`${API_URL}/super-admin/ai-cache/recent/export?${params}`, {
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.blob();
+    },
+
+    async deleteAICacheKey(cacheKey) {
+        const response = await fetch(`${API_URL}/super-admin/ai-cache/${cacheKey}`, {
+            method: 'DELETE',
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
     // ========================================================================
     // TICKETS
     // ========================================================================

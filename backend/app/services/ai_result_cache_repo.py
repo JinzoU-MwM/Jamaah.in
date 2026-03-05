@@ -126,3 +126,13 @@ def get_ai_cache_stats(db: Session) -> dict[str, int]:
         "active": int(active),
         "expired": int(expired),
     }
+
+
+def delete_ai_cache_by_key(db: Session, *, cache_key: str) -> bool:
+    """Delete a cache row by key. Returns True if deleted."""
+    row = db.query(AIResultCache).filter(AIResultCache.cache_key == cache_key).first()
+    if row is None:
+        return False
+    db.delete(row)
+    db.commit()
+    return True

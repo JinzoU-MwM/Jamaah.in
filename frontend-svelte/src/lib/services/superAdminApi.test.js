@@ -78,4 +78,44 @@ describe('SuperAdminApi', () => {
             })
         );
     });
+
+    it('exportAICacheRecentCsv fetches csv blob from export endpoint', async () => {
+        const blob = new Blob(['csv,data']);
+        fetchMock.mockResolvedValue({
+            ok: true,
+            blob: async () => blob,
+        });
+
+        const res = await SuperAdminApi.exportAICacheRecentCsv({ expiredOnly: true, limit: 100 });
+
+        expect(res).toBe(blob);
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/super-admin/ai-cache/recent/export?limit=100&expired_only=true',
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    Authorization: 'Bearer test-token',
+                }),
+            })
+        );
+    });
+
+    it('deleteAICacheKey sends delete request to per-key endpoint', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({ cache_key: 'abc', deleted: true }),
+        });
+
+        const res = await SuperAdminApi.deleteAICacheKey('abc');
+
+        expect(res.deleted).toBe(true);
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/super-admin/ai-cache/abc',
+            expect.objectContaining({
+                method: 'DELETE',
+                headers: expect.objectContaining({
+                    Authorization: 'Bearer test-token',
+                }),
+            })
+        );
+    });
 });

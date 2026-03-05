@@ -32,6 +32,8 @@
     let aiCacheRecentLoading = false;
     let aiCacheRecentError = null;
     let aiCachePurgeLoading = false;
+    let aiCacheExportLoading = false;
+    let aiCacheDeletingKey = null;
     let showExpiredOnly = false;
 
     let aiCacheStats = { total: 0, active: 0, expired: 0 };
@@ -104,6 +106,45 @@
             aiCacheRecentError = err.message;
         } finally {
             aiCachePurgeLoading = false;
+        }
+    }
+
+    async function exportAICacheCsv() {
+        try {
+            aiCacheExportLoading = true;
+            const blob = await SuperAdminApi.exportAICacheRecentCsv({
+                expiredOnly: showExpiredOnly,
+                limit: 5000,
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            const suffix = showExpiredOnly ? 'expired' : 'all';
+            a.href = url;
+            a.download = `ai-cache-recent-${suffix}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            aiCacheRecentError = err.message;
+        } finally {
+            aiCacheExportLoading = false;
+        }
+    }
+
+    async function deleteAICacheRow(cacheKey) {
+        if (!cacheKey) return;
+        const confirmed = window.confirm(`Delete cache key ${cacheKey.slice(0, 16)}...?`);
+        if (!confirmed) return;
+
+        try {
+            aiCacheDeletingKey = cacheKey;
+            await SuperAdminApi.deleteAICacheKey(cacheKey);
+            await Promise.all([loadAICacheStats(), loadAICacheRecent()]);
+        } catch (err) {
+            aiCacheRecentError = err.message;
+        } finally {
+            aiCacheDeletingKey = null;
         }
     }
 
@@ -240,6 +281,12 @@
                                     Refresh
                                 </button>
                                 <button
+                                    onclick={exportAICacheCsv}
+                                    disabled={aiCacheExportLoading}
+                                    class="px-3 py-1.5 text-sm border border-emerald-300 text-emerald-700 rounded-lg hover:bg-emerald-50 disabled:opacity-60">
+                                    {aiCacheExportLoading ? 'Exporting...' : 'Export CSV'}
+                                </button>
+                                <button
                                     onclick={purgeExpiredAICache}
                                     disabled={aiCachePurgeLoading}
                                     class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60">
@@ -280,13 +327,14 @@
                                         <th class="py-2 pr-3">Hits</th>
                                         <th class="py-2 pr-3">Expired</th>
                                         <th class="py-2 pr-3">Key</th>
+                                        <th class="py-2 pr-3">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="text-gray-800">
                                     {#if aiCacheRecentLoading}
-                                        <tr><td class="py-3 text-gray-500" colspan="5">Loading recent cache rows...</td></tr>
+                                        <tr><td class="py-3 text-gray-500" colspan="6">Loading recent cache rows...</td></tr>
                                     {:else if aiCacheRecent.length === 0}
-                                        <tr><td class="py-3 text-gray-500" colspan="5">No cache rows found.</td></tr>
+                                        <tr><td class="py-3 text-gray-500" colspan="6">No cache rows found.</td></tr>
                                     {:else}
                                         {#each aiCacheRecent as row}
                                             <tr class="border-b border-gray-100">
@@ -299,6 +347,14 @@
                                                     </span>
                                                 </td>
                                                 <td class="py-2 pr-3 font-mono text-xs text-gray-600">{row.cache_key.slice(0, 16)}...</td>
+                                                <td class="py-2 pr-3">
+                                                    <button
+                                                        onclick={() => deleteAICacheRow(row.cache_key)}
+                                                        disabled={aiCacheDeletingKey === row.cache_key}
+                                                        class="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 disabled:opacity-60">
+                                                        {aiCacheDeletingKey === row.cache_key ? 'Deleting...' : 'Delete'}
+                                                    </button>
+                                                </td>
                                             </tr>
                                         {/each}
                                     {/if}

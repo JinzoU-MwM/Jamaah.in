@@ -35,6 +35,26 @@ def test_ai_cache_recent_requires_super_admin(client, test_user):
     assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
+def test_ai_cache_recent_export_requires_auth(client):
+    response = client.get("/super-admin/ai-cache/recent/export")
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_ai_cache_recent_export_requires_super_admin(client, test_user):
+    response = client.get("/super-admin/ai-cache/recent/export", headers=_auth_headers(test_user.id))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_ai_cache_delete_requires_auth(client):
+    response = client.delete("/super-admin/ai-cache/" + ("z" * 64))
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_ai_cache_delete_requires_super_admin(client, test_user):
+    response = client.delete("/super-admin/ai-cache/" + ("z" * 64), headers=_auth_headers(test_user.id))
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
 def test_ai_cache_stats_returns_counts(client, db_session, test_user):
     test_user.is_super_admin = True
     db_session.commit()
@@ -212,3 +232,66 @@ def test_ai_cache_recent_expired_only_filter(client, db_session, test_user):
     assert len(data["items"]) == 1
     assert data["items"][0]["cache_key"] == "h" * 64
     assert data["items"][0]["is_expired"] is True
+
+
+def test_ai_cache_recent_export_returns_csv(client, db_session, test_user):
+    test_user.is_super_admin = True
+    db_session.commit()
+
+    now = utc_now()
+    db_session.add(
+        AIResultCache(
+            cache_key="i" * 64,
+            input_hash="9" * 64,
+            model="gemini-2.5-flash",
+            prompt_version="v3",
+            task_type="extract_document_data:image",
+            result_json='{"ok":9}',
+            hits=7,
+            created_at=now,
+            last_accessed_at=now,
+            expires_at=now + timedelta(minutes=20),
+        )
+    )
+    db_session.commit()
+
+    response = client.get(
+        "/super-admin/ai-cache/recent/export?limit=10",
+        headers=_auth_headers(test_user.id),
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert response.headers.get("content-type", "").startswith("text/csv")
+    assert "attachment; filename=" in response.headers.get("content-disposition", "")
+    body = response.text
+    assert "cache_key,task_type,model,prompt_version,hits,created_at,last_accessed_at,expires_at,is_expired" in body
+    assert ("i" * 64) in body
+
+
+def test_ai_cache_delete_by_key(client, db_session, test_user):
+    test_user.is_super_admin = True
+    db_session.commit()
+
+    now = utc_now()
+    key = "j" * 64
+    db_session.add(
+        AIResultCache(
+            cache_key=key,
+            input_hash="10" * 32,
+            model="gemini-2.5-flash",
+            prompt_version="v3",
+            task_type="extract_document_data:image",
+            result_json='{"ok":10}',
+            hits=1,
+            created_at=now,
+            last_accessed_at=now,
+            expires_at=now + timedelta(minutes=20),
+        )
+    )
+    db_session.commit()
+
+    response = client.delete(f"/super-admin/ai-cache/{key}", headers=_auth_headers(test_user.id))
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json() == {"cache_key": key, "deleted": True}
+
+    missing_response = client.delete(f"/super-admin/ai-cache/{key}", headers=_auth_headers(test_user.id))
+    assert missing_response.status_code == status.HTTP_404_NOT_FOUND
