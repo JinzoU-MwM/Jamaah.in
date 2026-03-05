@@ -17,6 +17,41 @@ export const SuperAdminApi = {
     },
 
     // ========================================================================
+    // AI CACHE OPS
+    // ========================================================================
+
+    async getAICacheStats() {
+        const response = await fetch(`${API_URL}/super-admin/ai-cache/stats`, {
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
+    async getAICacheRecent({ limit = 20, offset = 0, expiredOnly = false } = {}) {
+        const params = new URLSearchParams({
+            limit: String(limit),
+            offset: String(offset),
+        });
+        if (expiredOnly) params.append('expired_only', 'true');
+
+        const response = await fetch(`${API_URL}/super-admin/ai-cache/recent?${params}`, {
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
+    async purgeExpiredAICache() {
+        const response = await fetch(`${API_URL}/super-admin/ai-cache/purge-expired`, {
+            method: 'POST',
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
+    // ========================================================================
     // TICKETS
     // ========================================================================
 

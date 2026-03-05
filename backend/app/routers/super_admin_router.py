@@ -13,7 +13,8 @@ from sqlalchemy import func
 
 from app.database import get_db
 from app.auth import require_super_admin
-from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus
+from app.models.ai_result_cache import AIResultCache
+from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus, utc_now
 from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
 from app.services.ai_result_cache_repo import get_ai_cache_stats, purge_expired_ai_cache
 
@@ -90,6 +91,25 @@ class AICachePurgeResponse(BaseModel):
     deleted: int
     before: AICacheStatsResponse
     after: AICacheStatsResponse
+
+
+class AICacheRecentItem(BaseModel):
+    cache_key: str
+    task_type: str
+    model: str
+    prompt_version: str
+    hits: int
+    created_at: str
+    last_accessed_at: str
+    expires_at: str
+    is_expired: bool
+
+
+class AICacheRecentResponse(BaseModel):
+    total: int
+    limit: int
+    offset: int
+    items: List[AICacheRecentItem]
 
 
 # --- Endpoints ---
@@ -348,3 +368,43 @@ async def purge_expired_ai_cache_endpoint(
         before=AICacheStatsResponse(**before),
         after=AICacheStatsResponse(**after),
     )
+
+
+@router.get("/ai-cache/recent", response_model=AICacheRecentResponse)
+async def ai_cache_recent(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    expired_only: bool = False,
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """List recent persistent AI cache entries for debugging/ops."""
+    del admin
+    now = utc_now()
+    query = db.query(AIResultCache)
+    if expired_only:
+        query = query.filter(AIResultCache.expires_at <= now)
+
+    total = query.count()
+    rows = (
+        query.order_by(AIResultCache.last_accessed_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    items = [
+        AICacheRecentItem(
+            cache_key=row.cache_key,
+            task_type=row.task_type,
+            model=row.model,
+            prompt_version=row.prompt_version,
+            hits=row.hits,
+            created_at=row.created_at.isoformat(),
+            last_accessed_at=row.last_accessed_at.isoformat(),
+            expires_at=row.expires_at.isoformat(),
+            is_expired=row.expires_at <= now,
+        )
+        for row in rows
+    ]
+    return AICacheRecentResponse(total=total, limit=limit, offset=offset, items=items)

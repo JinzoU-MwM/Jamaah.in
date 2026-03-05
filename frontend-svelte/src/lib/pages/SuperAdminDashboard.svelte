@@ -27,9 +27,22 @@
 
     let loading = true;
     let error = null;
+    let aiCacheLoading = false;
+    let aiCacheError = null;
+    let aiCacheRecentLoading = false;
+    let aiCacheRecentError = null;
+    let aiCachePurgeLoading = false;
+    let showExpiredOnly = false;
+
+    let aiCacheStats = { total: 0, active: 0, expired: 0 };
+    let aiCacheRecent = [];
+    let aiCacheRecentTotal = 0;
+    let aiCacheRecentLimit = 10;
 
     onMount(() => {
         loadStats();
+        loadAICacheStats();
+        loadAICacheRecent();
         loadUnreadCount();
 
         const interval = setInterval(() => {
@@ -49,6 +62,48 @@
             console.error('Failed to load stats:', err);
         } finally {
             loading = false;
+        }
+    }
+
+    async function loadAICacheStats() {
+        try {
+            aiCacheLoading = true;
+            aiCacheError = null;
+            aiCacheStats = await SuperAdminApi.getAICacheStats();
+        } catch (err) {
+            aiCacheError = err.message;
+        } finally {
+            aiCacheLoading = false;
+        }
+    }
+
+    async function loadAICacheRecent() {
+        try {
+            aiCacheRecentLoading = true;
+            aiCacheRecentError = null;
+            const res = await SuperAdminApi.getAICacheRecent({
+                limit: aiCacheRecentLimit,
+                offset: 0,
+                expiredOnly: showExpiredOnly,
+            });
+            aiCacheRecent = res?.items || [];
+            aiCacheRecentTotal = res?.total || 0;
+        } catch (err) {
+            aiCacheRecentError = err.message;
+        } finally {
+            aiCacheRecentLoading = false;
+        }
+    }
+
+    async function purgeExpiredAICache() {
+        try {
+            aiCachePurgeLoading = true;
+            await SuperAdminApi.purgeExpiredAICache();
+            await Promise.all([loadAICacheStats(), loadAICacheRecent()]);
+        } catch (err) {
+            aiCacheRecentError = err.message;
+        } finally {
+            aiCachePurgeLoading = false;
         }
     }
 
@@ -165,6 +220,93 @@
                 <div class="space-y-8">
                     <StatsCards {stats} />
                     <Charts {stats} />
+
+                    <section class="bg-white border border-gray-200 rounded-xl p-5">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900">AI Cache Ops</h3>
+                            <div class="flex items-center gap-2">
+                                <label class="flex items-center gap-2 text-sm text-gray-600">
+                                    <input
+                                        type="checkbox"
+                                        bind:checked={showExpiredOnly}
+                                        onchange={loadAICacheRecent}
+                                        class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                    />
+                                    Expired only
+                                </label>
+                                <button
+                                    onclick={loadAICacheRecent}
+                                    class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                    Refresh
+                                </button>
+                                <button
+                                    onclick={purgeExpiredAICache}
+                                    disabled={aiCachePurgeLoading}
+                                    class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60">
+                                    {aiCachePurgeLoading ? 'Purging...' : 'Purge Expired'}
+                                </button>
+                            </div>
+                        </div>
+
+                        {#if aiCacheError}
+                            <div class="mb-3 text-sm text-red-600">{aiCacheError}</div>
+                        {/if}
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                            <div class="rounded-lg bg-slate-50 border border-slate-200 p-3">
+                                <p class="text-xs text-gray-600">Total</p>
+                                <p class="text-xl font-semibold text-gray-900">{aiCacheLoading ? '...' : aiCacheStats.total}</p>
+                            </div>
+                            <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+                                <p class="text-xs text-emerald-700">Active</p>
+                                <p class="text-xl font-semibold text-emerald-800">{aiCacheLoading ? '...' : aiCacheStats.active}</p>
+                            </div>
+                            <div class="rounded-lg bg-amber-50 border border-amber-200 p-3">
+                                <p class="text-xs text-amber-700">Expired</p>
+                                <p class="text-xl font-semibold text-amber-800">{aiCacheLoading ? '...' : aiCacheStats.expired}</p>
+                            </div>
+                        </div>
+
+                        {#if aiCacheRecentError}
+                            <div class="mb-2 text-sm text-red-600">{aiCacheRecentError}</div>
+                        {/if}
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead class="text-left text-gray-500 border-b border-gray-200">
+                                    <tr>
+                                        <th class="py-2 pr-3">Task</th>
+                                        <th class="py-2 pr-3">Model</th>
+                                        <th class="py-2 pr-3">Hits</th>
+                                        <th class="py-2 pr-3">Expired</th>
+                                        <th class="py-2 pr-3">Key</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-gray-800">
+                                    {#if aiCacheRecentLoading}
+                                        <tr><td class="py-3 text-gray-500" colspan="5">Loading recent cache rows...</td></tr>
+                                    {:else if aiCacheRecent.length === 0}
+                                        <tr><td class="py-3 text-gray-500" colspan="5">No cache rows found.</td></tr>
+                                    {:else}
+                                        {#each aiCacheRecent as row}
+                                            <tr class="border-b border-gray-100">
+                                                <td class="py-2 pr-3">{row.task_type}</td>
+                                                <td class="py-2 pr-3">{row.model}</td>
+                                                <td class="py-2 pr-3">{row.hits}</td>
+                                                <td class="py-2 pr-3">
+                                                    <span class={row.is_expired ? 'text-red-600' : 'text-emerald-600'}>
+                                                        {row.is_expired ? 'yes' : 'no'}
+                                                    </span>
+                                                </td>
+                                                <td class="py-2 pr-3 font-mono text-xs text-gray-600">{row.cache_key.slice(0, 16)}...</td>
+                                            </tr>
+                                        {/each}
+                                    {/if}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">Showing {aiCacheRecent.length} of {aiCacheRecentTotal} rows.</div>
+                    </section>
                 </div>
             {:else if activeTab === 'users'}
                 <UserManagement onUpdate={loadStats} />
