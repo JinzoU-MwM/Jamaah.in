@@ -86,6 +86,7 @@ JWT_SECRET=your-secret-key
 # AI OCR
 GEMINI_API_KEY=your-gemini-key
 GEMINI_MODEL=gemini-2.5-flash
+OCR_BYPASS_MAX_FILES_PER_HOUR=60
 
 # Email (Brevo)
 SMTP_EMAIL=noreply@jamaah.in

@@ -2,10 +2,13 @@
 Tests for OCR review queue and dashboard endpoints.
 """
 import importlib
+from datetime import timedelta
 
 from fastapi import status
 
 from app.auth import create_access_token
+from app.models.ocr_review import OcrProcessingLog
+from app.models.user import PlanType, SubscriptionStatus, utc_now
 from app.schemas import ProcessingResult, ExtractedDataItem, FileResult
 
 documents_router_module = importlib.import_module("app.routers.documents_router")
@@ -14,6 +17,15 @@ documents_router_module = importlib.import_module("app.routers.documents_router"
 def _auth_headers(user_id: int) -> dict:
     token = create_access_token(data={"sub": str(user_id)})
     return {"Authorization": f"Bearer {token}"}
+
+
+def _activate_pro_subscription(db_session, user):
+    sub = user.subscription
+    sub.plan = PlanType.PRO
+    sub.status = SubscriptionStatus.ACTIVE
+    sub.subscribed_at = utc_now()
+    sub.expires_at = utc_now() + timedelta(days=30)
+    db_session.commit()
 
 
 def test_ocr_review_queue_requires_auth(client):
@@ -120,3 +132,70 @@ def test_process_documents_bypass_requires_pro_plan(client, test_user):
     response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert "requires active Pro subscription" in response.json()["detail"]
+
+
+def test_process_documents_bypass_allowed_for_pro(client, db_session, test_user, monkeypatch):
+    _activate_pro_subscription(db_session, test_user)
+    seen = {"mode": None}
+
+    async def mock_process_files(_file_data, _session_id, cache_mode="default"):
+        seen["mode"] = cache_mode
+        return (
+            [ProcessingResult(filename="ktp.jpg", success=True)],
+            [ExtractedDataItem(nama="AHMAD", no_identitas="1234567890123456")],
+            [FileResult(filename="ktp.jpg", status="success", cached=False, processing_ms=120.0)],
+        )
+
+    def mock_run_pipeline(extracted_data, _session_id):
+        return extracted_data, []
+
+    monkeypatch.setattr(documents_router_module, "process_files", mock_process_files)
+    monkeypatch.setattr(documents_router_module, "run_pipeline", mock_run_pipeline)
+    monkeypatch.setattr(documents_router_module, "OCR_BYPASS_MAX_FILES_PER_HOUR", 100)
+
+    headers = _auth_headers(test_user.id)
+    files = {"files": ("ktp.jpg", b"fake-jpg-bytes", "image/jpeg")}
+    response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.json()["cache_mode"] == "bypass"
+    assert seen["mode"] == "bypass"
+
+
+def test_process_documents_bypass_hourly_limit_enforced(client, db_session, test_user, monkeypatch):
+    _activate_pro_subscription(db_session, test_user)
+    monkeypatch.setattr(documents_router_module, "OCR_BYPASS_MAX_FILES_PER_HOUR", 2)
+
+    def should_not_run(*args, **kwargs):
+        raise AssertionError("process_files should not run when bypass limit is exceeded")
+
+    monkeypatch.setattr(documents_router_module, "process_files", should_not_run)
+
+    db_session.add(
+        OcrProcessingLog(
+            user_id=test_user.id,
+            session_id="sess-a",
+            filename="a.jpg",
+            status="success",
+            processing_ms=100.0,
+            cached=False,
+            provenance_json='{"cache_mode": "bypass"}',
+        )
+    )
+    db_session.add(
+        OcrProcessingLog(
+            user_id=test_user.id,
+            session_id="sess-b",
+            filename="b.jpg",
+            status="success",
+            processing_ms=120.0,
+            cached=False,
+            provenance_json='{"cache_mode": "bypass"}',
+        )
+    )
+    db_session.commit()
+
+    headers = _auth_headers(test_user.id)
+    files = {"files": ("ktp.jpg", b"fake-jpg-bytes", "image/jpeg")}
+    response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
+    assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
+    assert "Bypass cache hourly limit exceeded" in response.json()["detail"]

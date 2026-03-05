@@ -26,6 +26,7 @@ def test_ocr_status_returns_provider_state(client, test_user, monkeypatch):
     monkeypatch.setattr(documents_router_module, "EXTRACT_TEXT_PROMPT_VERSION", "v-text-1")
     monkeypatch.setattr(documents_router_module, "GEMINI_CACHE_TTL_SECONDS", 600)
     monkeypatch.setattr(documents_router_module, "GEMINI_TEXT_CACHE_TTL_SECONDS", 300)
+    monkeypatch.setattr(documents_router_module, "OCR_BYPASS_MAX_FILES_PER_HOUR", 42)
     monkeypatch.setattr(
         documents_router_module,
         "get_ai_cache_stats",
@@ -46,6 +47,7 @@ def test_ocr_status_returns_provider_state(client, test_user, monkeypatch):
     assert data["providers"]["gemini"]["text_prompt_version"] == "v-text-1"
     assert data["providers"]["gemini"]["cache_ttl_seconds"] == 600
     assert data["providers"]["gemini"]["text_cache_ttl_seconds"] == 300
+    assert data["providers"]["gemini"]["bypass_max_files_per_hour"] == 42
     assert data["providers"]["tesseract"]["available"] is True
     assert "zai" not in data["providers"]
     assert "cache" in data

@@ -5,6 +5,7 @@ Handles file upload validation and delegates to DocumentProcessor.
 import uuid
 import time
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List
@@ -54,10 +55,29 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 router = APIRouter(tags=["Documents"])
+BYPASS_CACHE_MARKER = '"cache_mode": "bypass"'
+try:
+    OCR_BYPASS_MAX_FILES_PER_HOUR = int(os.getenv("OCR_BYPASS_MAX_FILES_PER_HOUR", "60"))
+except ValueError:
+    OCR_BYPASS_MAX_FILES_PER_HOUR = 60
 
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _count_recent_bypass_files(db: Session, user_id: int, window_hours: int = 1) -> int:
+    since = utc_now() - timedelta(hours=max(1, window_hours))
+    return (
+        db.query(func.count(OcrProcessingLog.id))
+        .filter(
+            OcrProcessingLog.user_id == user_id,
+            OcrProcessingLog.created_at >= since,
+            OcrProcessingLog.provenance_json.contains(BYPASS_CACHE_MARKER),
+        )
+        .scalar()
+        or 0
+    )
 
 
 class OcrReviewDecisionRequest(BaseModel):
@@ -96,6 +116,7 @@ async def get_ocr_status(
                 "text_prompt_version": EXTRACT_TEXT_PROMPT_VERSION,
                 "cache_ttl_seconds": GEMINI_CACHE_TTL_SECONDS,
                 "text_cache_ttl_seconds": GEMINI_TEXT_CACHE_TTL_SECONDS,
+                "bypass_max_files_per_hour": OCR_BYPASS_MAX_FILES_PER_HOUR,
             },
             "tesseract": {
                 "available": bool(ocr_engine.TESSERACT_AVAILABLE),
@@ -327,6 +348,20 @@ async def process_documents(
             continue
 
         file_data.append((file.filename, file_ext, content))
+
+    if cache_mode == "bypass" and OCR_BYPASS_MAX_FILES_PER_HOUR > 0:
+        recent_bypass_files = _count_recent_bypass_files(db, user.id)
+        projected_total = recent_bypass_files + len(file_data)
+        if projected_total > OCR_BYPASS_MAX_FILES_PER_HOUR:
+            remaining = max(OCR_BYPASS_MAX_FILES_PER_HOUR - recent_bypass_files, 0)
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "Bypass cache hourly limit exceeded. "
+                    f"Limit={OCR_BYPASS_MAX_FILES_PER_HOUR} files/hour, "
+                    f"recent={recent_bypass_files}, remaining={remaining}."
+                ),
+            )
 
     # 2. PROCESS FILES (OCR + caching + batching)
     proc_results, extracted_data, file_results = await process_files(
