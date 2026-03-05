@@ -282,6 +282,11 @@ async def process_documents(
             status_code=400,
             detail=f"Invalid cache_mode '{cache_mode}'. Allowed values: {allowed}.",
         )
+    if cache_mode == "bypass" and access.get("plan") != "pro":
+        raise HTTPException(
+            status_code=403,
+            detail="cache_mode 'bypass' requires active Pro subscription.",
+        )
 
     # Session ID for progress tracking (use client-provided or generate)
     if not session_id:

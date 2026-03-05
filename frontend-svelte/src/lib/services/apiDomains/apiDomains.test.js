@@ -139,6 +139,13 @@ describe('API domain modules', () => {
         );
     });
 
+    it('documentExcelApi.uploadDocuments rejects invalid cache mode', async () => {
+        const blob = new Blob(['abc'], { type: 'text/plain' });
+        await expect(
+            documentExcelApi.uploadDocuments([blob], null, { cacheMode: 'unknown-mode' })
+        ).rejects.toThrow('Invalid cache mode');
+    });
+
     it('createGroupOpsApi.listGroups uses cache on second call', async () => {
         const cache = new Map();
         fetchMock.mockResolvedValue({

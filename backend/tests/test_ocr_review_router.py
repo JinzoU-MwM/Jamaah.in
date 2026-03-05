@@ -100,11 +100,11 @@ def test_process_documents_cache_mode_forwarded(client, test_user, monkeypatch):
 
     headers = _auth_headers(test_user.id)
     files = {"files": ("ktp.jpg", b"fake-jpg-bytes", "image/jpeg")}
-    response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
+    response = client.post("/process-documents/?cache_mode=refresh", headers=headers, files=files)
     assert response.status_code == status.HTTP_200_OK
     payload = response.json()
-    assert payload["cache_mode"] == "bypass"
-    assert seen["mode"] == "bypass"
+    assert payload["cache_mode"] == "refresh"
+    assert seen["mode"] == "refresh"
 
 
 def test_process_documents_invalid_cache_mode_rejected(client, test_user):
@@ -112,3 +112,11 @@ def test_process_documents_invalid_cache_mode_rejected(client, test_user):
     files = {"files": ("ktp.jpg", b"fake-jpg-bytes", "image/jpeg")}
     response = client.post("/process-documents/?cache_mode=invalid", headers=headers, files=files)
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+def test_process_documents_bypass_requires_pro_plan(client, test_user):
+    headers = _auth_headers(test_user.id)
+    files = {"files": ("ktp.jpg", b"fake-jpg-bytes", "image/jpeg")}
+    response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert "requires active Pro subscription" in response.json()["detail"]

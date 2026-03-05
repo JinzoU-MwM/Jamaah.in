@@ -49,6 +49,20 @@
     bypass: "Bypass (tanpa read/write cache)",
   };
   const cacheModeHint = $derived(cacheModeLabels[processingCacheMode] || cacheModeLabels.default);
+  const canUseBypassCacheMode = $derived(
+    localSubscription?.plan === "pro" && localSubscription?.status === "active",
+  );
+  const cacheModeNotice = $derived(
+    canUseBypassCacheMode
+      ? "Gunakan bypass hanya saat perlu validasi hasil terbaru tanpa cache."
+      : "Mode bypass khusus Pro aktif untuk mencegah lonjakan biaya API.",
+  );
+
+  $effect(() => {
+    if (!canUseBypassCacheMode && processingCacheMode === "bypass") {
+      processingCacheMode = "default";
+    }
+  });
 
   // Track failed files for retry
   let failedFileNames = $state([]);
@@ -364,10 +378,11 @@
           >
             <option value="default">default</option>
             <option value="refresh">refresh</option>
-            <option value="bypass">bypass</option>
+            <option value="bypass" disabled={!canUseBypassCacheMode}>bypass (Pro)</option>
           </select>
         </div>
         <p class="mt-2 text-xs text-slate-500">{cacheModeHint}</p>
+        <p class="mt-1 text-xs text-slate-500">{cacheModeNotice}</p>
       </details>
     </div>
 
