@@ -1,0 +1,50 @@
+groups:
+  - name: jamaah-backend
+    interval: 30s
+    rules:
+      - alert: HighHttpErrorRate
+        expr: |
+          (sum(rate(http_errors_total[5m])) / clamp_min(sum(rate(http_requests_total[5m])), 1)) > 0.03
+        for: 5m
+        labels:
+          severity: critical
+          service: jamaah-backend
+        annotations:
+          summary: "HTTP error rate > 3% (5m)"
+          description: "Backend error rate is above threshold. Check logs with request_id and recent deploy."
+
+      - alert: HighHttpP95Latency
+        expr: |
+          histogram_quantile(0.95, sum by (le) (rate(http_request_duration_seconds_bucket[5m]))) > 1
+        for: 10m
+        labels:
+          severity: warning
+          service: jamaah-backend
+        annotations:
+          summary: "HTTP p95 latency > 1s (10m)"
+          description: "API latency degraded. Check DB performance, upstream API, and saturation."
+
+      - alert: LowGeminiCacheHitRatio
+        expr: |
+          (
+            sum(rate(gemini_cache_requests_total{result="hit"}[15m])) /
+            clamp_min(sum(rate(gemini_cache_requests_total[15m])), 1)
+          ) < 0.40
+        for: 30m
+        labels:
+          severity: warning
+          service: jamaah-backend
+        annotations:
+          summary: "Gemini cache hit ratio < 40% (30m)"
+          description: "AI cache efficiency dropped. Inspect prompt/model version churn and cache TTL policy."
+
+      - alert: HighGeminiCallVolume
+        expr: |
+          sum(increase(gemini_calls_total[1h])) > 500
+        for: 10m
+        labels:
+          severity: warning
+          service: jamaah-backend
+        annotations:
+          summary: "Gemini call volume high (>500/hour)"
+          description: "Potential cost spike. Validate cache hit ratio and abnormal request pattern."

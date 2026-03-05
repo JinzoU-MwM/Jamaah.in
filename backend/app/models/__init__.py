@@ -9,6 +9,7 @@ from app.models.pending_member import PendingMember
 from app.models.export_template import ExportTemplate
 from app.models.ocr_review import OcrProcessingLog, OcrReviewItem
 from app.models.audit_log import AuditLog
+from app.models.ai_result_cache import AIResultCache
 
 __all__ = [
     # User models
@@ -33,4 +34,6 @@ __all__ = [
     "OcrReviewItem",
     # Audit
     "AuditLog",
+    # AI cache
+    "AIResultCache",
 ]

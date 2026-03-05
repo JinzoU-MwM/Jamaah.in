@@ -16,7 +16,12 @@ from typing import List, Tuple
 
 from app.schemas import ExtractedDataItem, ProcessingResult, FileResult, ValidationWarning
 from app.services import ocr_engine, cleaner
-from app.services.gemini_ocr import extract_document_data as gemini_extract_data
+from app.services.gemini_ocr import (
+    EXTRACT_PROMPT_VERSION,
+    GEMINI_MODEL,
+    extract_document_data as gemini_extract_data,
+)
+from app.services.gemini_cache_key import build_gemini_cache_key
 from app.services.cache import ocr_cache
 from app.services.validators import validate_row
 from app.services.progress import update_progress
@@ -340,8 +345,17 @@ async def process_files(
     async def _process_one(filename: str, file_ext: str, content: bytes):
         """Process a single file (PDF or image) with cache check."""
         started_at = time.perf_counter()
-        file_hash = ocr_cache.compute_hash(content)
+        file_hash = build_gemini_cache_key(
+            input_data=content,
+            prompt_version=EXTRACT_PROMPT_VERSION,
+            model=GEMINI_MODEL,
+            task_type=f"document_processor:{OCR_ENGINE}",
+        )
         cached_result = ocr_cache.get(file_hash)
+        if cached_result is None:
+            logger.info("OCR local cache MISS key=%s... file=%s", file_hash[:12], filename)
+        else:
+            logger.info("OCR local cache HIT key=%s... file=%s", file_hash[:12], filename)
         was_cached = cached_result is not None
 
         try:
