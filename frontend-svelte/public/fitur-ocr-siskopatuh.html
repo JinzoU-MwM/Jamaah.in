@@ -25,53 +25,21 @@
       content="Scan dokumen jamaah dan review hasil OCR sebelum ekspor. Cocok untuk tim travel umrah Indonesia."
     />
     <meta name="twitter:image" content="https://jamaah.web.id/icon-512.png" />
-    <style>
-      :root {
-        --bg: #f5f7fa;
-        --surface: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --brand: #0f766e;
-        --line: #dae4ef;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: "Segoe UI", Tahoma, sans-serif;
-        color: var(--text);
-        background: linear-gradient(180deg, #edf7f5 0%, var(--bg) 320px);
-        line-height: 1.6;
-      }
-      .wrap { max-width: 1024px; margin: 0 auto; padding: 24px; }
-      .hero, .box { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
-      .hero { padding: 30px; margin-bottom: 20px; }
-      .box { padding: 18px; margin-bottom: 16px; }
-      h1 { margin: 0 0 10px; font-size: 1.95rem; line-height: 1.25; }
-      h2 { margin: 0 0 10px; font-size: 1.4rem; }
-      h3 { margin: 0 0 8px; font-size: 1.08rem; }
-      p { margin: 0 0 12px; color: var(--muted); }
-      .btn {
-        display: inline-block;
-        padding: 10px 14px;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 600;
-        background: var(--brand);
-        color: #fff;
-      }
-      .btn-row { margin-top: 14px; display: flex; gap: 12px; flex-wrap: wrap; }
-      .btn-alt { background: #fff; color: var(--text); border: 1px solid var(--line); }
-      .grid {
-        display: grid;
-        gap: 14px;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      }
-      .meta { font-size: 0.92rem; color: #64748b; }
-      .list { margin: 0; padding-left: 18px; color: var(--muted); }
-      @media (max-width: 700px) { h1 { font-size: 1.55rem; } .hero { padding: 22px; } }
-    </style>
+    <link rel="stylesheet" href="/landing-guides.css" />
   </head>
   <body>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="logo" href="/">Jamaah<span class="logo-dot">.in</span></a>
+        <div class="nav-links">
+          <a href="/software-travel-umrah.html">Software</a>
+          <a href="/fitur-ocr-siskopatuh.html">OCR</a>
+          <a href="/fitur-rooming-jamaah.html">Rooming</a>
+          <a href="/manifest-mutawwif-digital.html">Manifest</a>
+          <a href="/#/login">Masuk</a>
+        </div>
+      </nav>
+    </header>
     <main class="wrap">
       <section class="hero">
         <h1>OCR Siskopatuh: Scan KTP, Paspor, dan Visa Lebih Cepat untuk Tim Travel Umrah</h1>

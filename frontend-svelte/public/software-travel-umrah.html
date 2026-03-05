@@ -25,61 +25,21 @@
       content="Platform operasional travel umrah: OCR Siskopatuh, rooming, inventory, dan manifest mutawwif."
     />
     <meta name="twitter:image" content="https://jamaah.web.id/icon-512.png" />
-    <style>
-      :root {
-        --bg: #f6f8fb;
-        --surface: #ffffff;
-        --text: #0f172a;
-        --muted: #475569;
-        --brand: #0f766e;
-        --brand-2: #115e59;
-        --line: #dbe3ef;
-      }
-      * { box-sizing: border-box; }
-      body {
-        margin: 0;
-        font-family: "Segoe UI", Tahoma, sans-serif;
-        color: var(--text);
-        background: radial-gradient(circle at top right, #e2f6f2, transparent 45%), var(--bg);
-        line-height: 1.6;
-      }
-      .wrap {
-        max-width: 1024px;
-        margin: 0 auto;
-        padding: 24px;
-      }
-      .hero, .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
-      .hero { padding: 32px; margin-bottom: 24px; }
-      h1, h2, h3 { line-height: 1.25; }
-      h1 { font-size: 2rem; margin: 0 0 12px; }
-      h2 { font-size: 1.45rem; margin: 0 0 10px; }
-      h3 { font-size: 1.1rem; margin: 0 0 8px; }
-      p { margin: 0 0 12px; color: var(--muted); }
-      .cta-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
-      .btn {
-        text-decoration: none;
-        padding: 10px 14px;
-        border-radius: 10px;
-        border: 1px solid transparent;
-        font-weight: 600;
-        display: inline-block;
-      }
-      .btn-primary { background: var(--brand); color: #fff; }
-      .btn-primary:hover { background: var(--brand-2); }
-      .btn-ghost { border-color: var(--line); color: var(--text); background: #fff; }
-      .grid { display: grid; gap: 16px; margin: 18px 0 24px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-      .card { padding: 18px; }
-      .list { margin: 0; padding-left: 18px; color: var(--muted); }
-      .faq-item { margin-bottom: 14px; }
-      .meta { font-size: 0.92rem; color: #64748b; margin-top: 12px; }
-      .footer-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; font-size: 0.95rem; }
-      @media (max-width: 700px) {
-        .hero { padding: 22px; }
-        h1 { font-size: 1.6rem; }
-      }
-    </style>
+    <link rel="stylesheet" href="/landing-guides.css" />
   </head>
   <body>
+    <header class="site-header">
+      <nav class="nav">
+        <a class="logo" href="/">Jamaah<span class="logo-dot">.in</span></a>
+        <div class="nav-links">
+          <a href="/software-travel-umrah.html">Software</a>
+          <a href="/fitur-ocr-siskopatuh.html">OCR</a>
+          <a href="/fitur-rooming-jamaah.html">Rooming</a>
+          <a href="/manifest-mutawwif-digital.html">Manifest</a>
+          <a href="/#/login">Masuk</a>
+        </div>
+      </nav>
+    </header>
     <main class="wrap">
       <section class="hero">
         <h1>Software Travel Umrah untuk Operasional Biro yang Lebih Rapi dan Cepat</h1>
@@ -96,21 +56,21 @@
       </section>
 
       <section class="grid" aria-label="Ringkasan manfaat">
-        <article class="card">
+        <article class="box">
           <h2>Input Data Lebih Cepat</h2>
           <p>Scan KTP, paspor, dan visa lalu review hasil ekstraksi sebelum ekspor ke template 32 kolom.</p>
         </article>
-        <article class="card">
+        <article class="box">
           <h2>Rooming Lebih Terkontrol</h2>
           <p>Auto rooming berdasarkan gender dan keluarga, tetap bisa diubah manual dengan drag and drop.</p>
         </article>
-        <article class="card">
+        <article class="box">
           <h2>Manifest Siap Lapangan</h2>
           <p>Mutawwif dapat link manifest mobile dengan checklist kehadiran dan data operasional penting.</p>
         </article>
       </section>
 
-      <section class="card" style="margin-bottom: 16px;">
+      <section class="box">
         <h2>Masalah Operasional yang Umum Terjadi di Biro Umrah</h2>
         <ul class="list">
           <li>Input data jamaah berulang dari foto dokumen ke Excel sehingga rawan typo.</li>
@@ -120,7 +80,7 @@
         </ul>
       </section>
 
-      <section class="card" style="margin-bottom: 16px;">
+      <section class="box">
         <h2>Alur Kerja di Jamaah.in</h2>
         <ol class="list">
           <li>Upload dokumen jamaah (KTP/paspor/visa).</li>
@@ -131,7 +91,7 @@
         </ol>
       </section>
 
-      <section class="card" style="margin-bottom: 16px;">
+      <section class="box">
         <h2>FAQ Software Travel Umrah</h2>
         <div class="faq-item">
           <h3>Apakah software ini cocok untuk biro kecil?</h3>
@@ -155,7 +115,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="box">
         <h2>Mulai Digitalisasi Operasional Travel Umrah</h2>
         <p>
           Jika target timmu adalah proses lebih cepat, data lebih rapi, dan koordinasi lapangan lebih jelas,
