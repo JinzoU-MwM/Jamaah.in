@@ -213,3 +213,4 @@ def test_process_documents_bypass_hourly_limit_enforced(client, db_session, test
     assert detail["message"] == "Bypass cache hourly limit exceeded."
     assert detail["quota"]["remaining_files"] == 0
     assert detail["quota"]["limit_files"] == 2
+    assert detail["suggested_mode"] == "refresh"

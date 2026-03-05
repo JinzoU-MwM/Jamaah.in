@@ -50,18 +50,30 @@
     bypass: "Bypass (tanpa read/write cache)",
   };
   const cacheModeHint = $derived(cacheModeLabels[processingCacheMode] || cacheModeLabels.default);
-  const canUseBypassCacheMode = $derived(
-    localSubscription?.plan === "pro" && localSubscription?.status === "active",
-  );
   const bypassQuota = $derived(ocrStatus?.cache_quota?.bypass || null);
+  const canUseBypassCacheMode = $derived(
+    (() => {
+      const isProActive = localSubscription?.plan === "pro" && localSubscription?.status === "active";
+      if (!isProActive) return false;
+      const backendAllowed = ocrStatus?.providers?.gemini?.bypass_allowed_now;
+      if (typeof backendAllowed === "boolean") return backendAllowed;
+      if (!bypassQuota) return true;
+      return Boolean(bypassQuota.unlimited || (bypassQuota.remaining_files ?? 0) > 0);
+    })(),
+  );
   const cacheModeNotice = $derived(
-    canUseBypassCacheMode
-      ? (
-          bypassQuota?.unlimited
-            ? "Bypass aktif tanpa limit per jam. Tetap gunakan seperlunya untuk kontrol biaya."
-            : `Sisa bypass 1 jam: ${bypassQuota?.remaining_files ?? "-"} dari ${bypassQuota?.limit_files ?? "-"} file.`
-        )
-      : "Mode bypass khusus Pro aktif untuk mencegah lonjakan biaya API.",
+    (() => {
+      const isProActive = localSubscription?.plan === "pro" && localSubscription?.status === "active";
+      if (canUseBypassCacheMode) {
+        return bypassQuota?.unlimited
+          ? "Bypass aktif tanpa limit per jam. Tetap gunakan seperlunya untuk kontrol biaya."
+          : `Sisa bypass 1 jam: ${bypassQuota?.remaining_files ?? "-"} dari ${bypassQuota?.limit_files ?? "-"} file.`;
+      }
+      if (isProActive) {
+        return "Kuota bypass per jam sedang habis. Gunakan default/refresh atau tunggu quota reset.";
+      }
+      return "Mode bypass khusus Pro aktif untuk mencegah lonjakan biaya API.";
+    })(),
   );
 
   $effect(() => {

@@ -117,8 +117,13 @@ async def get_ocr_status(
         ai_cache_stats = get_ai_cache_stats(db)
     except Exception:
         ai_cache_stats = {"total": -1, "active": -1, "expired": -1}
+    access = check_access(db, user)
     recent_bypass_files = _count_recent_bypass_files(db, user.id)
     bypass_quota = _build_bypass_quota_summary(recent_bypass_files)
+    bypass_allowed_now = bool(
+        access.get("plan") == "pro"
+        and (bypass_quota["unlimited"] or (bypass_quota["remaining_files"] or 0) > 0)
+    )
 
     return {
         "primary_engine": OCR_ENGINE,
@@ -134,6 +139,7 @@ async def get_ocr_status(
                 "bypass_max_files_per_hour": OCR_BYPASS_MAX_FILES_PER_HOUR,
                 "bypass_recent_files_1h": bypass_quota["recent_files"],
                 "bypass_remaining_files_1h": bypass_quota["remaining_files"],
+                "bypass_allowed_now": bypass_allowed_now,
             },
             "tesseract": {
                 "available": bool(ocr_engine.TESSERACT_AVAILABLE),
@@ -142,6 +148,7 @@ async def get_ocr_status(
         "cache": ocr_cache.stats,
         "ai_cache": ai_cache_stats,
         "cache_quota": {"bypass": bypass_quota},
+        "subscription": access,
         "requested_by": user.email,
     }
 
@@ -381,6 +388,7 @@ async def process_documents(
                     "code": "bypass_quota_exceeded",
                     "message": "Bypass cache hourly limit exceeded.",
                     "quota": quota_payload,
+                    "suggested_mode": "refresh",
                 },
             )
 

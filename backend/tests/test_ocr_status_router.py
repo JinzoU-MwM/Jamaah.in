@@ -2,10 +2,13 @@
 Tests for OCR status endpoint.
 """
 import importlib
+from datetime import timedelta
 
 from fastapi import status
 
 from app.auth import create_access_token
+from app.models.ocr_review import OcrProcessingLog
+from app.models.user import PlanType, SubscriptionStatus, utc_now
 
 documents_router_module = importlib.import_module("app.routers.documents_router")
 
@@ -50,10 +53,88 @@ def test_ocr_status_returns_provider_state(client, test_user, monkeypatch):
     assert data["providers"]["gemini"]["bypass_max_files_per_hour"] == 42
     assert data["providers"]["gemini"]["bypass_recent_files_1h"] == 0
     assert data["providers"]["gemini"]["bypass_remaining_files_1h"] == 42
+    assert data["providers"]["gemini"]["bypass_allowed_now"] is False
     assert data["providers"]["tesseract"]["available"] is True
     assert "zai" not in data["providers"]
     assert "cache" in data
     assert data["cache_quota"]["bypass"]["limit_files"] == 42
     assert data["cache_quota"]["bypass"]["remaining_files"] == 42
+    assert data["subscription"]["plan"] == "free"
     assert data["ai_cache"] == {"total": 5, "active": 4, "expired": 1}
     assert "requested_by" in data
+
+
+def test_ocr_status_shows_bypass_allowed_for_pro_with_remaining_quota(client, db_session, test_user, monkeypatch):
+    sub = test_user.subscription
+    sub.plan = PlanType.PRO
+    sub.status = SubscriptionStatus.ACTIVE
+    sub.subscribed_at = utc_now()
+    sub.expires_at = utc_now() + timedelta(days=30)
+    db_session.commit()
+
+    monkeypatch.setattr(documents_router_module, "OCR_BYPASS_MAX_FILES_PER_HOUR", 3)
+    db_session.add(
+        OcrProcessingLog(
+            user_id=test_user.id,
+            session_id="s-a",
+            filename="a.jpg",
+            status="success",
+            processing_ms=100.0,
+            cached=False,
+            provenance_json='{"cache_mode": "bypass"}',
+        )
+    )
+    db_session.commit()
+
+    token = create_access_token(data={"sub": str(test_user.id)})
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.get("/ocr/status", headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["providers"]["gemini"]["bypass_recent_files_1h"] == 1
+    assert data["providers"]["gemini"]["bypass_remaining_files_1h"] == 2
+    assert data["providers"]["gemini"]["bypass_allowed_now"] is True
+    assert data["subscription"]["plan"] == "pro"
+
+
+def test_ocr_status_shows_bypass_not_allowed_when_quota_exhausted(client, db_session, test_user, monkeypatch):
+    sub = test_user.subscription
+    sub.plan = PlanType.PRO
+    sub.status = SubscriptionStatus.ACTIVE
+    sub.subscribed_at = utc_now()
+    sub.expires_at = utc_now() + timedelta(days=30)
+    db_session.commit()
+
+    monkeypatch.setattr(documents_router_module, "OCR_BYPASS_MAX_FILES_PER_HOUR", 2)
+    db_session.add(
+        OcrProcessingLog(
+            user_id=test_user.id,
+            session_id="s-a",
+            filename="a.jpg",
+            status="success",
+            processing_ms=100.0,
+            cached=False,
+            provenance_json='{"cache_mode": "bypass"}',
+        )
+    )
+    db_session.add(
+        OcrProcessingLog(
+            user_id=test_user.id,
+            session_id="s-b",
+            filename="b.jpg",
+            status="success",
+            processing_ms=100.0,
+            cached=False,
+            provenance_json='{"cache_mode": "bypass"}',
+        )
+    )
+    db_session.commit()
+
+    token = create_access_token(data={"sub": str(test_user.id)})
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.get("/ocr/status", headers=headers)
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["providers"]["gemini"]["bypass_recent_files_1h"] == 2
+    assert data["providers"]["gemini"]["bypass_remaining_files_1h"] == 0
+    assert data["providers"]["gemini"]["bypass_allowed_now"] is False

@@ -41,7 +41,8 @@ export async function parseError(response) {
             if (detail.code === 'bypass_quota_exceeded' && detail.quota) {
                 const remaining = detail.quota.remaining_files ?? '-';
                 const limit = detail.quota.limit_files ?? '-';
-                message = `${detailMessage} Remaining ${remaining}/${limit} files in 1h window.`;
+                const suggestedMode = detail.suggested_mode ? ` Try ${detail.suggested_mode} mode.` : '';
+                message = `${detailMessage} Remaining ${remaining}/${limit} files in 1h window.${suggestedMode}`;
             } else {
                 message = detailMessage;
             }
