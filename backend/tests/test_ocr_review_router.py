@@ -208,5 +208,8 @@ def test_process_documents_bypass_hourly_limit_enforced(client, db_session, test
     files = {"files": ("ktp.jpg", b"fake-jpg-bytes", "image/jpeg")}
     response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
     assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
-    assert "Bypass cache hourly limit exceeded" in response.json()["detail"]
-    assert "remaining=0" in response.json()["detail"]
+    detail = response.json()["detail"]
+    assert detail["code"] == "bypass_quota_exceeded"
+    assert detail["message"] == "Bypass cache hourly limit exceeded."
+    assert detail["quota"]["remaining_files"] == 0
+    assert detail["quota"]["limit_files"] == 2

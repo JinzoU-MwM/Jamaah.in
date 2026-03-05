@@ -373,14 +373,15 @@ async def process_documents(
     if cache_mode == "bypass" and OCR_BYPASS_MAX_FILES_PER_HOUR > 0:
         projected_total = recent_bypass_files + len(file_data)
         if projected_total > OCR_BYPASS_MAX_FILES_PER_HOUR:
-            remaining = max(OCR_BYPASS_MAX_FILES_PER_HOUR - recent_bypass_files, 0)
+            quota_payload = _build_bypass_quota_summary(recent_bypass_files)
+            quota_payload["projected_files"] = projected_total
             raise HTTPException(
                 status_code=429,
-                detail=(
-                    "Bypass cache hourly limit exceeded. "
-                    f"Limit={OCR_BYPASS_MAX_FILES_PER_HOUR} files/hour, "
-                    f"recent={recent_bypass_files}, remaining={remaining}."
-                ),
+                detail={
+                    "code": "bypass_quota_exceeded",
+                    "message": "Bypass cache hourly limit exceeded.",
+                    "quota": quota_payload,
+                },
             )
 
     # 2. PROCESS FILES (OCR + caching + batching)

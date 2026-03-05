@@ -205,6 +205,17 @@
       } catch {}
     } catch (err) {
       if (eventSource) eventSource.close();
+      if (
+        processingCacheMode === "bypass" &&
+        String(err?.message || "").toLowerCase().includes("bypass")
+      ) {
+        processingCacheMode = "default";
+        try {
+          ocrStatus = await ApiService.getOcrStatus();
+        } catch {
+          // ignore refresh errors
+        }
+      }
       errorMessage = err.message;
     } finally {
       isProcessing = false;

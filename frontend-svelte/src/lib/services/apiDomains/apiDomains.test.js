@@ -164,6 +164,25 @@ describe('API domain modules', () => {
         ).rejects.toThrow('Invalid cache mode');
     });
 
+    it('documentExcelApi.uploadDocuments maps structured bypass quota errors', async () => {
+        fetchMock.mockResolvedValue({
+            ok: false,
+            text: async () =>
+                JSON.stringify({
+                    detail: {
+                        code: 'bypass_quota_exceeded',
+                        message: 'Bypass cache hourly limit exceeded.',
+                        quota: { remaining_files: 0, limit_files: 2 },
+                    },
+                }),
+        });
+
+        const blob = new Blob(['abc'], { type: 'text/plain' });
+        await expect(
+            documentExcelApi.uploadDocuments([blob], 'sess-1', { cacheMode: 'bypass' })
+        ).rejects.toThrow('Kuota bypass per jam habis');
+    });
+
     it('createGroupOpsApi.listGroups uses cache on second call', async () => {
         const cache = new Map();
         fetchMock.mockResolvedValue({

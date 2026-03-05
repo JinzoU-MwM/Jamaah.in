@@ -24,6 +24,7 @@ const ERROR_MAP = {
     'Invalid credentials': 'Email atau password salah.',
     'too many requests': 'Terlalu banyak percobaan. Tunggu beberapa saat.',
     'Rate limit': 'Terlalu banyak percobaan. Tunggu beberapa saat.',
+    'Bypass cache hourly limit exceeded': 'Kuota bypass per jam habis. Pakai mode default/refresh atau tunggu 1 jam.',
     'file too large': 'Ukuran file terlalu besar. Maksimal 10MB.',
     'Excel generation failed': 'Gagal membuat file Excel. Coba lagi.',
     'corrupted': 'File yang diunduh tampaknya rusak. Coba lagi.',
