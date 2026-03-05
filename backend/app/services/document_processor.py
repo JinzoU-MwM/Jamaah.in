@@ -98,6 +98,20 @@ def _build_file_provenance(
     return json.dumps(summary, ensure_ascii=True)
 
 
+def _build_failed_file_provenance(cache_mode: str = "default") -> str:
+    """Build minimal provenance for OCR attempts that failed."""
+    return json.dumps(
+        {
+            "ocr_engine": OCR_ENGINE,
+            "cached": False,
+            "cache_mode": cache_mode,
+            "records": 0,
+            "status": "failed",
+        },
+        ensure_ascii=True,
+    )
+
+
 def _parse_text_to_structured(raw_text: str) -> dict:
     """
     Parse raw OCR text (from Tesseract) into structured document fields using regex.
@@ -500,6 +514,7 @@ async def process_files(
                 error=doc_type_or_error,
                 error_category=categorize_error_message(doc_type_or_error),
                 processing_ms=round(elapsed_ms, 2),
+                provenance_json=_build_failed_file_provenance(normalized_cache_mode),
             ))
             logger.warning(
                 f"OCR file processed: session_id={session_id} file='{filename}' "

@@ -2,6 +2,28 @@ import { API_URL, authHeaders, parseError } from '../apiCore.js';
 
 export const documentExcelApi = {
     /**
+     * Get OCR runtime/provider/cache status (auth required)
+     */
+    async getOcrStatus() {
+        try {
+            const response = await fetch(`${API_URL}/ocr/status`, {
+                headers: authHeaders(),
+            });
+
+            if (!response.ok) {
+                throw new Error(await parseError(response));
+            }
+
+            return await response.json();
+        } catch (error) {
+            if (error.message.includes('fetch')) {
+                throw new Error(`Failed to get OCR status: ${error.message}`);
+            }
+            throw error;
+        }
+    },
+
+    /**
      * Upload documents for OCR processing (auth required)
      */
     async uploadDocuments(files, sessionId = null, options = {}) {

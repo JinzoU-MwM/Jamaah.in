@@ -26,6 +26,7 @@
   let isProcessing = $state(false);
   let errorMessage = $state("");
   let progress = $state(null);
+  let ocrStatus = $state(null);
   // subscription comes from props, but we may need local state for it
   let localSubscription = $state(null);
 
@@ -52,9 +53,14 @@
   const canUseBypassCacheMode = $derived(
     localSubscription?.plan === "pro" && localSubscription?.status === "active",
   );
+  const bypassQuota = $derived(ocrStatus?.cache_quota?.bypass || null);
   const cacheModeNotice = $derived(
     canUseBypassCacheMode
-      ? "Gunakan bypass hanya saat perlu validasi hasil terbaru tanpa cache."
+      ? (
+          bypassQuota?.unlimited
+            ? "Bypass aktif tanpa limit per jam. Tetap gunakan seperlunya untuk kontrol biaya."
+            : `Sisa bypass 1 jam: ${bypassQuota?.remaining_files ?? "-"} dari ${bypassQuota?.limit_files ?? "-"} file.`
+        )
       : "Mode bypass khusus Pro aktif untuk mencegah lonjakan biaya API.",
   );
 
@@ -131,6 +137,11 @@
         console.error("Failed to fetch subscription:", e);
       }
     }
+    try {
+      ocrStatus = await ApiService.getOcrStatus();
+    } catch (e) {
+      console.warn("Failed to fetch OCR status:", e);
+    }
   });
 
   function generateSessionId() {
@@ -174,6 +185,15 @@
       previewData = result.data;
       validationWarnings = result.validation_warnings || [];
       fileResults = result.file_results || [];
+      if (result.cache_quota?.bypass) {
+        ocrStatus = {
+          ...(ocrStatus || {}),
+          cache_quota: {
+            ...(ocrStatus?.cache_quota || {}),
+            bypass: result.cache_quota.bypass,
+          },
+        };
+      }
       failedFileNames = (result.file_results || [])
         .filter((fr) => fr.status === "failed")
         .map((fr) => fr.filename);

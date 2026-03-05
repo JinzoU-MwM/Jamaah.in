@@ -116,6 +116,7 @@ def test_process_documents_cache_mode_forwarded(client, test_user, monkeypatch):
     assert response.status_code == status.HTTP_200_OK
     payload = response.json()
     assert payload["cache_mode"] == "refresh"
+    assert payload["cache_quota"]["bypass"]["recent_files"] == 0
     assert seen["mode"] == "refresh"
 
 
@@ -143,7 +144,15 @@ def test_process_documents_bypass_allowed_for_pro(client, db_session, test_user,
         return (
             [ProcessingResult(filename="ktp.jpg", success=True)],
             [ExtractedDataItem(nama="AHMAD", no_identitas="1234567890123456")],
-            [FileResult(filename="ktp.jpg", status="success", cached=False, processing_ms=120.0)],
+            [
+                FileResult(
+                    filename="ktp.jpg",
+                    status="success",
+                    cached=False,
+                    processing_ms=120.0,
+                    provenance_json='{"cache_mode": "bypass"}',
+                )
+            ],
         )
 
     def mock_run_pipeline(extracted_data, _session_id):
@@ -158,6 +167,7 @@ def test_process_documents_bypass_allowed_for_pro(client, db_session, test_user,
     response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
     assert response.status_code == status.HTTP_200_OK
     assert response.json()["cache_mode"] == "bypass"
+    assert response.json()["cache_quota"]["bypass"]["remaining_files"] == 99
     assert seen["mode"] == "bypass"
 
 
@@ -199,3 +209,4 @@ def test_process_documents_bypass_hourly_limit_enforced(client, db_session, test
     response = client.post("/process-documents/?cache_mode=bypass", headers=headers, files=files)
     assert response.status_code == status.HTTP_429_TOO_MANY_REQUESTS
     assert "Bypass cache hourly limit exceeded" in response.json()["detail"]
+    assert "remaining=0" in response.json()["detail"]

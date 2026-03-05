@@ -48,8 +48,12 @@ def test_ocr_status_returns_provider_state(client, test_user, monkeypatch):
     assert data["providers"]["gemini"]["cache_ttl_seconds"] == 600
     assert data["providers"]["gemini"]["text_cache_ttl_seconds"] == 300
     assert data["providers"]["gemini"]["bypass_max_files_per_hour"] == 42
+    assert data["providers"]["gemini"]["bypass_recent_files_1h"] == 0
+    assert data["providers"]["gemini"]["bypass_remaining_files_1h"] == 42
     assert data["providers"]["tesseract"]["available"] is True
     assert "zai" not in data["providers"]
     assert "cache" in data
+    assert data["cache_quota"]["bypass"]["limit_files"] == 42
+    assert data["cache_quota"]["bypass"]["remaining_files"] == 42
     assert data["ai_cache"] == {"total": 5, "active": 4, "expired": 1}
     assert "requested_by" in data

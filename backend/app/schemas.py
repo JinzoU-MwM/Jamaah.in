@@ -138,6 +138,7 @@ class ProcessingPreviewResponse(BaseModel):
     cache_stats: Optional[Dict[str, Any]] = None
     session_id: Optional[str] = None  # for SSE progress connection
     cache_mode: Optional[str] = None
+    cache_quota: Optional[Dict[str, Any]] = None
 
 
 class GenerateExcelRequest(BaseModel):

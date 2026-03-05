@@ -103,6 +103,24 @@ describe('API domain modules', () => {
         expect(api.getDocumentUrl(7, 'group-manifest')).toBe('/api/documents/7/group-manifest');
     });
 
+    it('documentExcelApi.getOcrStatus requests status endpoint', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({ primary_engine: 'gemini' }),
+        });
+
+        const statusPayload = await documentExcelApi.getOcrStatus();
+        expect(statusPayload.primary_engine).toBe('gemini');
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/ocr/status',
+            expect.objectContaining({
+                headers: expect.objectContaining({
+                    Authorization: 'Bearer test-token',
+                }),
+            })
+        );
+    });
+
     it('documentExcelApi.uploadDocuments uses session and cache mode query when provided', async () => {
         fetchMock.mockResolvedValue({
             ok: true,

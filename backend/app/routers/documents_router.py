@@ -80,6 +80,19 @@ def _count_recent_bypass_files(db: Session, user_id: int, window_hours: int = 1)
     )
 
 
+def _build_bypass_quota_summary(recent_bypass_files: int) -> dict:
+    limit = OCR_BYPASS_MAX_FILES_PER_HOUR
+    unlimited = limit <= 0
+    remaining = None if unlimited else max(limit - recent_bypass_files, 0)
+    return {
+        "window_hours": 1,
+        "recent_files": recent_bypass_files,
+        "limit_files": limit,
+        "remaining_files": remaining,
+        "unlimited": unlimited,
+    }
+
+
 class OcrReviewDecisionRequest(BaseModel):
     action: str = Field(..., pattern="^(approve|reject)$")
     notes: str = ""
@@ -104,6 +117,8 @@ async def get_ocr_status(
         ai_cache_stats = get_ai_cache_stats(db)
     except Exception:
         ai_cache_stats = {"total": -1, "active": -1, "expired": -1}
+    recent_bypass_files = _count_recent_bypass_files(db, user.id)
+    bypass_quota = _build_bypass_quota_summary(recent_bypass_files)
 
     return {
         "primary_engine": OCR_ENGINE,
@@ -117,6 +132,8 @@ async def get_ocr_status(
                 "cache_ttl_seconds": GEMINI_CACHE_TTL_SECONDS,
                 "text_cache_ttl_seconds": GEMINI_TEXT_CACHE_TTL_SECONDS,
                 "bypass_max_files_per_hour": OCR_BYPASS_MAX_FILES_PER_HOUR,
+                "bypass_recent_files_1h": bypass_quota["recent_files"],
+                "bypass_remaining_files_1h": bypass_quota["remaining_files"],
             },
             "tesseract": {
                 "available": bool(ocr_engine.TESSERACT_AVAILABLE),
@@ -124,6 +141,7 @@ async def get_ocr_status(
         },
         "cache": ocr_cache.stats,
         "ai_cache": ai_cache_stats,
+        "cache_quota": {"bypass": bypass_quota},
         "requested_by": user.email,
     }
 
@@ -349,8 +367,10 @@ async def process_documents(
 
         file_data.append((file.filename, file_ext, content))
 
+    recent_bypass_files = _count_recent_bypass_files(db, user.id)
+    bypass_quota = _build_bypass_quota_summary(recent_bypass_files)
+
     if cache_mode == "bypass" and OCR_BYPASS_MAX_FILES_PER_HOUR > 0:
-        recent_bypass_files = _count_recent_bypass_files(db, user.id)
         projected_total = recent_bypass_files + len(file_data)
         if projected_total > OCR_BYPASS_MAX_FILES_PER_HOUR:
             remaining = max(OCR_BYPASS_MAX_FILES_PER_HOUR - recent_bypass_files, 0)
@@ -419,6 +439,15 @@ async def process_documents(
         # Record usage (counts towards free tier limit)
         record_usage(db, user.id, count=successful)
 
+        processed_bypass_files = sum(
+            1 for fr in file_results if BYPASS_CACHE_MARKER in (fr.provenance_json or "")
+        )
+        response_bypass_quota = bypass_quota
+        if processed_bypass_files > 0:
+            response_bypass_quota = _build_bypass_quota_summary(
+                recent_bypass_files + processed_bypass_files
+            )
+
         return ProcessingPreviewResponse(
             status="success",
             message=f"Processed {successful} documents, consolidated to {len(final_data)} unique records",
@@ -431,6 +460,7 @@ async def process_documents(
             cache_stats=ocr_cache.stats,
             session_id=session_id,
             cache_mode=cache_mode,
+            cache_quota={"bypass": response_bypass_quota},
         )
 
     except HTTPException:
