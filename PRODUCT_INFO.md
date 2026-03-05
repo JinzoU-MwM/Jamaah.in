@@ -1,7 +1,7 @@
 # Jamaah.in — Product Information Document
 
 > **Comprehensive product brief for brainstorming & planning sessions.**
-> Last updated — 28 February 2026 (Landing page update & Trial Card).
+> Last updated � 04 March 2026 (OCR reliability, KK enrichment, and observability update).
 
 ---
 
@@ -65,10 +65,12 @@ Upload → Validate Files → Cache Check → Gemini Vision OCR
 #### Key Technical Details
 - **Direct Image-to-JSON**: Sends raw image bytes to Gemini with a structured extraction prompt — no intermediate text step
 - **Concurrent Processing**: Uses `ThreadPoolExecutor(max_workers=15)` with `asyncio.Semaphore` for rate-limiting Gemini API calls
-- **Auto-Retry**: Exponential backoff on 429/5xx errors (up to 3 retries)
+- **Auto-Retry**: Categorized retry policy for timeout/network/429/5xx errors (up to 3 retries, longer cool-down for 429)
 - **OCR Result Caching**: MD5 hash-based cache to avoid re-processing identical images
 - **PDF Support**: `pdf2image` converts multi-page PDFs into individual images
 - **Image Preprocessing**: OpenCV-based card detection, auto-rotation (bruteforce 4 orientations), adaptive thresholding
+- **Per-file Telemetry**: Logs include `session_id`, `doc_type`, `cache_hit`, `elapsed_ms`, status, and batch summary metrics
+- **Per-file Error Categories**: Failed files are classified (`invalid_file_type`, `file_too_large`, `timeout`, `rate_limit`, `network_error`, etc.)
 
 ### 3.2 Data Cleaning & Intelligent Merging
 
@@ -77,8 +79,12 @@ Upload → Validate Files → Cache Check → Gemini Vision OCR
 | **Name Cleaning** | Blacklist filter (removes "PROVINSI", "KABUPATEN" etc. misreads), sanitization, minimum length check |
 | **Date Standardization** | Handles Indonesian months ("MEI", "AGUSTUS"), DD-MM-YYYY ↔ YYYY-MM-DD, OCR typo correction (l→1, O→0) |
 | **Fuzzy Merge** | Automatically merges KTP/KK + Passport + Visa records for the same person using `SequenceMatcher` (≥80% name similarity) |
+| **Identity Priority** | If passport number exists, `jenis_identitas` and `no_identitas` are prioritized from passport |
+| **KK Family Enrichment** | For matched KK members: address is standardized from KK, father name is filled via per-member mapping (`kk_member_fathers`) |
+| **Auto Title Assignment** | Title is auto-derived as `TUAN/NONA/NYONYA` using birth date, gender, and marital status |
 | **Field Validation** | NIK (16 digits), passport number (letter + 6-7 digits), visa number, date formats, citizenship (WNI/WNA) |
-| **Validation Warnings** | Non-blocking warnings shown in preview — user can fix before exporting |
+| **Validation Warnings** | Non-blocking warnings shown in preview � includes low-confidence OCR field warnings |
+| **Field Provenance & Confidence** | Internal metadata tracks `field->source` and `field->confidence` for explainable merge/review |
 
 ### 3.3 Document-Specific Parsers
 Specialized regex-based parsers for each document type:
@@ -94,6 +100,7 @@ Specialized regex-based parsers for each document type:
 - **Validation Indicators**: Warning badges on fields with validation issues
 - **Row Management**: Add, delete, and reorder rows
 - **Real-time Progress**: Server-Sent Events (SSE) for live upload/processing progress
+- **Per-file Status Detail**: Includes processing duration, cache status, provenance summary, and categorized errors
 - **Bulk Edit** (P2): Multi-select checkboxes (shift-click range), bulk edit toolbar (column picker → value → apply), find & replace with match highlighting, delete selected. Keyboard: Ctrl+A, Ctrl+F, Esc
 
 ### 3.5 Excel Export

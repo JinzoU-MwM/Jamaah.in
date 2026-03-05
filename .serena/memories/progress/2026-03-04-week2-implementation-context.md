@@ -1,0 +1,13 @@
+Current continuation context (saved on 2026-03-04):
+- Latest completed and pushed commit to main: 61f361f (feat(groups): upsert members on save and merge OCR updates).
+- Commit includes: backend group member upsert/merge logic, passport identity priority enforcement, ScannerPage save feedback/count fix, and new integration tests in backend/tests/integration/test_group_member_upsert.py.
+- Local workspace still has one unrelated modified file: PRODUCT_INFO.md (not committed in 61f361f).
+- User requested: "continue to week 2 implementations".
+- Roadmap reference found in docs/IMPROVEMENTS.md (no explicit Week 1/2 labels, but clear Quick Wins and Medium-Term buckets).
+- Candidate Week 2 batch inferred: engineering hardening/productivity improvements (CI workflow for lint+tests and pre-commit config).
+- Current repo state check before interruption:
+  - .github/workflows/deploy.yml exists.
+  - No .pre-commit-config.yaml at repo root.
+  - backend/requirements.txt already contains pytest-asyncio, pytest-mock, responses, ruff, mypy, pre-commit.
+  - backend/pyproject.toml already has ruff/black/mypy config.
+- Implementation of Week 2 had not started yet when interrupted; no new file edits were made for CI/pre-commit in that attempt.
