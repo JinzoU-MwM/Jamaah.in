@@ -30,7 +30,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
             });
             if (!response.ok) throw new Error(await parseError(response));
             const data = await response.json();
-            cacheSet('auth:me', data, 120000); // 120s TTL
+            cacheSet('auth:me', data, 30000); // 30s TTL
             return data;
         },
 
@@ -42,7 +42,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
             });
             if (!response.ok) throw new Error(await parseError(response));
             const data = await response.json();
-            cacheSet('sub:status', data, 60000); // 60s TTL
+            cacheSet('sub:status', data, 20000); // 20s TTL
             return data;
         },
 
@@ -162,7 +162,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
             });
             if (!response.ok) throw new Error(await parseError(response));
             const data = await response.json();
-            cacheSet('sub:trial', data, 300000); // 5min TTL
+            cacheSet('sub:trial', data, 30000); // 30s TTL
             return data;
         },
 

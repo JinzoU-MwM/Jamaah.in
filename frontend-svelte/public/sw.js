@@ -1,11 +1,13 @@
 // Service Worker — Jamaah.in PWA
-// Cache-first for static assets, network-first for API with offline fallback
+// Cache static assets only; keep API/dynamic requests network-first to avoid stale data.
 
-const CACHE_NAME = 'jamaah-v1';
+const CACHE_NAME = 'jamaah-v2';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
 ];
+
+const STATIC_DESTINATIONS = new Set(['style', 'script', 'image', 'font', 'worker']);
 
 // Install: cache shell
 self.addEventListener('install', (event) => {
@@ -33,27 +35,26 @@ self.addEventListener('fetch', (event) => {
     // Skip non-GET
     if (request.method !== 'GET') return;
 
-    // API calls: network-first, cache fallback (for manifest/shared endpoints)
-    if (url.pathname.startsWith('/shared/') || url.pathname.startsWith('/analytics/')) {
-        event.respondWith(
-            fetch(request)
-                .then((response) => {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                    return response;
-                })
-                .catch(() => caches.match(request))
-        );
+    // Navigations: network-first with app shell fallback.
+    if (request.mode === 'navigate') {
+        event.respondWith(fetch(request).catch(() => caches.match('/index.html')));
         return;
     }
 
-    // Static assets: cache-first
+    // Never cache API/dynamic endpoints; this avoids stale JSON for auth/groups/subscription, etc.
+    const isSameOrigin = url.origin === self.location.origin;
+    const isLikelyStatic = STATIC_DESTINATIONS.has(request.destination) || STATIC_ASSETS.includes(url.pathname);
+    if (!isSameOrigin || !isLikelyStatic) {
+        event.respondWith(fetch(request));
+        return;
+    }
+
+    // Static assets: cache-first.
     event.respondWith(
         caches.match(request).then((cached) => {
             if (cached) return cached;
             return fetch(request).then((response) => {
-                // Cache successful responses for same-origin
-                if (response.ok && url.origin === self.location.origin) {
+                if (response.ok) {
                     const clone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
                 }
