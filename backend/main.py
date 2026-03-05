@@ -25,11 +25,10 @@ if sentry_dsn:
         release=os.getenv("APP_VERSION", "latest"),
     )
 
-import logging
-
 # FastAPI
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.responses import PlainTextResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -62,6 +61,7 @@ from app.routers import (
     export_router,
 )
 from app.services.cache import ocr_cache
+from app.services.metrics import HttpMetricsMiddleware, metrics_store
 from app.error_handlers import (
     app_error_handler,
     validation_error_handler,
@@ -71,18 +71,11 @@ from app.error_handlers import (
     NotFoundError,
     UnauthorizedError,
 )
-from app.logging_config import configure_logging, get_logger
+from app.logging_config import RequestIdMiddleware, configure_logging, get_logger
 
 # Configure structured logging
 configure_logging()
 logger = get_logger(__name__)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
 
 # ---- Config ----
 ENV = os.getenv("ENV", "development").strip().lower()
@@ -118,6 +111,8 @@ app = FastAPI(
 )
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(HttpMetricsMiddleware)
+app.add_middleware(RequestIdMiddleware)
 
 # Register custom error handlers
 app.add_exception_handler(AppError, app_error_handler)
@@ -233,6 +228,15 @@ async def health_check():
 async def cache_stats():
     """Return OCR cache statistics."""
     return ocr_cache.stats
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus-style metrics endpoint."""
+    return PlainTextResponse(
+        metrics_store.render_prometheus(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
 
 
 if __name__ == "__main__":

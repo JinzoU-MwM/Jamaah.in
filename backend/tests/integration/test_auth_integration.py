@@ -46,7 +46,7 @@ class TestAuthRegistration:
                 "name": "Weak User"
             }
         )
-        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
 
 class TestAuthLogin:
