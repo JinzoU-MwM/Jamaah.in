@@ -15,6 +15,7 @@ from app.database import get_db
 from app.auth import require_super_admin
 from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus
 from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
+from app.services.ai_result_cache_repo import get_ai_cache_stats, purge_expired_ai_cache
 
 router = APIRouter(prefix="/super-admin", tags=["Super Admin"])
 
@@ -77,6 +78,18 @@ class TicketStatusRequest(BaseModel):
 class UnreadCountResponse(BaseModel):
     unread_tickets: int
     unread_messages: int
+
+
+class AICacheStatsResponse(BaseModel):
+    total: int
+    active: int
+    expired: int
+
+
+class AICachePurgeResponse(BaseModel):
+    deleted: int
+    before: AICacheStatsResponse
+    after: AICacheStatsResponse
 
 
 # --- Endpoints ---
@@ -307,3 +320,31 @@ async def delete_ticket(
     db.query(SupportTicket).filter(SupportTicket.id == ticket_id).delete()
     db.commit()
     return {"success": True, "deleted_ticket_id": ticket_id}
+
+
+@router.get("/ai-cache/stats", response_model=AICacheStatsResponse)
+async def ai_cache_stats(
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Get persistent AI cache statistics."""
+    del admin
+    stats = get_ai_cache_stats(db)
+    return AICacheStatsResponse(**stats)
+
+
+@router.post("/ai-cache/purge-expired", response_model=AICachePurgeResponse)
+async def purge_expired_ai_cache_endpoint(
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Purge expired persistent AI cache rows."""
+    del admin
+    before = get_ai_cache_stats(db)
+    deleted = purge_expired_ai_cache(db)
+    after = get_ai_cache_stats(db)
+    return AICachePurgeResponse(
+        deleted=deleted,
+        before=AICacheStatsResponse(**before),
+        after=AICacheStatsResponse(**after),
+    )
