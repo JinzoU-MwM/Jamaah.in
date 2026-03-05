@@ -137,6 +137,7 @@ class ProcessingPreviewResponse(BaseModel):
     file_results: List[FileResult] = []  # per-file status
     cache_stats: Optional[Dict[str, Any]] = None
     session_id: Optional[str] = None  # for SSE progress connection
+    cache_mode: Optional[str] = None
 
 
 class GenerateExcelRequest(BaseModel):

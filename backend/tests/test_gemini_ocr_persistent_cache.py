@@ -114,3 +114,66 @@ def test_extract_document_data_updates_gemini_metrics(monkeypatch):
     assert 'gemini_calls_total{task_type="extract_document_data:image"} 1' in body
     assert 'gemini_cache_requests_total{task_type="extract_document_data:image",result="miss"} 1' in body
     assert 'gemini_cache_requests_total{task_type="extract_document_data:image",result="hit"} 1' in body
+
+
+def test_extract_document_data_bypass_skips_read_and_write(monkeypatch):
+    storage = _setup_fake_persistent_cache(monkeypatch)
+    monkeypatch.setattr(gemini_ocr, "GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(gemini_ocr, "_image_to_base64", lambda _: ("abc", "image/png"))
+
+    calls = {"count": 0}
+
+    def fake_call(payload):
+        del payload
+        calls["count"] += 1
+        return {
+            "candidates": [{
+                "content": {"parts": [{"text": '{"document_type":"KTP","nama":"Bypass User"}'}]}
+            }]
+        }
+
+    monkeypatch.setattr(gemini_ocr, "_call_gemini", fake_call)
+    payload = b"bypass-image-bytes"
+
+    first = gemini_ocr.extract_document_data(payload, "bypass.png", cache_mode="bypass")
+    second = gemini_ocr.extract_document_data(payload, "bypass.png", cache_mode="bypass")
+
+    assert first["nama"] == "Bypass User"
+    assert second["nama"] == "Bypass User"
+    assert calls["count"] == 2
+    assert storage == {}
+
+
+def test_extract_document_data_refresh_skips_read_but_writes(monkeypatch):
+    storage = _setup_fake_persistent_cache(monkeypatch)
+    monkeypatch.setattr(gemini_ocr, "GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr(gemini_ocr, "_image_to_base64", lambda _: ("abc", "image/png"))
+
+    payload = b"refresh-image-bytes"
+    cache_key = build_gemini_cache_key(
+        input_data=payload,
+        prompt_version=gemini_ocr.EXTRACT_PROMPT_VERSION,
+        model=gemini_ocr.GEMINI_MODEL,
+        task_type="extract_document_data:image",
+    )
+    storage[cache_key] = {"document_type": "KTP", "nama": "Old Cache"}
+
+    calls = {"count": 0}
+
+    def fake_call(payload):
+        del payload
+        calls["count"] += 1
+        return {
+            "candidates": [{
+                "content": {"parts": [{"text": '{"document_type":"KTP","nama":"Fresh Cache"}'}]}
+            }]
+        }
+
+    monkeypatch.setattr(gemini_ocr, "_call_gemini", fake_call)
+
+    refreshed = gemini_ocr.extract_document_data(payload, "refresh.png", cache_mode="refresh")
+    cached = gemini_ocr.extract_document_data(payload, "refresh.png")
+
+    assert refreshed["nama"] == "Fresh Cache"
+    assert cached["nama"] == "Fresh Cache"
+    assert calls["count"] == 1

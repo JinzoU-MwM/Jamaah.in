@@ -30,6 +30,7 @@ GEMINI_TEXT_CACHE_TTL_SECONDS = int(os.getenv("GEMINI_TEXT_CACHE_TTL_SECONDS", "
 
 _singleflight_registry_lock = threading.Lock()
 _singleflight_locks: dict[str, threading.Lock] = {}
+_CACHE_MODES = {"default", "refresh", "bypass"}
 
 # Structured extraction prompt for Indonesian ID documents
 EXTRACT_PROMPT = """Kamu adalah OCR specialist untuk dokumen identitas Indonesia.
@@ -130,6 +131,22 @@ def _store_persistent_cache(
         db.close()
 
 
+def _normalize_cache_mode(cache_mode: str) -> str:
+    normalized = (cache_mode or "default").strip().lower()
+    if normalized not in _CACHE_MODES:
+        raise ValueError(f"Unsupported cache_mode='{cache_mode}'")
+    return normalized
+
+
+def _resolve_cache_policy(cache_mode: str) -> tuple[bool, bool]:
+    normalized = _normalize_cache_mode(cache_mode)
+    if normalized == "default":
+        return True, True
+    if normalized == "refresh":
+        return False, True
+    return False, False
+
+
 def _resolve_cached_or_compute(
     *,
     cache_key: str,
@@ -138,33 +155,48 @@ def _resolve_cached_or_compute(
     task_type: str,
     ttl_seconds: int,
     compute_fn,
+    allow_cache_read: bool = True,
+    allow_cache_write: bool = True,
 ) -> dict:
-    cached = _load_persistent_cache(cache_key)
-    if cached is not None:
-        metrics_store.observe_gemini_cache_result(task_type, True)
-        logger.info("Gemini persistent cache HIT task=%s key=%s...", task_type, cache_key[:12])
-        return cached
-
-    key_lock = _get_singleflight_lock(cache_key)
-    with key_lock:
+    if allow_cache_read:
         cached = _load_persistent_cache(cache_key)
         if cached is not None:
             metrics_store.observe_gemini_cache_result(task_type, True)
-            logger.info("Gemini persistent cache HIT(after-wait) task=%s key=%s...", task_type, cache_key[:12])
+            logger.info("Gemini persistent cache HIT task=%s key=%s...", task_type, cache_key[:12])
             return cached
+
+    key_lock = _get_singleflight_lock(cache_key)
+    with key_lock:
+        if allow_cache_read:
+            cached = _load_persistent_cache(cache_key)
+            if cached is not None:
+                metrics_store.observe_gemini_cache_result(task_type, True)
+                logger.info(
+                    "Gemini persistent cache HIT(after-wait) task=%s key=%s...",
+                    task_type,
+                    cache_key[:12],
+                )
+                return cached
 
         metrics_store.observe_gemini_cache_result(task_type, False)
         metrics_store.observe_gemini_api_call(task_type)
         logger.info("Gemini persistent cache MISS task=%s key=%s... calling upstream", task_type, cache_key[:12])
         result = compute_fn()
-        _store_persistent_cache(
-            cache_key=cache_key,
-            input_data=input_data,
-            prompt_version=prompt_version,
-            task_type=task_type,
-            result=result,
-            ttl_seconds=ttl_seconds,
-        )
+        if allow_cache_write:
+            _store_persistent_cache(
+                cache_key=cache_key,
+                input_data=input_data,
+                prompt_version=prompt_version,
+                task_type=task_type,
+                result=result,
+                ttl_seconds=ttl_seconds,
+            )
+        else:
+            logger.info(
+                "Gemini persistent cache write skipped task=%s key=%s...",
+                task_type,
+                cache_key[:12],
+            )
         return result
 
 
@@ -229,7 +261,7 @@ def _image_to_base64(img_bytes: bytes) -> tuple:
     return base64.b64encode(img_bytes).decode("utf-8"), mime_type
 
 
-def extract_text_from_image(image_bytes: bytes, filename: str = "") -> str:
+def extract_text_from_image(image_bytes: bytes, filename: str = "", cache_mode: str = "default") -> str:
     """
     Extract raw text from an image using Gemini Vision API.
 
@@ -244,6 +276,7 @@ def extract_text_from_image(image_bytes: bytes, filename: str = "") -> str:
         raise RuntimeError("GEMINI_API_KEY not configured")
 
     task_type = "extract_text_from_image"
+    allow_cache_read, allow_cache_write = _resolve_cache_policy(cache_mode)
     cache_key = build_gemini_cache_key(
         input_data=image_bytes,
         prompt_version=EXTRACT_TEXT_PROMPT_VERSION,
@@ -276,9 +309,11 @@ def extract_text_from_image(image_bytes: bytes, filename: str = "") -> str:
         task_type=task_type,
         ttl_seconds=GEMINI_TEXT_CACHE_TTL_SECONDS,
         compute_fn=_compute_result,
+        allow_cache_read=allow_cache_read,
+        allow_cache_write=allow_cache_write,
     )
     text = cached_payload.get("text", "")
-    logger.info(f"Extracted {len(text)} chars from {filename}")
+    logger.info(f"Extracted {len(text)} chars from {filename} (cache_mode={cache_mode})")
     return text
 
 
@@ -295,7 +330,7 @@ def _parse_structured_json(raw_text: str) -> dict:
         return {"document_type": "UNKNOWN", "_raw": raw_text}
 
 
-def extract_document_data(text_or_bytes, filename: str = "") -> dict:
+def extract_document_data(text_or_bytes, filename: str = "", cache_mode: str = "default") -> dict:
     """
     Extract structured document data from an image or text.
 
@@ -311,6 +346,8 @@ def extract_document_data(text_or_bytes, filename: str = "") -> dict:
     """
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY not configured")
+
+    allow_cache_read, allow_cache_write = _resolve_cache_policy(cache_mode)
 
     # If we receive bytes, do direct structured extraction from image
     if isinstance(text_or_bytes, bytes):
@@ -367,10 +404,11 @@ def extract_document_data(text_or_bytes, filename: str = "") -> dict:
             return _parse_structured_json(raw_text)
 
     logger.info(
-        "Extracting structured data for %s via Gemini (%s) key=%s...",
+        "Extracting structured data for %s via Gemini (%s) key=%s... cache_mode=%s",
         filename,
         GEMINI_MODEL,
         cache_key[:12],
+        cache_mode,
     )
     return _resolve_cached_or_compute(
         cache_key=cache_key,
@@ -379,5 +417,7 @@ def extract_document_data(text_or_bytes, filename: str = "") -> dict:
         task_type=task_type,
         ttl_seconds=GEMINI_CACHE_TTL_SECONDS,
         compute_fn=_compute_result,
+        allow_cache_read=allow_cache_read,
+        allow_cache_write=allow_cache_write,
     )
 

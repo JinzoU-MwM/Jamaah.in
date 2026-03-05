@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, File, UploadFile, HTTPException, Request, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, Request, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -29,6 +29,7 @@ from app.services.document_processor import (
     MAX_FILES_PER_REQUEST,
     OCR_ENGINE,
     OCR_FALLBACK_ENABLED,
+    CACHE_MODE_VALUES,
 )
 from app.services.gemini_ocr import (
     EXTRACT_PROMPT_VERSION,
@@ -244,6 +245,10 @@ async def process_documents(
     request: Request,
     files: List[UploadFile] = File(..., description="Identity document images (KTP/KK, Passport, Visa)"),
     session_id: str = None,
+    cache_mode: str = Query(
+        "default",
+        description="AI cache mode: default (read/write), refresh (skip read, write), bypass (skip read/write).",
+    ),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -269,6 +274,13 @@ async def process_documents(
         raise HTTPException(
             status_code=400,
             detail=f"Maksimum {MAX_FILES_PER_REQUEST} file per upload. Anda mengirim {len(files)} file.",
+        )
+    cache_mode = (cache_mode or "default").strip().lower()
+    if cache_mode not in CACHE_MODE_VALUES:
+        allowed = ", ".join(sorted(CACHE_MODE_VALUES))
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid cache_mode '{cache_mode}'. Allowed values: {allowed}.",
         )
 
     # Session ID for progress tracking (use client-provided or generate)
@@ -312,7 +324,11 @@ async def process_documents(
         file_data.append((file.filename, file_ext, content))
 
     # 2. PROCESS FILES (OCR + caching + batching)
-    proc_results, extracted_data, file_results = await process_files(file_data, session_id)
+    proc_results, extracted_data, file_results = await process_files(
+        file_data,
+        session_id,
+        cache_mode=cache_mode,
+    )
     results.extend(proc_results)
     file_results = file_results_early + file_results
 
@@ -373,7 +389,8 @@ async def process_documents(
             validation_warnings=all_warnings,
             file_results=file_results,
             cache_stats=ocr_cache.stats,
-            session_id=session_id
+            session_id=session_id,
+            cache_mode=cache_mode,
         )
 
     except HTTPException:

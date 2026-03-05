@@ -158,7 +158,7 @@ FRONTEND_URL=http://localhost:5173
 |-------|-----------|------|
 | **Auth** | `POST /auth/register, login, verify-otp, forgot-password, reset-password` | Public |
 | **Auth** | `GET/PUT/DELETE /auth/me`, `GET /auth/subscription, activity` | JWT |
-| **Documents** | `POST /process-documents/`, `GET /progress/{session_id}` (SSE) | JWT |
+| **Documents** | `POST /process-documents/?cache_mode=default|refresh|bypass`, `GET /progress/{session_id}` (SSE) | JWT |
 | **Excel** | `POST /generate-excel/` | JWT |
 | **Groups** | `GET/POST /groups/`, `GET/PUT/DELETE /groups/{id}`, members CRUD | JWT |
 | **Payment** | `POST /payment/create-order, webhook`, `GET /payment/status/{id}` | JWT |
@@ -170,7 +170,7 @@ Full interactive docs: `http://localhost:8000/docs`
 
 ```
 Upload Files → Validate (type, size)
-→ Cache Check (MD5 hash)
+→ Cache Check (deterministic AI cache key)
 → Gemini Vision OCR (concurrent, rate-limited)
 → Structured JSON Extraction
 → Data Cleaning (name sanitization, date standardization)

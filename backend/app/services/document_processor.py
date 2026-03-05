@@ -50,6 +50,7 @@ _executor = ThreadPoolExecutor(max_workers=15)
 
 # Semaphore to rate-limit concurrent Gemini API calls (initialized lazily)
 _gemini_semaphore: asyncio.Semaphore = None
+CACHE_MODE_VALUES = {"default", "refresh", "bypass"}
 
 
 def categorize_error_message(error_message: str) -> str:
@@ -74,7 +75,11 @@ def categorize_error_message(error_message: str) -> str:
     return "processing_error"
 
 
-def _build_file_provenance(items: List[ExtractedDataItem], was_cached: bool) -> str:
+def _build_file_provenance(
+    items: List[ExtractedDataItem],
+    was_cached: bool,
+    cache_mode: str = "default",
+) -> str:
     """Build a compact JSON summary of per-file extraction provenance."""
     source_types = sorted({
         (item.source_document_type or item.jenis_identitas or "UNKNOWN").upper()
@@ -83,6 +88,7 @@ def _build_file_provenance(items: List[ExtractedDataItem], was_cached: bool) -> 
     summary = {
         "ocr_engine": OCR_ENGINE,
         "cached": bool(was_cached),
+        "cache_mode": cache_mode,
         "records": len(items),
         "source_document_types": source_types,
         "has_passport": any(bool(item.no_paspor) for item in items),
@@ -224,9 +230,9 @@ def _parse_text_to_structured(raw_text: str) -> dict:
     return data
 
 
-def _process_with_gemini(img_bytes: bytes, filename: str) -> dict:
+def _process_with_gemini(img_bytes: bytes, filename: str, cache_mode: str = "default") -> dict:
     """Process using Gemini AI (direct image → structured JSON)."""
-    return gemini_extract_data(img_bytes, filename)
+    return gemini_extract_data(img_bytes, filename, cache_mode=cache_mode)
 
 
 def _process_with_tesseract(img_bytes: bytes, filename: str) -> dict:
@@ -252,7 +258,7 @@ def _process_with_hybrid(img_bytes: bytes, filename: str) -> dict:
     return gemini_extract_data(raw_text, filename)
 
 
-def _process_single_image(img_bytes: bytes, filename: str) -> dict:
+def _process_single_image(img_bytes: bytes, filename: str, cache_mode: str = "default") -> dict:
     """Process a single image through OCR with engine selection and retry/fallback."""
     # Select primary engine
     engines = {
@@ -266,7 +272,10 @@ def _process_single_image(img_bytes: bytes, filename: str) -> dict:
     # Try primary engine with retries
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            result = primary_fn(img_bytes, filename)
+            if primary_fn == _process_with_gemini:
+                result = primary_fn(img_bytes, filename, cache_mode=cache_mode)
+            else:
+                result = primary_fn(img_bytes, filename)
             if attempt > 1:
                 logger.info(f"Retry succeeded for {filename} on attempt {attempt}")
             logger.info(
@@ -287,7 +296,7 @@ def _process_single_image(img_bytes: bytes, filename: str) -> dict:
     if OCR_FALLBACK_ENABLED and OCR_ENGINE != "gemini":
         logger.info(f"Falling back to Gemini for {filename} after {OCR_ENGINE} failed")
         try:
-            result = _process_with_gemini(img_bytes, filename)
+            result = _process_with_gemini(img_bytes, filename, cache_mode=cache_mode)
             logger.info(f"OCR [gemini-fallback] result for {filename}: type={result.get('document_type', '?')}")
             return result
         except Exception as e:
@@ -317,6 +326,7 @@ def _has_useful_data(doc_data: dict) -> bool:
 async def process_files(
     file_data: List[Tuple[str, str, bytes]],
     session_id: str,
+    cache_mode: str = "default",
 ) -> Tuple[List[ProcessingResult], List[ExtractedDataItem], List[FileResult]]:
     """
     Process a batch of files through OCR with caching and progress tracking.
@@ -335,11 +345,18 @@ async def process_files(
     if _gemini_semaphore is None:
         _gemini_semaphore = asyncio.Semaphore(GEMINI_CONCURRENCY)
 
+    normalized_cache_mode = (cache_mode or "default").strip().lower()
+    if normalized_cache_mode not in CACHE_MODE_VALUES:
+        raise ValueError(f"Unsupported cache_mode='{cache_mode}'")
+
+    local_cache_read = normalized_cache_mode == "default"
+    local_cache_write = normalized_cache_mode in {"default", "refresh"}
+
     async def _rate_limited_ocr(img_bytes: bytes, filename: str) -> dict:
         """Run OCR with semaphore to limit concurrent Gemini API calls."""
         async with _gemini_semaphore:
             return await loop.run_in_executor(
-                _executor, _process_single_image, img_bytes, filename
+                _executor, _process_single_image, img_bytes, filename, normalized_cache_mode
             )
 
     async def _process_one(filename: str, file_ext: str, content: bytes):
@@ -351,9 +368,17 @@ async def process_files(
             model=GEMINI_MODEL,
             task_type=f"document_processor:{OCR_ENGINE}",
         )
-        cached_result = ocr_cache.get(file_hash)
+        cached_result = ocr_cache.get(file_hash) if local_cache_read else None
         if cached_result is None:
-            logger.info("OCR local cache MISS key=%s... file=%s", file_hash[:12], filename)
+            if local_cache_read:
+                logger.info("OCR local cache MISS key=%s... file=%s", file_hash[:12], filename)
+            else:
+                logger.info(
+                    "OCR local cache SKIP(read) key=%s... file=%s mode=%s",
+                    file_hash[:12],
+                    filename,
+                    normalized_cache_mode,
+                )
         else:
             logger.info("OCR local cache HIT key=%s... file=%s", file_hash[:12], filename)
         was_cached = cached_result is not None
@@ -390,7 +415,7 @@ async def process_files(
 
                     logger.info(f"PDF '{filename}': {len(items)} valid items extracted")
                     # Only cache non-empty results so failed files can be retried
-                    if items:
+                    if items and local_cache_write:
                         ocr_cache.put(file_hash, items)
 
                 elapsed_ms = (time.perf_counter() - started_at) * 1000
@@ -407,7 +432,8 @@ async def process_files(
                         return filename, False, doc_data.get('_error', 'OCR failed'), [], False, elapsed_ms
 
                     items = [doc_data_to_item(doc_data)]
-                    ocr_cache.put(file_hash, items)
+                    if local_cache_write:
+                        ocr_cache.put(file_hash, items)
 
                 doc_type = items[0].jenis_identitas if items else "UNKNOWN"
                 elapsed_ms = (time.perf_counter() - started_at) * 1000
@@ -457,7 +483,7 @@ async def process_files(
                 document_type=doc_type_or_error,
                 cached=was_cached,
                 processing_ms=round(elapsed_ms, 2),
-                provenance_json=_build_file_provenance(items, was_cached),
+                provenance_json=_build_file_provenance(items, was_cached, normalized_cache_mode),
             ))
             logger.info(
                 f"OCR file processed: session_id={session_id} file='{filename}' "
