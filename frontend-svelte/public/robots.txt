@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
+Allow: /software-travel-umrah.html
+Allow: /fitur-ocr-siskopatuh.html
+Allow: /fitur-rooming-jamaah.html
+Allow: /manifest-mutawwif-digital.html
 Disallow: /api/
 
 Sitemap: https://jamaah.web.id/sitemap.xml

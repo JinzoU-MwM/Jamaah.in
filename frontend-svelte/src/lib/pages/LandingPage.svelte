@@ -58,6 +58,7 @@
               ?.scrollIntoView({ behavior: "smooth" })}
           class="nav-link">Harga</button
         >
+        <a class="nav-link nav-link-anchor" href="/software-travel-umrah.html">Panduan</a>
         <button type="button" onclick={onGoToLogin} class="nav-link"
           >Masuk</button
         >
@@ -520,7 +521,39 @@
   </section>
 
   <!-- ================================================================== -->
-  <!-- 5. FINAL CTA -->
+  <!-- 5. SEO GUIDES -->
+  <!-- ================================================================== -->
+  <section class="section seo-guides" aria-labelledby="seo-guides-title">
+    <div class="section-inner">
+      <div class="section-header">
+        <h2 class="section-title" id="seo-guides-title">Pelajari Use Case Jamaah.in</h2>
+        <p class="section-desc">
+          Baca halaman detail berikut untuk alur operasional dan fitur yang paling sering dipakai tim travel.
+        </p>
+      </div>
+      <div class="guides-grid">
+        <a class="guide-card" href="/software-travel-umrah.html">
+          <h3>Software Travel Umrah</h3>
+          <p>Gambaran lengkap platform end-to-end untuk operasional travel umrah Indonesia.</p>
+        </a>
+        <a class="guide-card" href="/fitur-ocr-siskopatuh.html">
+          <h3>Fitur OCR Siskopatuh</h3>
+          <p>Penjelasan fitur scan KTP, paspor, dan visa untuk percepatan input data jamaah.</p>
+        </a>
+        <a class="guide-card" href="/fitur-rooming-jamaah.html">
+          <h3>Fitur Rooming Jamaah</h3>
+          <p>Alokasi kamar otomatis dan penyesuaian manual untuk tim operasional keberangkatan.</p>
+        </a>
+        <a class="guide-card" href="/manifest-mutawwif-digital.html">
+          <h3>Manifest Mutawwif Digital</h3>
+          <p>Checklist jamaah berbasis mobile untuk koordinasi mutawwif di lapangan.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================================================================== -->
+  <!-- 6. FINAL CTA -->
   <!-- ================================================================== -->
   <section class="section final-cta" aria-labelledby="cta-title">
     <div class="section-inner">
@@ -642,6 +675,11 @@
     border: none;
     cursor: pointer;
     transition: all 0.15s;
+  }
+  .nav-link-anchor {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
   }
   .nav-link:hover {
     color: white;
@@ -1087,6 +1125,40 @@
     border-color: rgba(255, 255, 255, 0.25);
   }
 
+  /* ---- SEO GUIDES ---- */
+  .seo-guides {
+    background: linear-gradient(180deg, #0f172a, #111827);
+  }
+  .guides-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .guide-card {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    transition: all 0.15s;
+  }
+  .guide-card:hover {
+    border-color: rgba(52, 211, 153, 0.45);
+    transform: translateY(-2px);
+  }
+  .guide-card h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.0625rem;
+    color: #f8fafc;
+  }
+  .guide-card p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: 0.9375rem;
+  }
+
   /* ---- FINAL CTA ---- */
   .final-cta {
     background: linear-gradient(180deg, #111827, #0a0f1a);
@@ -1159,6 +1231,9 @@
     .pricing-grid {
       grid-template-columns: 1fr;
       max-width: 380px;
+    }
+    .guides-grid {
+      grid-template-columns: 1fr;
     }
     .footer-inner {
       flex-direction: column;
