@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import os
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 
@@ -23,6 +23,11 @@ from app.auth import (
     verify_password,
     hash_password,
     FREE_USAGE_LIMIT,
+    AUTH_COOKIE_NAME,
+    COOKIE_SECURE,
+    COOKIE_SAMESITE,
+    COOKIE_DOMAIN,
+    ACCESS_TOKEN_EXPIRE_HOURS,
 )
 from app.models.user import User
 from app.models.audit_log import AuditLog
@@ -33,6 +38,29 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 limiter = Limiter(key_func=get_remote_address)
+
+
+def _set_auth_cookie(response: Response, token: str):
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+        max_age=ACCESS_TOKEN_EXPIRE_HOURS * 3600,
+        path="/",
+        domain=COOKIE_DOMAIN,
+    )
+
+
+def _clear_auth_cookie(response: Response):
+    response.delete_cookie(
+        key=AUTH_COOKIE_NAME,
+        path="/",
+        domain=COOKIE_DOMAIN,
+        secure=COOKIE_SECURE,
+        samesite=COOKIE_SAMESITE,
+    )
 
 
 # --- Request/Response Schemas ---
@@ -93,10 +121,11 @@ async def register(
 
 @router.post("/login", response_model=TokenResponse)
 @limiter.limit("5/minute")
-async def login(request: Request, req: LoginRequest, db: Session = Depends(get_db)):
+async def login(request: Request, response: Response, req: LoginRequest, db: Session = Depends(get_db)):
     """Login with email and password."""
     user = authenticate_user(db, req.email, req.password)
     token = create_access_token({"sub": str(user.id), "email": user.email})
+    _set_auth_cookie(response, token)
     access_info = check_access(db, user)
     return TokenResponse(
         access_token=token,
@@ -134,7 +163,12 @@ class ResetPasswordRequest(BaseModel):
 
 @router.post("/verify-email")
 @limiter.limit("5/minute")
-async def verify_email(request: Request, req: VerifyEmailRequest, db: Session = Depends(get_db)):
+async def verify_email(
+    request: Request,
+    response: Response,
+    req: VerifyEmailRequest,
+    db: Session = Depends(get_db),
+):
     """Verify email with 6-digit OTP code."""
     user = db.query(User).filter(User.email == req.email.lower().strip()).first()
     if not user:
@@ -155,6 +189,7 @@ async def verify_email(request: Request, req: VerifyEmailRequest, db: Session = 
 
     # Auto-login after verification
     token = create_access_token({"sub": str(user.id), "email": user.email})
+    _set_auth_cookie(response, token)
     access_info = check_access(db, user)
     return {
         "success": True,
@@ -170,6 +205,13 @@ async def verify_email(request: Request, req: VerifyEmailRequest, db: Session = 
             "subscription": access_info,
         },
     }
+
+
+@router.post("/logout")
+async def logout(response: Response):
+    """Clear authentication cookie."""
+    _clear_auth_cookie(response)
+    return {"success": True}
 
 
 @router.post("/resend-otp")

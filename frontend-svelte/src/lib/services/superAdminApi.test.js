@@ -17,7 +17,6 @@ describe('SuperAdminApi', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.stubGlobal('localStorage', createStorageMock());
-        localStorage.setItem('token', 'test-token');
         fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
     });
@@ -34,9 +33,24 @@ describe('SuperAdminApi', () => {
         expect(fetchMock).toHaveBeenCalledWith(
             '/api/super-admin/ai-cache/stats',
             expect.objectContaining({
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
+            })
+        );
+    });
+
+    it('getCharts fetches chart series for dashboard', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => ({ user_activity: [], revenue_monthly: [] }),
+        });
+
+        const data = await SuperAdminApi.getCharts();
+
+        expect(Array.isArray(data.user_activity)).toBe(true);
+        expect(fetchMock).toHaveBeenCalledWith(
+            '/api/super-admin/charts',
+            expect.objectContaining({
+                credentials: 'include',
             })
         );
     });
@@ -52,9 +66,7 @@ describe('SuperAdminApi', () => {
         expect(fetchMock).toHaveBeenCalledWith(
             '/api/super-admin/ai-cache/recent?limit=5&offset=0&expired_only=true',
             expect.objectContaining({
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });
@@ -72,9 +84,7 @@ describe('SuperAdminApi', () => {
             '/api/super-admin/ai-cache/purge-expired',
             expect.objectContaining({
                 method: 'POST',
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });
@@ -92,9 +102,7 @@ describe('SuperAdminApi', () => {
         expect(fetchMock).toHaveBeenCalledWith(
             '/api/super-admin/ai-cache/recent/export?limit=100&expired_only=true',
             expect.objectContaining({
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });
@@ -112,9 +120,7 @@ describe('SuperAdminApi', () => {
             '/api/super-admin/ai-cache/abc',
             expect.objectContaining({
                 method: 'DELETE',
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });

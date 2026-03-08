@@ -3,8 +3,10 @@ Payment Router — /payment/*
 Handles Pakasir payment gateway integration for Pro subscription upgrades.
 """
 import os
+import json
 import uuid
 import logging
+from urllib.parse import parse_qs
 from datetime import datetime
 from typing import Optional
 
@@ -18,6 +20,7 @@ from app.models.user import User, Payment, PaymentStatus
 from app.services.payment_service import (
     create_payment_url,
     verify_transaction,
+    verify_webhook_signature,
     PRO_PRICE,
     PRO_ANNUAL_PRICE,
 )
@@ -28,6 +31,36 @@ router = APIRouter(prefix="/payment", tags=["Payment"])
 
 # Frontend redirect URL after payment
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+PAID_STATES = {"paid", "success", "completed", "settlement"}
+WEBHOOK_SIGNATURE_HEADERS = (
+    "x-pakasir-signature",
+    "x-signature",
+    "signature",
+)
+
+
+def _extract_signature(headers) -> str:
+    for name in WEBHOOK_SIGNATURE_HEADERS:
+        value = headers.get(name)
+        if value:
+            return value
+    return ""
+
+
+def _to_int_amount(value) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    try:
+        normalized = str(value).replace(",", "").strip()
+        if normalized == "":
+            return None
+        return int(float(normalized))
+    except (TypeError, ValueError):
+        return None
 
 
 # --- Schemas ---
@@ -111,18 +144,27 @@ async def payment_webhook(
     Pakasir webhook callback — called when a payment is completed.
     Verifies the payment and activates Pro subscription.
     """
-    try:
-        body = await request.json()
-    except Exception:
-        body = {}
-        # Try form data
-        form = await request.form()
-        body = dict(form)
+    raw_body = await request.body()
+    signature = _extract_signature(request.headers)
+    if not verify_webhook_signature(raw_body, signature):
+        logger.warning("Webhook rejected: invalid signature")
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    body = {}
+    if raw_body:
+        try:
+            body = json.loads(raw_body.decode("utf-8"))
+        except (ValueError, UnicodeDecodeError):
+            try:
+                parsed = parse_qs(raw_body.decode("utf-8"), keep_blank_values=True)
+                body = {k: v[0] if isinstance(v, list) and v else v for k, v in parsed.items()}
+            except UnicodeDecodeError:
+                body = {}
 
     order_id = body.get("order_id", "")
-    webhook_amount = body.get("amount")
+    webhook_amount = _to_int_amount(body.get("amount"))
 
-    logger.info("Webhook received: order_id=%s body=%s", order_id, body)
+    logger.info("Webhook received: order_id=%s", order_id)
 
     if not order_id:
         raise HTTPException(status_code=400, detail="Missing order_id")
@@ -137,24 +179,39 @@ async def payment_webhook(
     if payment.status == PaymentStatus.PAID:
         return {"status": "already_processed", "order_id": order_id}
 
-    # Verify with Pakasir API for extra security
+    if webhook_amount is not None and webhook_amount != payment.amount:
+        logger.warning(
+            "Webhook rejected: webhook amount mismatch order=%s expected=%s got=%s",
+            order_id,
+            payment.amount,
+            webhook_amount,
+        )
+        raise HTTPException(status_code=400, detail="Invalid payment amount")
+
+    # Verify with Pakasir API and only accept paid state.
     verification = verify_transaction(order_id)
-    if verification:
-        api_status = verification.get("status", "").lower()
-        if api_status in ("paid", "success", "completed", "settlement"):
-            payment.status = PaymentStatus.PAID
-            payment.paid_at = datetime.utcnow()
-            payment.pakasir_ref = verification.get("reference", "")
-        else:
-            logger.warning("Webhook: Pakasir API says status=%s for %s", api_status, order_id)
-            # Still mark as paid if webhook says so (Pakasir sent it)
-            payment.status = PaymentStatus.PAID
-            payment.paid_at = datetime.utcnow()
-    else:
-        # API verification failed but webhook was received — trust the webhook
-        logger.warning("Webhook: could not verify via API, trusting webhook for %s", order_id)
-        payment.status = PaymentStatus.PAID
-        payment.paid_at = datetime.utcnow()
+    if not verification:
+        logger.warning("Webhook rejected: unable to verify order %s via Pakasir API", order_id)
+        raise HTTPException(status_code=502, detail="Payment verification failed")
+
+    api_status = str(verification.get("status", "")).lower()
+    if api_status not in PAID_STATES:
+        logger.info("Webhook ignored: order %s status is %s", order_id, api_status)
+        return {"status": "ignored", "order_id": order_id, "reason": f"status_{api_status}"}
+
+    verified_amount = _to_int_amount(verification.get("amount"))
+    if verified_amount is None or verified_amount != payment.amount:
+        logger.warning(
+            "Webhook rejected: verification amount mismatch order=%s expected=%s got=%s",
+            order_id,
+            payment.amount,
+            verified_amount,
+        )
+        raise HTTPException(status_code=400, detail="Verified amount mismatch")
+
+    payment.status = PaymentStatus.PAID
+    payment.paid_at = datetime.utcnow()
+    payment.pakasir_ref = str(verification.get("reference", ""))
 
     db.commit()
 
@@ -191,7 +248,7 @@ async def payment_status(
         verification = verify_transaction(order_id)
         if verification:
             api_status = verification.get("status", "").lower()
-            if api_status in ("paid", "success", "completed", "settlement"):
+            if api_status in PAID_STATES:
                 payment.status = PaymentStatus.PAID
                 payment.paid_at = datetime.utcnow()
                 payment.pakasir_ref = verification.get("reference", "")

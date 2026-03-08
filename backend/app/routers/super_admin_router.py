@@ -4,7 +4,7 @@ Provides super admin-only endpoints for managing the entire application.
 Super admin is the app owner, separate from regular admins.
 """
 import csv
-from datetime import datetime
+from datetime import datetime, timedelta, time
 from io import StringIO
 from typing import List, Optional
 
@@ -17,7 +17,16 @@ from sqlalchemy import func
 from app.database import get_db
 from app.auth import require_super_admin
 from app.models.ai_result_cache import AIResultCache
-from app.models.user import User, Subscription, UsageLog, PlanType, SubscriptionStatus, utc_now
+from app.models.user import (
+    User,
+    Subscription,
+    UsageLog,
+    PlanType,
+    SubscriptionStatus,
+    Payment,
+    PaymentStatus,
+    utc_now,
+)
 from app.models.support_ticket import SupportTicket, TicketMessage, TicketStatus, TicketPriority, SenderType
 from app.services.ai_result_cache_repo import (
     delete_ai_cache_by_key,
@@ -39,6 +48,21 @@ class SuperAdminStatsResponse(BaseModel):
     open_tickets: int
     resolved_tickets: int
     total_revenue: int
+
+
+class UserActivityPoint(BaseModel):
+    date: str
+    count: int
+
+
+class RevenueMonthlyPoint(BaseModel):
+    month: str
+    amount: int
+
+
+class SuperAdminChartsResponse(BaseModel):
+    user_activity: List[UserActivityPoint]
+    revenue_monthly: List[RevenueMonthlyPoint]
 
 
 class TicketListItem(BaseModel):
@@ -126,6 +150,17 @@ class AICacheRecentResponse(BaseModel):
 
 # --- Endpoints ---
 
+
+def _month_start(dt: datetime) -> datetime:
+    return dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def _add_months(dt: datetime, months: int) -> datetime:
+    month_index = (dt.month - 1) + months
+    year = dt.year + (month_index // 12)
+    month = (month_index % 12) + 1
+    return dt.replace(year=year, month=month, day=1)
+
 @router.get("/stats", response_model=SuperAdminStatsResponse)
 async def super_admin_stats(
     admin: User = Depends(require_super_admin),
@@ -141,8 +176,6 @@ async def super_admin_stats(
     open_tickets = db.query(SupportTicket).filter(SupportTicket.status == TicketStatus.OPEN).count()
     resolved_tickets = db.query(SupportTicket).filter(SupportTicket.status == TicketStatus.RESOLVED).count()
 
-    # Calculate revenue from payments
-    from app.models.user import Payment, PaymentStatus
     revenue = db.query(func.sum(Payment.amount)).filter(
         Payment.status == PaymentStatus.PAID
     ).scalar() or 0
@@ -156,6 +189,78 @@ async def super_admin_stats(
         open_tickets=open_tickets,
         resolved_tickets=resolved_tickets,
         total_revenue=revenue,
+    )
+
+
+@router.get("/charts", response_model=SuperAdminChartsResponse)
+async def super_admin_charts(
+    admin: User = Depends(require_super_admin),
+    db: Session = Depends(get_db),
+):
+    """Get real chart series for super admin dashboard."""
+    del admin
+
+    now = utc_now()
+    today = now.date()
+
+    # 30-day usage series (includes today)
+    start_day = today - timedelta(days=29)
+    start_dt = datetime.combine(start_day, time.min)
+    end_dt = datetime.combine(today, time.max)
+
+    daily_counts = {
+        start_day + timedelta(days=offset): 0
+        for offset in range(30)
+    }
+    usage_rows = (
+        db.query(UsageLog.created_at, UsageLog.count)
+        .filter(
+            UsageLog.created_at >= start_dt,
+            UsageLog.created_at <= end_dt,
+        )
+        .all()
+    )
+    for created_at, count in usage_rows:
+        if not created_at:
+            continue
+        day = created_at.date()
+        if day in daily_counts:
+            daily_counts[day] += int(count or 0)
+
+    user_activity = [
+        UserActivityPoint(date=day.isoformat(), count=daily_counts[day])
+        for day in sorted(daily_counts.keys())
+    ]
+
+    # 12-month paid revenue series (includes current month)
+    current_month = _month_start(now)
+    month_starts = [_add_months(current_month, -11 + idx) for idx in range(12)]
+    month_amounts = {month.strftime("%Y-%m"): 0 for month in month_starts}
+
+    revenue_rows = (
+        db.query(Payment.amount, Payment.paid_at, Payment.created_at)
+        .filter(
+            Payment.status == PaymentStatus.PAID,
+            func.coalesce(Payment.paid_at, Payment.created_at) >= month_starts[0],
+        )
+        .all()
+    )
+    for amount, paid_at, created_at in revenue_rows:
+        anchor = paid_at or created_at
+        if not anchor:
+            continue
+        month_key = anchor.strftime("%Y-%m")
+        if month_key in month_amounts:
+            month_amounts[month_key] += int(amount or 0)
+
+    revenue_monthly = [
+        RevenueMonthlyPoint(month=month.strftime("%Y-%m"), amount=month_amounts[month.strftime("%Y-%m")])
+        for month in month_starts
+    ]
+
+    return SuperAdminChartsResponse(
+        user_activity=user_activity,
+        revenue_monthly=revenue_monthly,
     )
 
 

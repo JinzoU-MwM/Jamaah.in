@@ -1,6 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import { SuperAdminApi } from '../services/superAdminApi.js';
+    import { ApiService } from '../services/api.js';
     import StatsCards from '../components/super-admin/StatsCards.svelte';
     import Charts from '../components/super-admin/Charts.svelte';
     import UserManagement from '../components/super-admin/UserManagement.svelte';
@@ -27,6 +28,8 @@
 
     let loading = true;
     let error = null;
+    let chartsLoading = false;
+    let chartsError = null;
     let aiCacheLoading = false;
     let aiCacheError = null;
     let aiCacheRecentLoading = false;
@@ -40,9 +43,14 @@
     let aiCacheRecent = [];
     let aiCacheRecentTotal = 0;
     let aiCacheRecentLimit = 10;
+    let chartsData = {
+        user_activity: [],
+        revenue_monthly: [],
+    };
 
     onMount(() => {
         loadStats();
+        loadCharts();
         loadAICacheStats();
         loadAICacheRecent();
         loadUnreadCount();
@@ -54,16 +62,22 @@
         return () => clearInterval(interval);
     });
 
-    async function loadStats() {
+    async function loadStats({ background = false } = {}) {
         try {
-            loading = true;
-            error = null;
+            if (!background) {
+                loading = true;
+                error = null;
+            }
             stats = await SuperAdminApi.getStats();
         } catch (err) {
-            error = err.message;
+            if (!background) {
+                error = err.message;
+            }
             console.error('Failed to load stats:', err);
         } finally {
-            loading = false;
+            if (!background) {
+                loading = false;
+            }
         }
     }
 
@@ -76,6 +90,18 @@
             aiCacheError = err.message;
         } finally {
             aiCacheLoading = false;
+        }
+    }
+
+    async function loadCharts() {
+        try {
+            chartsLoading = true;
+            chartsError = null;
+            chartsData = await SuperAdminApi.getCharts();
+        } catch (err) {
+            chartsError = err.message;
+        } finally {
+            chartsLoading = false;
         }
     }
 
@@ -185,8 +211,19 @@
 
     function closeTicketDetail() {
         selectedTicket = null;
-        loadStats(); // Refresh stats
+        loadStats({ background: true }); // Refresh summary without full-page spinner
         loadUnreadCount();
+    }
+
+    async function handleLogout() {
+        try {
+            await ApiService.logout();
+        } catch {
+            // no-op
+        }
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
     }
 </script>
 
@@ -201,7 +238,7 @@
                         SUPER ADMIN
                     </span>
                 </div>
-                <button onclick={() => { localStorage.removeItem('token'); window.location.href = '/'; }}
+                <button onclick={handleLogout}
                     class="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
                     Logout
                 </button>
@@ -213,7 +250,7 @@
         <div class="max-w-7xl mx-auto px-4 py-8">
             <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                 {error}
-                <button onclick={loadStats} class="ml-4 underline hover:no-underline">Retry</button>
+                <button onclick={() => loadStats()} class="ml-4 underline hover:no-underline">Retry</button>
             </div>
         </div>
     {:else if loading}
@@ -260,7 +297,7 @@
             {#if activeTab === 'stats'}
                 <div class="space-y-8">
                     <StatsCards {stats} />
-                    <Charts {stats} />
+                    <Charts {stats} chartData={chartsData} loading={chartsLoading} error={chartsError} />
 
                     <section class="bg-white border border-gray-200 rounded-xl p-5">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
@@ -379,7 +416,7 @@
                         <TicketDetail {selectedTicket} onClose={closeTicketDetail} />
                     </div>
                 {:else}
-                    <TicketList onSelect={openTicket} onRefresh={loadStats} />
+                    <TicketList onSelect={openTicket} onRefresh={() => loadStats({ background: true })} />
                 {/if}
             {/if}
         </div>

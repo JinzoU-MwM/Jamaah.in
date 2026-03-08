@@ -26,7 +26,8 @@ if sentry_dsn:
     )
 
 # FastAPI
-from fastapi import FastAPI, Request
+import hmac
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.responses import PlainTextResponse
 from fastapi.exceptions import RequestValidationError
@@ -95,6 +96,32 @@ if ENV == "production" and "*" in ALLOWED_ORIGINS:
 limiter = Limiter(key_func=get_remote_address)
 
 
+def _to_bool_env(value: str | None, default: bool) -> bool:
+    if value is None or value.strip() == "":
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _ops_endpoint_public_enabled() -> bool:
+    # In production, operational endpoints are private unless explicitly enabled.
+    default_public = ENV in {"development", "test"}
+    return _to_bool_env(os.getenv("EXPOSE_OPS_ENDPOINTS"), default_public)
+
+
+def _require_ops_access(request: Request) -> None:
+    if _ops_endpoint_public_enabled():
+        return
+
+    ops_token = os.getenv("OPS_ENDPOINT_TOKEN", "").strip()
+    if not ops_token:
+        # Hide endpoint when not configured for private access.
+        raise HTTPException(status_code=404, detail="Not found")
+
+    provided = request.headers.get("x-ops-token", "")
+    if not hmac.compare_digest(provided, ops_token):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
@@ -123,7 +150,7 @@ app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -225,14 +252,16 @@ async def health_check():
 
 
 @app.get("/cache-stats")
-async def cache_stats():
+async def cache_stats(request: Request):
     """Return OCR cache statistics."""
+    _require_ops_access(request)
     return ocr_cache.stats
 
 
 @app.get("/metrics")
-async def metrics():
+async def metrics(request: Request):
     """Prometheus-style metrics endpoint."""
+    _require_ops_access(request)
     return PlainTextResponse(
         metrics_store.render_prometheus(),
         media_type="text/plain; version=0.0.4; charset=utf-8",

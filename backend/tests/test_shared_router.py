@@ -19,6 +19,7 @@ from app.routers.shared_router import require_pro_plan
 from app.models.group import Group, GroupMember
 from app.models.operational import Room
 from app.models.user import User
+from app.auth import verify_password
 
 # Mock User
 mock_user = User(id=1, email="test@example.com", is_active=True)
@@ -57,7 +58,8 @@ class TestSharedRouter:
         data = response.json()
         assert "shared_token" in data
         assert data["pin"] == "1234"
-        assert group.shared_pin == "1234"
+        assert group.shared_pin != "1234"
+        assert verify_password("1234", group.shared_pin)
         assert group.shared_token is not None
         self.mock_db.commit.assert_called_once()
     

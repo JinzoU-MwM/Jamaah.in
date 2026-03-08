@@ -1,11 +1,11 @@
-import { API_URL, authHeaders, parseError } from '../apiCore.js';
+import { API_URL, authHeaders, parseError, apiFetch } from '../apiCore.js';
 
 export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
     return {
         async listGroups() {
             const cached = cacheGet('groups:list');
             if (cached) return cached;
-            const response = await fetch(`${API_URL}/groups/`, {
+            const response = await apiFetch(`${API_URL}/groups/`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -15,7 +15,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async createGroup(name, description = '') {
-            const response = await fetch(`${API_URL}/groups/`, {
+            const response = await apiFetch(`${API_URL}/groups/`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ name, description }),
@@ -28,7 +28,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         async getGroup(groupId) {
             const cached = cacheGet(`groups:${groupId}`);
             if (cached) return cached;
-            const response = await fetch(`${API_URL}/groups/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -38,7 +38,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async updateGroup(groupId, data) {
-            const response = await fetch(`${API_URL}/groups/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}`, {
                 method: 'PUT',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(data),
@@ -48,7 +48,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async deleteGroup(groupId) {
-            const response = await fetch(`${API_URL}/groups/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
@@ -58,7 +58,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async addGroupMembers(groupId, members) {
-            const response = await fetch(`${API_URL}/groups/${groupId}/members`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}/members`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ members }),
@@ -69,7 +69,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async updateGroupMember(groupId, memberId, data) {
-            const response = await fetch(`${API_URL}/groups/${groupId}/members/${memberId}`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}/members/${memberId}`, {
                 method: 'PUT',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(data),
@@ -79,7 +79,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async deleteGroupMember(groupId, memberId) {
-            const response = await fetch(`${API_URL}/groups/${groupId}/members/${memberId}`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}/members/${memberId}`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
@@ -89,7 +89,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async getInventoryForecast(groupId) {
-            const response = await fetch(`${API_URL}/inventory/forecast/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/inventory/forecast/${groupId}`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -97,7 +97,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async getFulfillmentStatus(groupId) {
-            const response = await fetch(`${API_URL}/inventory/fulfillment/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/inventory/fulfillment/${groupId}`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -105,7 +105,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async markMembersReceived(groupId, memberIds) {
-            const response = await fetch(`${API_URL}/inventory/fulfillment/${groupId}/mark-received`, {
+            const response = await apiFetch(`${API_URL}/inventory/fulfillment/${groupId}/mark-received`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ member_ids: memberIds, items_received: ['koper', 'baju'] }),
@@ -115,7 +115,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async updateMemberOperational(memberId, bajuSize, familyId) {
-            const response = await fetch(`${API_URL}/inventory/members/${memberId}/operational`, {
+            const response = await apiFetch(`${API_URL}/inventory/members/${memberId}/operational`, {
                 method: 'PUT',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ baju_size: bajuSize, family_id: familyId }),
@@ -125,7 +125,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async getRoomingSummary(groupId) {
-            const response = await fetch(`${API_URL}/rooming/summary/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/summary/${groupId}`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -133,7 +133,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async getGroupRooms(groupId) {
-            const response = await fetch(`${API_URL}/rooming/group/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/group/${groupId}`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -141,7 +141,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async createRoom(groupId, roomNumber, genderType = 'male', roomType = 'quad', capacity = 4) {
-            const response = await fetch(`${API_URL}/rooming/group/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/group/${groupId}`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ room_number: roomNumber, gender_type: genderType, room_type: roomType, capacity }),
@@ -151,7 +151,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async deleteRoom(roomId) {
-            const response = await fetch(`${API_URL}/rooming/${roomId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/${roomId}`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
@@ -160,7 +160,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async autoRooming(groupId, roomCapacity = 4) {
-            const response = await fetch(`${API_URL}/rooming/auto/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/auto/${groupId}`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ room_capacity: roomCapacity }),
@@ -170,7 +170,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async clearAutoRooming(groupId) {
-            const response = await fetch(`${API_URL}/rooming/auto/${groupId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/auto/${groupId}`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
@@ -179,7 +179,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async assignMemberToRoom(memberId, roomId) {
-            const response = await fetch(`${API_URL}/rooming/assign`, {
+            const response = await apiFetch(`${API_URL}/rooming/assign`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ member_id: memberId, room_id: roomId }),
@@ -189,7 +189,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async unassignMember(memberId) {
-            const response = await fetch(`${API_URL}/rooming/unassign/${memberId}`, {
+            const response = await apiFetch(`${API_URL}/rooming/unassign/${memberId}`, {
                 method: 'POST',
                 headers: authHeaders(),
             });
@@ -198,7 +198,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async shareGroup(groupId, pin, expiresInDays = 30) {
-            const response = await fetch(`${API_URL}/groups/${groupId}/share`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}/share`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ pin, expires_in_days: expiresInDays }),
@@ -208,7 +208,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async revokeShare(groupId) {
-            const response = await fetch(`${API_URL}/groups/${groupId}/share`, {
+            const response = await apiFetch(`${API_URL}/groups/${groupId}/share`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
@@ -217,7 +217,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async getSharedManifest(sharedToken, pin) {
-            const response = await fetch(`${API_URL}/shared/manifest/${sharedToken}`, {
+            const response = await apiFetch(`${API_URL}/shared/manifest/${sharedToken}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ pin }),
@@ -227,7 +227,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async getTeam() {
-            const response = await fetch(`${API_URL}/team/`, {
+            const response = await apiFetch(`${API_URL}/team/`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -235,7 +235,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async createOrganization(name) {
-            const response = await fetch(`${API_URL}/team/create`, {
+            const response = await apiFetch(`${API_URL}/team/create`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ name }),
@@ -245,7 +245,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async inviteTeamMember(email, role = 'viewer') {
-            const response = await fetch(`${API_URL}/team/invite`, {
+            const response = await apiFetch(`${API_URL}/team/invite`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ email, role }),
@@ -255,7 +255,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async joinTeam(token) {
-            const response = await fetch(`${API_URL}/team/join/${token}`, {
+            const response = await apiFetch(`${API_URL}/team/join/${token}`, {
                 method: 'POST',
                 headers: authHeaders(),
             });
@@ -264,7 +264,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async updateTeamMemberRole(memberId, role) {
-            const response = await fetch(`${API_URL}/team/members/${memberId}`, {
+            const response = await apiFetch(`${API_URL}/team/members/${memberId}`, {
                 method: 'PATCH',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ role }),
@@ -274,7 +274,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async removeTeamMember(memberId) {
-            const response = await fetch(`${API_URL}/team/members/${memberId}`, {
+            const response = await apiFetch(`${API_URL}/team/members/${memberId}`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });
@@ -283,7 +283,7 @@ export function createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }) {
         },
 
         async cancelTeamInvite(inviteId) {
-            const response = await fetch(`${API_URL}/team/invites/${inviteId}`, {
+            const response = await apiFetch(`${API_URL}/team/invites/${inviteId}`, {
                 method: 'DELETE',
                 headers: authHeaders(),
             });

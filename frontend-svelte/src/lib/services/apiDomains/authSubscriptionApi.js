@@ -1,9 +1,9 @@
-import { API_URL, authHeaders, parseError } from '../apiCore.js';
+import { API_URL, authHeaders, parseError, apiFetch } from '../apiCore.js';
 
 export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
     return {
         async register(email, password, name) {
-            const response = await fetch(`${API_URL}/auth/register`, {
+            const response = await apiFetch(`${API_URL}/auth/register`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password, name }),
@@ -13,7 +13,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async login(email, password) {
-            const response = await fetch(`${API_URL}/auth/login`, {
+            const response = await apiFetch(`${API_URL}/auth/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password }),
@@ -22,10 +22,19 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
             return await response.json();
         },
 
+        async logout() {
+            const response = await apiFetch(`${API_URL}/auth/logout`, {
+                method: 'POST',
+                headers: authHeaders(),
+            });
+            if (!response.ok) throw new Error(await parseError(response));
+            return await response.json();
+        },
+
         async getMe() {
             const cached = cacheGet('auth:me');
             if (cached) return cached;
-            const response = await fetch(`${API_URL}/auth/me`, {
+            const response = await apiFetch(`${API_URL}/auth/me`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -37,7 +46,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         async getSubscriptionStatus() {
             const cached = cacheGet('sub:status');
             if (cached) return cached;
-            const response = await fetch(`${API_URL}/subscription/status`, {
+            const response = await apiFetch(`${API_URL}/subscription/status`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -47,7 +56,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async upgradeToPro(paymentRef = null) {
-            const response = await fetch(`${API_URL}/subscription/upgrade`, {
+            const response = await apiFetch(`${API_URL}/subscription/upgrade`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ payment_ref: paymentRef }),
@@ -57,7 +66,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async updateProfile(updates) {
-            const response = await fetch(`${API_URL}/auth/profile`, {
+            const response = await apiFetch(`${API_URL}/auth/profile`, {
                 method: 'PATCH',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(updates),
@@ -67,7 +76,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async changePassword(currentPassword, newPassword) {
-            const response = await fetch(`${API_URL}/auth/change-password`, {
+            const response = await apiFetch(`${API_URL}/auth/change-password`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
@@ -77,7 +86,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async getActivity() {
-            const response = await fetch(`${API_URL}/auth/activity`, {
+            const response = await apiFetch(`${API_URL}/auth/activity`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -85,7 +94,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async deleteAccount(password) {
-            const response = await fetch(`${API_URL}/auth/account`, {
+            const response = await apiFetch(`${API_URL}/auth/account`, {
                 method: 'DELETE',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ password }),
@@ -95,7 +104,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async verifyEmail(email, otp) {
-            const response = await fetch(`${API_URL}/auth/verify-email`, {
+            const response = await apiFetch(`${API_URL}/auth/verify-email`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, otp }),
@@ -105,7 +114,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async resendOtp(email) {
-            const response = await fetch(`${API_URL}/auth/resend-otp`, {
+            const response = await apiFetch(`${API_URL}/auth/resend-otp`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -115,7 +124,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async forgotPassword(email) {
-            const response = await fetch(`${API_URL}/auth/forgot-password`, {
+            const response = await apiFetch(`${API_URL}/auth/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email }),
@@ -125,7 +134,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async resetPassword(email, code, newPassword) {
-            const response = await fetch(`${API_URL}/auth/reset-password`, {
+            const response = await apiFetch(`${API_URL}/auth/reset-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, code, new_password: newPassword }),
@@ -135,7 +144,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async sendPhoneOtp(phoneNumber) {
-            const response = await fetch(`${API_URL}/auth/send-phone-otp`, {
+            const response = await apiFetch(`${API_URL}/auth/send-phone-otp`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ phone_number: phoneNumber }),
@@ -145,7 +154,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async verifyPhone(phoneNumber, otp) {
-            const response = await fetch(`${API_URL}/auth/verify-phone`, {
+            const response = await apiFetch(`${API_URL}/auth/verify-phone`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ phone_number: phoneNumber, otp }),
@@ -157,7 +166,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         async getTrialStatus() {
             const cached = cacheGet('sub:trial');
             if (cached) return cached;
-            const response = await fetch(`${API_URL}/subscription/trial-status`, {
+            const response = await apiFetch(`${API_URL}/subscription/trial-status`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));
@@ -167,7 +176,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async activateProTrial() {
-            const response = await fetch(`${API_URL}/subscription/activate-trial`, {
+            const response = await apiFetch(`${API_URL}/subscription/activate-trial`, {
                 method: 'POST',
                 headers: authHeaders(),
             });
@@ -176,7 +185,7 @@ export function createAuthSubscriptionApi({ cacheGet, cacheSet }) {
         },
 
         async getPricing() {
-            const response = await fetch(`${API_URL}/subscription/pricing`, {
+            const response = await apiFetch(`${API_URL}/subscription/pricing`, {
                 headers: authHeaders(),
             });
             if (!response.ok) throw new Error(await parseError(response));

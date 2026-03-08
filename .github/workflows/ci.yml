@@ -48,7 +48,14 @@ jobs:
             backend/tests/test_ocr_review_router.py \
             backend/tests/integration/test_group_duplicates.py \
             backend/tests/integration/test_audit_log.py \
-            backend/tests/integration/test_super_admin_ai_cache_router.py
+            backend/tests/integration/test_super_admin_ai_cache_router.py \
+            backend/tests/integration/test_payment_webhook_security.py \
+            backend/tests/integration/test_registration_security.py \
+            backend/tests/integration/test_shared_manifest_security.py \
+            backend/tests/integration/test_export_template_security.py \
+            backend/tests/integration/test_auth_cookie_session.py \
+            backend/tests/integration/test_ops_endpoint_security.py \
+            backend/tests/integration/test_super_admin_charts_router.py
 
   frontend-verify:
     runs-on: ubuntu-latest

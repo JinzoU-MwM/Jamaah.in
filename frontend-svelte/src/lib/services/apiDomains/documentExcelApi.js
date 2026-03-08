@@ -1,4 +1,4 @@
-import { API_URL, authHeaders, parseError } from '../apiCore.js';
+import { API_URL, authHeaders, parseError, apiFetch } from '../apiCore.js';
 
 export const documentExcelApi = {
     /**
@@ -6,7 +6,7 @@ export const documentExcelApi = {
      */
     async getOcrStatus() {
         try {
-            const response = await fetch(`${API_URL}/ocr/status`, {
+            const response = await apiFetch(`${API_URL}/ocr/status`, {
                 headers: authHeaders(),
             });
 
@@ -45,7 +45,7 @@ export const documentExcelApi = {
             : `${API_URL}/process-documents/`;
 
         try {
-            const response = await fetch(url, {
+            const response = await apiFetch(url, {
                 method: 'POST',
                 headers: authHeaders(),
                 body: formData,
@@ -93,7 +93,7 @@ export const documentExcelApi = {
 
     async generateExcel(data) {
         try {
-            const response = await fetch(`${API_URL}/generate-excel/`, {
+            const response = await apiFetch(`${API_URL}/generate-excel/`, {
                 method: 'POST',
                 headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ data }),

@@ -5,22 +5,21 @@ import { mapError } from './toast.svelte.js';
 export const API_URL = '/api';
 
 /**
- * Get stored JWT token
+ * Create request headers.
+ * Auth is carried by HttpOnly cookie session.
  */
-export function getToken() {
-    return localStorage.getItem('token');
+export function authHeaders(extra = {}) {
+    return { ...extra };
 }
 
 /**
- * Create headers with auth token
+ * Cookie-aware fetch for API requests.
  */
-export function authHeaders(extra = {}) {
-    const token = getToken();
-    const headers = { ...extra };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
+export function apiFetch(url, options = {}) {
+    return fetch(url, {
+        credentials: 'include',
+        ...options,
+    });
 }
 
 /**

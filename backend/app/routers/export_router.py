@@ -1,20 +1,28 @@
 """
 Export Template Router — Custom Excel template upload and export.
 """
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from sqlalchemy.orm import Session
-from openpyxl import load_workbook, Workbook
-from openpyxl.utils import get_column_letter
 import os
-from typing import Optional
+import uuid
+from pathlib import Path
+from io import BytesIO
+
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
 from app.database import get_db
 from app.auth import get_current_user
 from app.models.user import User
 from app.models.export_template import ExportTemplate
 from app.models.group import Group, GroupMember
+from app.config import UPLOAD_DIR, MAX_FILE_SIZE
 
 router = APIRouter(prefix="/export-templates", tags=["export"])
+TEMPLATE_UPLOAD_DIR = (UPLOAD_DIR / "templates").resolve()
+TEMPLATE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Header mapping for auto-detection
 HEADER_MAPPINGS = {
@@ -62,6 +70,21 @@ HEADER_MAPPINGS = {
 }
 
 
+class ConfigureTemplateRequest(BaseModel):
+    name: str | None = None
+    column_mapping: dict
+    header_row: int = 1
+    data_start_row: int = 2
+
+
+def _resolve_template_path(path_value: str) -> Path:
+    """Resolve and enforce template path boundary inside TEMPLATE_UPLOAD_DIR."""
+    resolved = Path(path_value).resolve()
+    if TEMPLATE_UPLOAD_DIR not in resolved.parents:
+        raise HTTPException(400, "Invalid template path")
+    return resolved
+
+
 @router.post("/upload")
 async def upload_template(
     file: UploadFile = File(...),
@@ -69,17 +92,19 @@ async def upload_template(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Upload Excel template and auto-detect column mappings."""
-    if not file.filename.endswith((".xlsx", ".xls", ".xlsm")):
+    """Upload Excel template and return server-side template handle."""
+    original_name = Path(file.filename or "").name
+    ext = Path(original_name).suffix.lower()
+    if ext not in {".xlsx", ".xls", ".xlsm"}:
         raise HTTPException(400, "File must be Excel (.xlsx, .xls, .xlsm)")
 
-    # Save file
-    upload_dir = "uploads/templates"
-    os.makedirs(upload_dir, exist_ok=True)
-    file_path = os.path.join(upload_dir, f"{current_user.id}_{file.filename}")
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(400, "Template file too large")
 
+    safe_filename = f"{current_user.id}_{uuid.uuid4().hex}{ext}"
+    file_path = (TEMPLATE_UPLOAD_DIR / safe_filename).resolve()
     with open(file_path, "wb") as f:
-        content = await file.read()
         f.write(content)
 
     # Load workbook and detect headers
@@ -100,48 +125,66 @@ async def upload_template(
             if header_lower in HEADER_MAPPINGS:
                 mapping[idx] = HEADER_MAPPINGS[header_lower]
 
+        template = ExportTemplate(
+            user_id=current_user.id,
+            name=(name or "Template").strip(),
+            file_path=str(file_path),
+            column_mapping=mapping,
+            header_row=1,
+            data_start_row=2,
+        )
+        db.add(template)
+        db.commit()
+        db.refresh(template)
+
         return {
-            "file_path": file_path,
+            "template_id": template.id,
             "headers": headers,
             "auto_mapping": mapping,
             "detected_count": len(mapping),
             "total_columns": len(headers),
+            "name": template.name,
         }
     except Exception as e:
-        os.remove(file_path)
+        if file_path.exists():
+            os.remove(file_path)
         raise HTTPException(400, f"Failed to read Excel file: {str(e)}")
 
 
-@router.post("/")
-def save_template(
-    name: str,
-    file_path: str,
-    column_mapping: dict,
-    header_row: int = 1,
-    data_start_row: int = 2,
+@router.post("/{template_id}/configure")
+def configure_template(
+    template_id: int,
+    body: ConfigureTemplateRequest,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Save a template with custom mapping."""
-    if not os.path.exists(file_path):
+    """Configure an uploaded template by id (server-issued handle)."""
+    template = (
+        db.query(ExportTemplate)
+        .filter(
+            ExportTemplate.id == template_id,
+            ExportTemplate.user_id == current_user.id,
+        )
+        .first()
+    )
+    if not template:
+        raise HTTPException(404, "Template not found")
+
+    template_path = _resolve_template_path(template.file_path)
+    if not template_path.exists():
         raise HTTPException(400, "Template file not found")
 
-    template = ExportTemplate(
-        user_id=current_user.id,
-        name=name,
-        file_path=file_path,
-        column_mapping=column_mapping,
-        header_row=header_row,
-        data_start_row=data_start_row,
-    )
-    db.add(template)
+    template.name = (body.name or template.name).strip()
+    template.column_mapping = body.column_mapping
+    template.header_row = body.header_row
+    template.data_start_row = body.data_start_row
     db.commit()
     db.refresh(template)
 
     return {
         "id": template.id,
         "name": template.name,
-        "column_count": len(column_mapping),
+        "column_count": len(body.column_mapping),
     }
 
 
@@ -217,9 +260,9 @@ def delete_template(
     if not template:
         raise HTTPException(404, "Template not found")
 
-    # Delete file
-    if os.path.exists(template.file_path):
-        os.remove(template.file_path)
+    template_path = _resolve_template_path(template.file_path)
+    if template_path.exists():
+        os.remove(template_path)
 
     db.delete(template)
     db.commit()
@@ -235,9 +278,6 @@ def export_with_template(
     current_user: User = Depends(get_current_user),
 ):
     """Export group data using a saved template."""
-    from fastapi.responses import StreamingResponse
-    from io import BytesIO
-
     # Verify group ownership
     group = db.query(Group).filter(Group.id == group_id).first()
     if not group or group.user_id != current_user.id:
@@ -264,14 +304,18 @@ def export_with_template(
     )
 
     # Load template
-    wb = load_workbook(template.file_path)
+    template_path = _resolve_template_path(template.file_path)
+    if not template_path.exists():
+        raise HTTPException(400, "Template file not found")
+    wb = load_workbook(template_path)
     ws = wb.active
 
     # Write data
     row_idx = template.data_start_row
     for member in members:
         for col_idx, field_name in template.column_mapping.items():
-            col_letter = get_column_letter(col_idx + 1)  # 1-indexed
+            col_num = int(col_idx)
+            col_letter = get_column_letter(col_num + 1)  # 1-indexed
             value = getattr(member, field_name, "")
             ws[f"{col_letter}{row_idx}"] = value or ""
         row_idx += 1

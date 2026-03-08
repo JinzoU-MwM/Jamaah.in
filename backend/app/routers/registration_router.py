@@ -1,7 +1,8 @@
 """
 Registration Router — Self-service jamaah onboarding via registration links.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from pathlib import Path
+from fastapi import APIRouter, Depends, HTTPException, status, Form, UploadFile, File
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from typing import Optional
@@ -16,6 +17,7 @@ from app.models.group import Group, GroupMember
 from app.models.registration import RegistrationLink
 from app.models.pending_member import PendingMember
 from pydantic import BaseModel
+from app.config import MAX_FILE_SIZE, ALLOWED_EXTENSIONS
 
 router = APIRouter(prefix="/registration", tags=["registration"])
 
@@ -75,6 +77,12 @@ def get_link_info(
     current_user: User = Depends(get_current_user),
 ):
     """Get registration link info for a group."""
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group:
+        raise HTTPException(404, "Group not found")
+    if group.user_id != current_user.id:
+        raise HTTPException(403, "Not authorized")
+
     link = (
         db.query(RegistrationLink)
         .filter(
@@ -103,6 +111,12 @@ def revoke_link(
     current_user: User = Depends(get_current_user),
 ):
     """Revoke registration link."""
+    group = db.query(Group).filter(Group.id == group_id).first()
+    if not group:
+        raise HTTPException(404, "Group not found")
+    if group.user_id != current_user.id:
+        raise HTTPException(403, "Not authorized")
+
     link = (
         db.query(RegistrationLink)
         .filter(
@@ -150,10 +164,13 @@ def get_registration_info(token: str, db: Session = Depends(get_db)):
 @router.post("/public/{token}")
 async def submit_registration(
     token: str,
-    phone_number: str,
+    phone_number: str = Form(...),
+    ktp: UploadFile | None = File(None),
+    passport: UploadFile | None = File(None),
+    visa: UploadFile | None = File(None),
     db: Session = Depends(get_db),
 ):
-    """Submit registration data."""
+    """Submit registration data via multipart form."""
     link = (
         db.query(RegistrationLink)
         .filter(
@@ -168,6 +185,16 @@ async def submit_registration(
 
     if datetime.utcnow() > link.expires_at:
         raise HTTPException(410, "Registration link has expired")
+
+    for field_name, upload in (("ktp", ktp), ("passport", passport), ("visa", visa)):
+        if not upload:
+            continue
+        ext = Path(upload.filename or "").suffix.lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            raise HTTPException(400, f"Invalid {field_name} file type")
+        content = await upload.read()
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(400, f"{field_name} file too large")
 
     # Check for duplicate phone number
     existing = (

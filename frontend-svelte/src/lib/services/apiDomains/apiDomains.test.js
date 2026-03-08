@@ -22,7 +22,6 @@ describe('API domain modules', () => {
     beforeEach(() => {
         vi.restoreAllMocks();
         vi.stubGlobal('localStorage', createStorageMock());
-        localStorage.setItem('token', 'test-token');
         fetchMock = vi.fn();
         vi.stubGlobal('fetch', fetchMock);
     });
@@ -48,9 +47,7 @@ describe('API domain modules', () => {
         expect(fetchMock).toHaveBeenCalledWith(
             '/api/auth/me',
             expect.objectContaining({
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });
@@ -68,9 +65,7 @@ describe('API domain modules', () => {
             '/api/payment/create-order?plan_type=yearly',
             expect.objectContaining({
                 method: 'POST',
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });
@@ -114,9 +109,7 @@ describe('API domain modules', () => {
         expect(fetchMock).toHaveBeenCalledWith(
             '/api/ocr/status',
             expect.objectContaining({
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });
@@ -135,9 +128,7 @@ describe('API domain modules', () => {
             '/api/process-documents/?session_id=sess-1&cache_mode=default',
             expect.objectContaining({
                 method: 'POST',
-                headers: expect.objectContaining({
-                    Authorization: 'Bearer test-token',
-                }),
+                credentials: 'include',
             })
         );
     });

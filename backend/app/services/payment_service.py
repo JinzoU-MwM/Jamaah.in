@@ -5,6 +5,8 @@ Handles payment URL generation and transaction verification.
 import os
 import json
 import logging
+import hmac
+import hashlib
 import urllib.request
 import urllib.error
 from datetime import datetime
@@ -13,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 PAKASIR_SLUG = os.getenv("PAKASIR_SLUG", "") or os.getenv("SLUG", "")
 PAKASIR_API_KEY = os.getenv("PAKASIR_API_KEY", "")
+PAKASIR_WEBHOOK_SECRET = os.getenv("PAKASIR_WEBHOOK_SECRET", "")
 PAKASIR_BASE_URL = "https://app.pakasir.com"
 
 # Pricing constants
@@ -69,3 +72,23 @@ def verify_transaction(order_id: str) -> dict:
     except Exception as e:
         logger.error("Pakasir API failed for order %s: %s", order_id, str(e))
         return None
+
+
+def verify_webhook_signature(raw_body: bytes, signature_header: str | None) -> bool:
+    """
+    Verify Pakasir webhook signature using HMAC SHA-256 over the raw request body.
+    Accepts plain hex value or 'sha256=<hex>'.
+    """
+    if not PAKASIR_WEBHOOK_SECRET or not signature_header:
+        return False
+
+    candidate = signature_header.strip()
+    if candidate.lower().startswith("sha256="):
+        candidate = candidate.split("=", 1)[1].strip()
+
+    expected = hmac.new(
+        PAKASIR_WEBHOOK_SECRET.encode("utf-8"),
+        raw_body,
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(candidate.lower(), expected.lower())

@@ -263,26 +263,19 @@
 
   async function checkSuperAdminAuth() {
     checkingSuperAdminAuth = true;
-    const token = localStorage.getItem("token");
     const savedUser = localStorage.getItem("user");
 
-    console.log("[Super Admin Check] Token exists:", !!token);
-    console.log("[Super Admin Check] Saved user:", savedUser ? JSON.parse(savedUser) : null);
-
-    if (!token || !savedUser) {
-      // Not authenticated, redirect to login
-      console.log("[Super Admin Check] Redirecting to login - no auth");
-      checkingSuperAdminAuth = false;
-      window.location.hash = "#/login";
-      currentPage = "login";
-      return;
+    if (savedUser) {
+      try {
+        user = JSON.parse(savedUser);
+      } catch {
+        user = null;
+      }
     }
 
     try {
       // Try to get current user and verify super admin status
       const me = await ApiService.getMe();
-      console.log("[Super Admin Check] User from API:", me);
-      console.log("[Super Admin Check] is_super_admin:", me.is_super_admin);
       user = me;
       localStorage.setItem("user", JSON.stringify(me));
 
@@ -304,10 +297,8 @@
       groups = groupsData.groups || [];
       trialAvailable = trial?.trial_available ?? false;
     } catch (err) {
-      console.error("[Super Admin Check] Auth error:", err);
       checkingSuperAdminAuth = false;
       user = null;
-      localStorage.removeItem("token");
       localStorage.removeItem("user");
       window.location.hash = "#/login";
       currentPage = "login";
@@ -320,6 +311,8 @@
     // Clean up any leftover dark mode from previous versions
     document.documentElement.classList.remove("dark");
     localStorage.removeItem("darkMode");
+    // Drop legacy bearer token storage; cookie session is authoritative.
+    localStorage.removeItem("token");
 
     // If already on public page (set by getInitialPageAndTokens), skip auth flow
     if (currentPage === "mutawwif" || currentPage === "registration") {
@@ -351,36 +344,37 @@
       }
     });
 
-    // Check for existing token — optimistic navigation
-    const token = localStorage.getItem("token");
+    // Check for existing cookie session — optimistic navigation from cached profile
     const savedUser = localStorage.getItem("user");
-    if (token && savedUser) {
-      // P4: Show dashboard immediately from cached user
+    if (savedUser) {
       try {
         user = JSON.parse(savedUser);
       } catch {
         user = { name: "User", email: "" };
       }
       currentPage = "dashboard";
+    }
 
-      try {
-        // P0: Fetch ALL data in parallel instead of sequentially
-        const [me, sub, groupsData, trial] = await Promise.all([
-          ApiService.getMe(),
-          ApiService.getSubscriptionStatus(),
-          ApiService.listGroups(),
-          ApiService.getTrialStatus().catch(() => null),
-        ]);
-        user = me;
-        localStorage.setItem("user", JSON.stringify(me));
-        subscription = sub;
-        groups = groupsData.groups || [];
-        trialAvailable = trial?.trial_available ?? false;
-      } catch {
-        // Token expired or invalid
+    try {
+      // Validate cookie session and hydrate user data in parallel.
+      const [me, sub, groupsData, trial] = await Promise.all([
+        ApiService.getMe(),
+        ApiService.getSubscriptionStatus(),
+        ApiService.listGroups(),
+        ApiService.getTrialStatus().catch(() => null),
+      ]);
+      user = me;
+      localStorage.setItem("user", JSON.stringify(me));
+      subscription = sub;
+      groups = groupsData.groups || [];
+      trialAvailable = trial?.trial_available ?? false;
+      currentPage = currentPage === "super-admin" ? "super-admin" : "dashboard";
+    } catch {
+      if (savedUser) {
         user = null;
-        localStorage.removeItem("token");
         localStorage.removeItem("user");
+      }
+      if (currentPage !== "landing") {
         currentPage = "landing";
       }
     }
@@ -414,11 +408,16 @@
       groups = groupsData.groups || [];
       trialAvailable = trial?.trial_available ?? false;
     } catch (e) {
-      console.error("Failed to load user data:", e);
+      // non-blocking refresh
     }
   }
 
-  function handleLogout() {
+  async function handleLogout() {
+    try {
+      await ApiService.logout();
+    } catch {
+      // no-op
+    }
     user = null;
     subscription = null;
     groups = [];

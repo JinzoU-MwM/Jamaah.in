@@ -14,22 +14,33 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.auth import get_current_user, check_access
+from app.auth import get_current_user, check_access, hash_password, verify_password
 from app.models.user import User
 from app.models.group import Group, GroupMember
 from app.models.operational import Room
 from sqlalchemy.orm import joinedload
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Shared Manifest"])
+limiter = Limiter(key_func=get_remote_address)
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+try:
+    MAX_PIN_ATTEMPTS = int(os.getenv("SHARED_PIN_MAX_ATTEMPTS", "5"))
+except ValueError:
+    MAX_PIN_ATTEMPTS = 5
+try:
+    PIN_LOCK_MINUTES = int(os.getenv("SHARED_PIN_LOCK_MINUTES", "15"))
+except ValueError:
+    PIN_LOCK_MINUTES = 15
 
 
 def utc_now() -> datetime:
@@ -103,6 +114,18 @@ class ManifestResponse(BaseModel):
     members: List[MutawwifMemberResponse]
 
 
+def _verify_shared_pin(provided_pin: str, stored_pin: str) -> bool:
+    """
+    Verify shared PIN, supporting both hashed (new) and plaintext (legacy) values.
+    """
+    if not stored_pin:
+        return False
+    try:
+        return verify_password(provided_pin, stored_pin)
+    except Exception:
+        return provided_pin == stored_pin
+
+
 # =============================================================================
 # ENDPOINT 1: Generate/Update Share Link (Protected — JWT + Pro)
 # =============================================================================
@@ -135,8 +158,10 @@ async def share_group(
     if not group.shared_token:
         group.shared_token = uuid.uuid4().hex  # 32-char hex string
 
-    group.shared_pin = body.pin
+    group.shared_pin = hash_password(body.pin)
     group.shared_expires_at = utc_now() + timedelta(days=body.expires_in_days)
+    group.shared_failed_attempts = 0
+    group.shared_locked_until = None
 
     db.commit()
     db.refresh(group)
@@ -148,7 +173,7 @@ async def share_group(
     return ShareGroupResponse(
         shared_token=group.shared_token,
         shared_url=shared_url,
-        pin=group.shared_pin,
+        pin=body.pin,
         expires_at=group.shared_expires_at.isoformat(),
         group_name=group.name
     )
@@ -159,7 +184,9 @@ async def share_group(
 # =============================================================================
 
 @router.post("/shared/manifest/{shared_token}")
+@limiter.limit("20/minute")
 async def get_shared_manifest(
+    request: Request,
     shared_token: str,
     body: ManifestPinRequest,
     db: Session = Depends(get_db),
@@ -183,9 +210,30 @@ async def get_shared_manifest(
             detail="Link sudah kedaluwarsa. Hubungi admin untuk memperpanjang."
         )
 
+    if group.shared_locked_until and group.shared_locked_until > utc_now():
+        raise HTTPException(
+            status_code=429,
+            detail="Terlalu banyak percobaan PIN. Coba lagi beberapa menit lagi.",
+        )
+
     # Verify PIN
-    if not group.shared_pin or body.pin != group.shared_pin:
+    if not _verify_shared_pin(body.pin, group.shared_pin or ""):
+        group.shared_failed_attempts = (group.shared_failed_attempts or 0) + 1
+        if group.shared_failed_attempts >= MAX_PIN_ATTEMPTS:
+            group.shared_failed_attempts = 0
+            group.shared_locked_until = utc_now() + timedelta(minutes=PIN_LOCK_MINUTES)
+            db.commit()
+            raise HTTPException(
+                status_code=429,
+                detail="Terlalu banyak percobaan PIN. Coba lagi beberapa menit lagi.",
+            )
+        db.commit()
         raise HTTPException(status_code=401, detail="PIN salah")
+
+    if group.shared_failed_attempts or group.shared_locked_until:
+        group.shared_failed_attempts = 0
+        group.shared_locked_until = None
+        db.commit()
 
     # Fetch members with room info (joinedload prevents N+1 query problem)
     members = db.query(GroupMember).options(

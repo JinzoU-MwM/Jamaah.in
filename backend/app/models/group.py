@@ -27,6 +27,8 @@ class Group(Base):
     shared_token = Column(String(64), unique=True, index=True, nullable=True)   # UUIDv4
     shared_pin = Column(String(10), nullable=True)                               # 4-digit PIN
     shared_expires_at = Column(DateTime, nullable=True)                          # Auto-expire
+    shared_failed_attempts = Column(Integer, default=0, nullable=False)
+    shared_locked_until = Column(DateTime, nullable=True)
 
     # --- Organization (Team) link ---
     org_id = Column(Integer, ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True, index=True)

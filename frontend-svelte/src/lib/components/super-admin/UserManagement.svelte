@@ -1,6 +1,6 @@
 <script>
     import { onMount } from 'svelte';
-    import { ApiService } from '../../services/api.js';
+    import { apiFetch, authHeaders } from '../../services/apiCore.js';
 
     export let onUpdate = () => {};
 
@@ -31,10 +31,8 @@
                 limit: String(limit)
             });
             if (search) params.append('search', search);
-            const result = await fetch(`/api/admin/users?${params}`, {
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                }
+            const result = await apiFetch(`/api/admin/users?${params}`, {
+                headers: authHeaders(),
             });
             if (!result.ok) throw new Error('Failed to load users');
             const data = await result.json();
@@ -60,12 +58,9 @@
     async function toggleUserStatus(user) {
         try {
             const endpoint = user.is_active ? '/admin/users' : '/admin/users';
-            const result = await fetch(`/api${endpoint}/${user.id}/active`, {
+            const result = await apiFetch(`/api${endpoint}/${user.id}/active`, {
                 method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ is_active: !user.is_active })
             });
             if (!result.ok) throw new Error('Failed to update user');
@@ -78,12 +73,9 @@
 
     async function setAdminStatus(user, isAdmin) {
         try {
-            const result = await fetch(`/api/admin/users/${user.id}/admin`, {
+            const result = await apiFetch(`/api/admin/users/${user.id}/admin`, {
                 method: 'PATCH',
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: authHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ is_admin: isAdmin })
             });
             if (!result.ok) throw new Error('Failed to update admin status');

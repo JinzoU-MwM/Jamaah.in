@@ -9,7 +9,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from bcrypt import hashpw, gensalt, checkpw
@@ -27,8 +27,12 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_HOURS = 24
 TRIAL_DAYS = 7
 FREE_USAGE_LIMIT = 5  # Free tier: 5 scans lifetime
+AUTH_COOKIE_NAME = os.getenv("AUTH_COOKIE_NAME", "jamaah_session")
+COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").strip().lower() == "true"
+COOKIE_SAMESITE = os.getenv("COOKIE_SAMESITE", "lax").strip().lower()
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "").strip() or None
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 
 def utc_now() -> datetime:
@@ -156,11 +160,23 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
 # =============================================================================
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    request: Request,
+    token: str | None = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ) -> User:
     """FastAPI dependency: extract current user from JWT."""
-    payload = decode_token(token)
+    cookie_token = request.cookies.get(AUTH_COOKIE_NAME)
+    resolved_token = token or cookie_token
+    if not resolved_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if resolved_token.lower().startswith("bearer "):
+        resolved_token = resolved_token.split(" ", 1)[1]
+
+    payload = decode_token(resolved_token)
     user_id = payload.get("sub")
     if user_id is None:
         raise HTTPException(status_code=401, detail="Token tidak valid")

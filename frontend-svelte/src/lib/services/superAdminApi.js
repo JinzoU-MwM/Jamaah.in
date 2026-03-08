@@ -1,7 +1,7 @@
 // Super Admin API Service
 // Provides API methods for the super admin dashboard
 
-import { API_URL, authHeaders, parseError } from './apiCore.js';
+import { API_URL, authHeaders, parseError, apiFetch } from './apiCore.js';
 
 export const SuperAdminApi = {
     // ========================================================================
@@ -9,7 +9,15 @@ export const SuperAdminApi = {
     // ========================================================================
 
     async getStats() {
-        const response = await fetch(`${API_URL}/super-admin/stats`, {
+        const response = await apiFetch(`${API_URL}/super-admin/stats`, {
+            headers: authHeaders(),
+        });
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
+    async getCharts() {
+        const response = await apiFetch(`${API_URL}/super-admin/charts`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -21,7 +29,7 @@ export const SuperAdminApi = {
     // ========================================================================
 
     async getAICacheStats() {
-        const response = await fetch(`${API_URL}/super-admin/ai-cache/stats`, {
+        const response = await apiFetch(`${API_URL}/super-admin/ai-cache/stats`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -35,7 +43,7 @@ export const SuperAdminApi = {
         });
         if (expiredOnly) params.append('expired_only', 'true');
 
-        const response = await fetch(`${API_URL}/super-admin/ai-cache/recent?${params}`, {
+        const response = await apiFetch(`${API_URL}/super-admin/ai-cache/recent?${params}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -43,7 +51,7 @@ export const SuperAdminApi = {
     },
 
     async purgeExpiredAICache() {
-        const response = await fetch(`${API_URL}/super-admin/ai-cache/purge-expired`, {
+        const response = await apiFetch(`${API_URL}/super-admin/ai-cache/purge-expired`, {
             method: 'POST',
             headers: authHeaders(),
         });
@@ -55,7 +63,7 @@ export const SuperAdminApi = {
         const params = new URLSearchParams({ limit: String(limit) });
         if (expiredOnly) params.append('expired_only', 'true');
 
-        const response = await fetch(`${API_URL}/super-admin/ai-cache/recent/export?${params}`, {
+        const response = await apiFetch(`${API_URL}/super-admin/ai-cache/recent/export?${params}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -63,7 +71,7 @@ export const SuperAdminApi = {
     },
 
     async deleteAICacheKey(cacheKey) {
-        const response = await fetch(`${API_URL}/super-admin/ai-cache/${cacheKey}`, {
+        const response = await apiFetch(`${API_URL}/super-admin/ai-cache/${cacheKey}`, {
             method: 'DELETE',
             headers: authHeaders(),
         });
@@ -81,7 +89,7 @@ export const SuperAdminApi = {
         if (status) params.append('status', status);
         if (priority) params.append('priority', priority);
 
-        const response = await fetch(`${API_URL}/super-admin/tickets?${params}`, {
+        const response = await apiFetch(`${API_URL}/super-admin/tickets?${params}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -89,7 +97,7 @@ export const SuperAdminApi = {
     },
 
     async getUnreadTicketCount() {
-        const response = await fetch(`${API_URL}/super-admin/tickets/unread-count`, {
+        const response = await apiFetch(`${API_URL}/super-admin/tickets/unread-count`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -97,7 +105,7 @@ export const SuperAdminApi = {
     },
 
     async getTicketDetail(ticketId) {
-        const response = await fetch(`${API_URL}/super-admin/tickets/${ticketId}`, {
+        const response = await apiFetch(`${API_URL}/super-admin/tickets/${ticketId}`, {
             headers: authHeaders(),
         });
         if (!response.ok) throw new Error(await parseError(response));
@@ -105,7 +113,7 @@ export const SuperAdminApi = {
     },
 
     async replyToTicket(ticketId, content) {
-        const response = await fetch(`${API_URL}/super-admin/tickets/${ticketId}/reply`, {
+        const response = await apiFetch(`${API_URL}/super-admin/tickets/${ticketId}/reply`, {
             method: 'POST',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ content }),
@@ -115,7 +123,7 @@ export const SuperAdminApi = {
     },
 
     async updateTicketStatus(ticketId, status) {
-        const response = await fetch(`${API_URL}/super-admin/tickets/${ticketId}/status`, {
+        const response = await apiFetch(`${API_URL}/super-admin/tickets/${ticketId}/status`, {
             method: 'PATCH',
             headers: authHeaders({ 'Content-Type': 'application/json' }),
             body: JSON.stringify({ status }),
@@ -125,7 +133,7 @@ export const SuperAdminApi = {
     },
 
     async deleteTicket(ticketId) {
-        const response = await fetch(`${API_URL}/super-admin/tickets/${ticketId}`, {
+        const response = await apiFetch(`${API_URL}/super-admin/tickets/${ticketId}`, {
             method: 'DELETE',
             headers: authHeaders(),
         });
