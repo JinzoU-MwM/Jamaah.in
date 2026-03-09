@@ -1,5 +1,5 @@
 """
-Export Template Router — Custom Excel template upload and export.
+Export Template Router - Custom Excel template upload and export.
 """
 import os
 import uuid
@@ -22,7 +22,17 @@ from app.config import UPLOAD_DIR, MAX_FILE_SIZE
 
 router = APIRouter(prefix="/export-templates", tags=["export"])
 TEMPLATE_UPLOAD_DIR = (UPLOAD_DIR / "templates").resolve()
-TEMPLATE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _ensure_template_upload_dir() -> None:
+    """Ensure template upload directory exists when upload endpoint is called."""
+    try:
+        TEMPLATE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    except PermissionError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Template storage is not writable on this server",
+        ) from exc
 
 # Header mapping for auto-detection
 HEADER_MAPPINGS = {
@@ -93,6 +103,8 @@ async def upload_template(
     current_user: User = Depends(get_current_user),
 ):
     """Upload Excel template and return server-side template handle."""
+    _ensure_template_upload_dir()
+
     original_name = Path(file.filename or "").name
     ext = Path(original_name).suffix.lower()
     if ext not in {".xlsx", ".xls", ".xlsm"}:
