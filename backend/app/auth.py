@@ -242,6 +242,18 @@ def check_access(db: Session, user: User) -> dict:
         "message": str
     }
     """
+    if is_super_admin_user(user):
+        return {
+            "allowed": True,
+            "plan": "pro",
+            "status": "active",
+            "usage_count": get_usage_count(db, user.id),
+            "usage_limit": None,
+            "trial_ends": None,
+            "subscription_ends": None,
+            "message": "Akses Super Admin — tanpa batas",
+        }
+
     sub = user.subscription
     usage = get_usage_count(db, user.id)
 
