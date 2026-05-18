@@ -21,6 +21,9 @@ from app.services.gemini_ocr import (
     GEMINI_MODEL,
     extract_document_data as gemini_extract_data,
 )
+from app.services.opencode_ocr import (
+    extract_document_data as opencode_extract_data,
+)
 from app.services.gemini_cache_key import build_gemini_cache_key
 from app.services.cache import ocr_cache
 from app.services.validators import validate_row
@@ -249,6 +252,11 @@ def _process_with_gemini(img_bytes: bytes, filename: str, cache_mode: str = "def
     return gemini_extract_data(img_bytes, filename, cache_mode=cache_mode)
 
 
+def _process_with_opencode(img_bytes: bytes, filename: str, cache_mode: str = "default") -> dict:
+    """Process using OpenCode Zen (GPT models, direct image → structured JSON)."""
+    return opencode_extract_data(img_bytes, filename, cache_mode=cache_mode)
+
+
 def _process_with_tesseract(img_bytes: bytes, filename: str) -> dict:
     """Process using Tesseract OCR + regex parsing."""
     if not ocr_engine.TESSERACT_AVAILABLE:
@@ -279,6 +287,7 @@ def _process_single_image(img_bytes: bytes, filename: str, cache_mode: str = "de
         "gemini": _process_with_gemini,
         "tesseract": _process_with_tesseract,
         "hybrid": _process_with_hybrid,
+        "opencode": _process_with_opencode,
     }
     primary_fn = engines.get(OCR_ENGINE, _process_with_gemini)
     last_error = None
@@ -286,7 +295,7 @@ def _process_single_image(img_bytes: bytes, filename: str, cache_mode: str = "de
     # Try primary engine with retries
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            if primary_fn == _process_with_gemini:
+            if primary_fn in (_process_with_gemini, _process_with_opencode):
                 result = primary_fn(img_bytes, filename, cache_mode=cache_mode)
             else:
                 result = primary_fn(img_bytes, filename)
@@ -308,7 +317,7 @@ def _process_single_image(img_bytes: bytes, filename: str, cache_mode: str = "de
 
     # Fallback to Gemini if primary wasn't Gemini and fallback is enabled
     if OCR_FALLBACK_ENABLED and OCR_ENGINE != "gemini":
-        logger.info(f"Falling back to Gemini for {filename} after {OCR_ENGINE} failed")
+        fallback_target = "Gemini"
         try:
             result = _process_with_gemini(img_bytes, filename, cache_mode=cache_mode)
             logger.info(f"OCR [gemini-fallback] result for {filename}: type={result.get('document_type', '?')}")
