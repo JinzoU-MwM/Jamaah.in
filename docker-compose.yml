@@ -1,0 +1,29 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: jamaah-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8006:8000"
+    volumes:
+      - ./.env.production:/app/.env:ro
+      - backend_uploads:/app/backend/uploads
+    environment:
+      - ENV=production
+      - APP_VERSION=4.0.0
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: jamaah-frontend
+    restart: unless-stopped
+    ports:
+      - "8005:80"
+    depends_on:
+      - backend
+
+volumes:
+  backend_uploads:
