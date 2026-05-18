@@ -379,7 +379,7 @@
           class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 mx-auto"
         >
           <Crown class="h-5 w-5" />
-          Upgrade ke Pro — Rp99.000/bulan
+           Upgrade ke Pro — Rp80.000/bulan
         </button>
       </div>
     </div>
@@ -566,16 +566,16 @@
         >
           {#if selectedPlan === "annual"}
             <p class="text-2xl font-bold text-emerald-700">
-              Rp 990.000<span class="text-sm font-normal text-emerald-500">
+               Rp 880.000<span class="text-sm font-normal text-emerald-500">
                 / tahun</span
               >
             </p>
             <p class="text-sm text-emerald-600 mt-1">
-              Hemat Rp 198.000 — setara Rp 82.500/bulan
+              Hemat Rp 80.000 — setara Rp 73.300/bulan
             </p>
           {:else}
             <p class="text-2xl font-bold text-emerald-700">
-              Rp 99.000<span class="text-sm font-normal text-emerald-500">
+               Rp 80.000<span class="text-sm font-normal text-emerald-500">
                 / bulan</span
               >
             </p>

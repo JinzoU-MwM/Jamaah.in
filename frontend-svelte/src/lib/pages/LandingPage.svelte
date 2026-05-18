@@ -473,14 +473,14 @@
         </div>
         <!-- Pro Annual -->
         <div class="price-card featured">
-          <div class="price-badge">HEMAT 17%</div>
+          <div class="price-badge">HEMAT 8%</div>
           <div class="price-plan">Pro Annual</div>
           <div class="price-value">
-            <span class="price-amount">Rp 800.000</span>
+            <span class="price-amount">Rp 880.000</span>
             <span class="price-period"> / tahun</span>
           </div>
           <p class="price-subtitle">
-            <strong>Rp 66.700/bulan</strong> — hemat 2 bulan gratis!
+            <strong>Rp 73.300/bulan</strong> — hemat 1 bulan gratis!
           </p>
           <ul class="price-features">
             <li>
