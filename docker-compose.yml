@@ -1,4 +1,22 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jamaah-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jamaah_in
+      POSTGRES_USER: jamaah
+      POSTGRES_PASSWORD: Jamaah123!
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - jamaah_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jamaah -d jamaah_in"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   backend:
     build:
       context: .
@@ -13,6 +31,9 @@ services:
     environment:
       - ENV=production
       - APP_VERSION=4.0.0
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   frontend:
     build:
@@ -26,4 +47,5 @@ services:
       - backend
 
 volumes:
+  jamaah_pgdata:
   backend_uploads:
