@@ -1,12 +1,12 @@
-<script>
+﻿<script>
   import { onMount, onDestroy } from "svelte";
   import {
-    LogOut,
     Crown,
     X,
     Loader2,
     CheckCircle,
     ExternalLink,
+    ScanLine,
   } from "lucide-svelte";
   import TableResult from "../components/TableResult.svelte";
   import FileUpload from "../components/FileUpload.svelte";
@@ -263,7 +263,6 @@
       failedFileNames = [];
     } catch (err) {
       errorMessage = err.message;
-      showModal = false;
     } finally {
       isGenerating = false;
     }
@@ -292,6 +291,7 @@
       failedFileNames = [];
       // Auto-dismiss success after 5 seconds
       setTimeout(() => (groupSaveSuccess = ""), 5000);
+      onSubscriptionChange?.();
     } catch (err) {
       errorMessage = err.message;
     } finally {
@@ -314,15 +314,51 @@
 
   function closeModal() {
     showModal = false;
+    errorMessage = "";
   }
 
   let isBlocked = $derived(localSubscription && !localSubscription.allowed);
 </script>
 
-<div class="bg-slate-50 min-h-screen lg:ml-0">
+<div class="min-h-screen bg-slate-50/70 p-4 lg:p-8">
+  <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-slate-900">AI Scanner</h1>
+      <p class="text-sm text-slate-500">
+        Upload KTP, KK, paspor, dan visa untuk diekstrak menjadi data jamaah.
+      </p>
+    </div>
+    {#if localSubscription?.plan === "pro"}
+      <div class="inline-flex w-fit items-center gap-2 rounded-full border border-primary-100 bg-white px-4 py-2 text-sm font-semibold text-primary-700 shadow-sm">
+        <Crown class="h-4 w-4 text-amber-500" />
+        Pro Active
+      </div>
+    {/if}
+  </header>
+
+  <div class="mb-6 grid gap-4 lg:grid-cols-3">
+    <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm lg:col-span-2">
+      <div class="flex items-start gap-4">
+        <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-primary-50 text-primary-600">
+          <ScanLine class="h-6 w-6" />
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-slate-900">Alur Scan Dokumen</h2>
+          <p class="mt-1 text-sm leading-relaxed text-slate-500">
+            Pilih grup, upload dokumen, review hasil AI, lalu simpan ke grup atau export Excel.
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
+      <p class="text-xs font-bold uppercase tracking-wide text-slate-400">Mode AI</p>
+      <p class="mt-2 text-sm font-semibold text-slate-900">{cacheModeLabels[processingCacheMode]}</p>
+      <p class="mt-1 text-xs text-slate-500">{canUseBypassCacheMode ? "Bypass tersedia untuk Pro." : "Default aman untuk pemrosesan rutin."}</p>
+    </div>
+  </div>
   <!-- Mobile Navbar (simplified - sidebar handles desktop nav) -->
   <nav
-    class="border-b border-slate-200 bg-white/80 backdrop-blur-sm px-3 sm:px-6 py-3 sm:py-4 flex justify-between items-center sticky top-0 z-10 lg:hidden"
+    class="hidden border-b border-slate-200 bg-white/80 backdrop-blur-sm px-3 sm:px-6 py-3 sm:py-4 justify-between items-center sticky top-0 z-10 lg:hidden"
   >
     <div class="text-sm font-semibold text-slate-800">Dashboard</div>
     <div class="text-xs text-slate-400">OCR Ekstrak Data</div>
@@ -330,7 +366,7 @@
 
   <!-- Welcome Header -->
   <div
-    class="bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 text-white"
+    class="hidden"
   >
     <div class="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
       <div class="flex items-center justify-between">
@@ -355,16 +391,18 @@
   </div>
 
   <!-- Subscription Banner -->
-  <SubscriptionBanner
-    subscription={localSubscription}
-    onUpgrade={() => (showUpgradeModal = true)}
-  />
+  <div class="mb-6">
+    <SubscriptionBanner
+      subscription={localSubscription}
+      onUpgrade={() => (showUpgradeModal = true)}
+    />
+  </div>
 
   <!-- Main Content -->
   {#if isBlocked}
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-16 text-center">
+    <div class="py-8 text-center">
       <div
-        class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 sm:p-12"
+        class="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm sm:p-12"
       >
         <div class="text-5xl sm:text-6xl mb-4">🔒</div>
         <h2 class="text-lg sm:text-xl font-bold text-slate-800 mb-2">
@@ -376,16 +414,16 @@
         </p>
         <button
           onclick={() => (showUpgradeModal = true)}
-          class="px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 mx-auto"
+          class="mx-auto flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-6 py-3 font-semibold text-white shadow-lg shadow-primary-500/20 transition-all hover:-translate-y-0.5"
         >
           <Crown class="h-5 w-5" />
-           Upgrade ke Pro — Rp80.000/bulan
+          Upgrade ke Pro - Rp80.000/bulan
         </button>
       </div>
     </div>
   {:else}
     <!-- Group Selector -->
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-4 sm:mt-6">
+    <div class="mb-6 rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
       <GroupSelector
         bind:selectedGroup
         onGroupSelect={(g) => (selectedGroup = g)}
@@ -397,9 +435,9 @@
 
     <!-- Success Banner -->
     {#if groupSaveSuccess}
-      <div class="max-w-5xl mx-auto px-4 sm:px-6 mb-4">
+      <div class="mb-5">
         <div
-          class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-center gap-3"
+          class="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
         >
           <CheckCircle class="h-5 w-5 text-emerald-500 flex-shrink-0" />
           <span class="text-sm text-emerald-700">{groupSaveSuccess}</span>
@@ -407,8 +445,8 @@
       </div>
     {/if}
 
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-4">
-      <details class="bg-white border border-slate-200 rounded-xl px-4 py-3">
+    <div class="mb-6">
+      <details class="rounded-3xl border border-slate-100 bg-white px-5 py-4 shadow-sm">
         <summary class="text-sm font-semibold text-slate-700 cursor-pointer select-none">
           Advanced OCR Settings
         </summary>
@@ -417,7 +455,7 @@
           <select
             id="cache-mode"
             bind:value={processingCacheMode}
-            class="border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 bg-white"
+            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white"
           >
             <option value="default">default</option>
             <option value="refresh">refresh</option>
@@ -440,12 +478,12 @@
 
   <!-- Retry Banner -->
   {#if failedFileNames.length > 0 && !isProcessing && !showModal}
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 mt-4">
+    <div class="mt-5">
       <div
-        class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between"
+        class="flex items-center justify-between rounded-2xl border border-red-200 bg-red-50 p-4"
       >
         <div class="flex items-center gap-2">
-          <span class="text-red-500 text-lg">⚠️</span>
+          <span class="text-red-500 text-lg">!</span>
           <span class="text-sm text-red-700">
             <strong>{failedFileNames.length}</strong> file gagal: {failedFileNames.join(
               ", ",
@@ -454,9 +492,9 @@
         </div>
         <button
           onclick={retryFailed}
-          class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg transition-colors"
+          class="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
         >
-          🔄 Coba Lagi
+          Coba Lagi
         </button>
       </div>
     </div>
@@ -480,6 +518,7 @@
   readOnly={localSubscription?.plan !== "pro"}
   {validationWarnings}
   {fileResults}
+  {errorMessage}
 />
 
 <!-- Upgrade Modal -->
@@ -571,7 +610,7 @@
               >
             </p>
             <p class="text-sm text-emerald-600 mt-1">
-              Hemat Rp 80.000 — setara Rp 73.300/bulan
+              Hemat Rp 80.000 - setara Rp 73.300/bulan
             </p>
           {:else}
             <p class="text-2xl font-bold text-emerald-700">

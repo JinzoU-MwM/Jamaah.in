@@ -1,4 +1,4 @@
-<script>
+﻿<script>
   import { onMount, onDestroy } from "svelte";
   import SkeletonLoader from './SkeletonLoader.svelte';
   import {
@@ -37,9 +37,10 @@
     validationWarnings = [],
     fileResults = [],
     readOnly = false,
-    showOperational = false, // Toggle for operational columns (Pro only)
-    isPro = false, // Is Pro user
-    loading = false, // Loading state for skeleton (passed from parent)
+    showOperational = false,
+    isPro = false,
+    loading = false,
+    errorMessage = "",
   } = $props();
 
   // State for operational columns toggle
@@ -120,7 +121,7 @@
 
   function getDocTypeColor(type) {
     if (type === "KTP") return "bg-blue-100 text-blue-700";
-    if (type === "PASSPORT") return "bg-purple-100 text-purple-700";
+    if (type === "PASSPORT") return "bg-primary-100 text-primary-700";
     if (type === "VISA") return "bg-amber-100 text-amber-700";
     if (type === "MERGED") return "bg-emerald-100 text-emerald-700";
     return "bg-slate-100 text-slate-700";
@@ -308,20 +309,20 @@
     class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
   >
     <div
-      class="bg-white rounded-2xl shadow-2xl w-full max-w-[95vw] max-h-[90vh] overflow-hidden flex flex-col"
+      class="flex max-h-[90vh] w-full max-w-[95vw] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl"
     >
       <!-- Modal Header -->
       <div
-        class="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-emerald-50 to-white"
+        class="flex items-center justify-between border-b border-slate-100 bg-white p-6"
       >
         <div class="flex items-center gap-3">
           <div
-            class="{readOnly ? 'bg-blue-100' : 'bg-emerald-100'} p-2 rounded-lg"
+            class="{readOnly ? 'bg-primary-100' : 'bg-primary-50'} rounded-2xl p-2"
           >
             {#if readOnly}
               <Eye class="h-6 w-6 text-blue-600" />
             {:else}
-              <Edit3 class="h-6 w-6 text-emerald-600" />
+              <Edit3 class="h-6 w-6 text-primary-600" />
             {/if}
           </div>
           <div>
@@ -391,7 +392,7 @@
             onclick={() => (showOperationalFields = !showOperationalFields)}
             class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors
               {showOperationalFields
-              ? 'bg-purple-100 text-purple-700 border border-purple-200'
+              ? 'bg-primary-100 text-primary-700 border border-primary-200'
               : 'bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200'}"
           >
             <Settings class="h-4 w-4" />
@@ -470,14 +471,14 @@
             type="text"
             bind:value={searchTerm}
             placeholder="Cari..."
-            class="px-2 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400 w-36"
+            class="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary-400"
           />
           <Replace class="h-4 w-4 text-slate-400 flex-shrink-0" />
           <input
             type="text"
             bind:value={replaceTerm}
             placeholder="Ganti dengan..."
-            class="px-2 py-1.5 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-1 focus:ring-emerald-400 w-36"
+            class="w-36 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-primary-400"
           />
           {#if searchTerm}
             <span class="text-xs text-slate-500">{matchCount()} ditemukan</span>
@@ -486,7 +487,7 @@
             type="button"
             onclick={() => replaceAll(false)}
             disabled={!searchTerm}
-            class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg disabled:opacity-40 transition-colors"
+            class="rounded-lg bg-primary-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary-700 disabled:opacity-40"
             >Ganti Semua</button
           >
           {#if selectedCount > 0}
@@ -563,7 +564,7 @@
                 {#if showOperationalFields}
                   {#each operationalColumns as col}
                     <th
-                      class="border-b border-slate-200 px-3 py-3 text-left font-semibold text-purple-700 whitespace-nowrap bg-purple-50"
+                      class="border-b border-slate-200 bg-primary-50 px-3 py-3 text-left font-semibold text-primary-700 whitespace-nowrap"
                       style="min-width: {col.width}"
                     >
                       <div class="flex items-center gap-1">
@@ -584,7 +585,7 @@
                 <tr
                   class="{selectedRows.has(rowIndex)
                     ? 'bg-blue-50'
-                    : 'hover:bg-emerald-50/50'} transition-colors"
+                    : 'hover:bg-primary-50/50'} transition-colors"
                 >
                   {#if !readOnly}
                     <td
@@ -654,7 +655,7 @@
                                   col.key,
                                   /** @type {any} */ (e.target).value,
                                 )}
-                              class="w-full px-2 py-1.5 border-0 bg-transparent focus:bg-emerald-50 focus:outline-none focus:ring-1 focus:ring-emerald-500 rounded text-sm {warning
+                              class="w-full rounded border-0 bg-transparent px-2 py-1.5 text-sm focus:bg-primary-50 focus:outline-none focus:ring-1 focus:ring-primary-500 {warning
                                 ? 'ring-1 ring-amber-400'
                                 : cellMatchesSearch(row[col.key])
                                   ? 'bg-yellow-100 ring-1 ring-yellow-400'
@@ -669,7 +670,7 @@
                               <div
                                 class="bg-amber-700 text-white text-xs rounded-lg px-3 py-1.5 shadow-lg whitespace-nowrap max-w-xs"
                               >
-                                ⚠️ {warning}
+                                Warning: {warning}
                               </div>
                             </div>
                           {/if}
@@ -681,7 +682,7 @@
                   {#if showOperationalFields}
                     {#each operationalColumns as opCol}
                       <td
-                        class="border-b border-slate-200 px-1 py-1 bg-purple-50/50"
+                        class="border-b border-slate-200 bg-primary-50/50 px-1 py-1"
                       >
                         {#if opCol.type === "select"}
                           <select
@@ -692,7 +693,7 @@
                                 opCol.key,
                                 /** @type {any} */ (e.target).value,
                               )}
-                            class="w-full px-2 py-1.5 border-0 bg-white focus:ring-1 focus:ring-purple-500 rounded text-sm"
+                            class="w-full rounded border-0 bg-white px-2 py-1.5 text-sm focus:ring-1 focus:ring-primary-500"
                           >
                             {#each opCol.options as opt}
                               <option value={opt}>{opt || "-"}</option>
@@ -708,7 +709,7 @@
                                 opCol.key,
                                 /** @type {any} */ (e.target).value,
                               )}
-                            class="w-full px-2 py-1.5 border-0 bg-white focus:ring-1 focus:ring-purple-500 rounded text-sm"
+                            class="w-full rounded border-0 bg-white px-2 py-1.5 text-sm focus:ring-1 focus:ring-primary-500"
                             placeholder={opCol.placeholder || "-"}
                           />
                         {/if}
@@ -745,6 +746,18 @@
         }
       </style>
 
+      {#if errorMessage}
+        <div class="mx-6 mt-4 rounded-xl border border-red-200 bg-red-50 p-4">
+          <div class="flex items-start gap-3">
+            <AlertTriangle class="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <p class="text-sm font-semibold text-red-700">Gagal mengunduh Excel</p>
+              <pre class="mt-1 text-xs text-red-600 whitespace-pre-wrap font-sans">{errorMessage}</pre>
+            </div>
+          </div>
+        </div>
+      {/if}
+
       <!-- Modal Footer -->
       <div
         class="flex items-center justify-between p-6 border-t border-slate-200 bg-slate-50"
@@ -761,7 +774,7 @@
               >Digabung Otomatis</span
             >
             <span class="text-xs text-slate-400"
-              >KTP/KK + Paspor + Visa → 1 Baris</span
+              >KTP/KK + Paspor + Visa -> 1 Baris</span
             >
           </div>
           {#if totalWarnings > 0}
@@ -784,7 +797,7 @@
           {#if readOnly}
             <button
               onclick={onUpgrade}
-              class="px-8 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-semibold flex items-center gap-2 transition-all shadow-lg hover:shadow-xl"
+              class="flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-8 py-2.5 font-semibold text-white shadow-lg shadow-primary-500/20 transition-all hover:-translate-y-0.5"
             >
               <Crown class="h-5 w-5" />
               Upgrade untuk Edit & Unduh
@@ -809,7 +822,7 @@
               <button
                 onclick={onSave}
                 disabled={isGenerating || data.length === 0}
-                class="px-8 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+                class="flex items-center gap-2 rounded-xl bg-primary-600 px-8 py-2.5 font-semibold text-white shadow-lg shadow-primary-500/20 transition-all hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {#if isGenerating}
                   <Loader2 class="h-5 w-5 animate-spin" />

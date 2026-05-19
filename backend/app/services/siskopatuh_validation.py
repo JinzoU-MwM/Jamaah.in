@@ -160,9 +160,17 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
         "PAK": "TUAN",
         "MR": "TUAN",
         "MISTER": "TUAN",
+        "SDR": "TUAN",
+        "SAUDARA": "TUAN",
+        "H": "TUAN",
+        "HAJI": "TUAN",
+        "DR": "TUAN",
+        "DOKTER": "TUAN",
         "IBU": "NYONYA",
         "MRS": "NYONYA",
         "MRS.": "NYONYA",
+        "HJ": "NYONYA",
+        "HAJJAH": "NYONYA",
         "MS": "NONA",
         "MISS": "NONA",
     }
@@ -192,14 +200,53 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
         "S1": "D4/S1",
         "D4": "D4/S1",
         "SARJANA": "D4/S1",
+        "SMA": "SMA/MA",
+        "SMU": "SMA/MA",
+        "SLTA": "SMA/MA",
+        "SMK": "SMA/MA",
+        "SMP": "SMP/MTS",
+        "SLTP": "SMP/MTS",
+        "SD": "SD/MI",
+        "TIDAKADA": "TIDAK SEKOLAH",
+        "TIDAKBERSYARAT": "TIDAK SEKOLAH",
+        "BELUMSEKOLAH": "TIDAK SEKOLAH",
     }
     pekerjaan_aliases = {
         "SWASTA": "PEG. SWASTA",
         "PEGAWAISWASTA": "PEG. SWASTA",
         "KARYAWANSWASTA": "PEG. SWASTA",
+        "KARYAWAN": "PEG. SWASTA",
+        "BURUH": "PEG. SWASTA",
+        "KONTRAKTOR": "PEG. SWASTA",
         "WIRASWASTA": "WIRAUSAHA",
         "USAHASENDIRI": "WIRAUSAHA",
+        "PEDAGANG": "WIRAUSAHA",
+        "PENGUSAHA": "WIRAUSAHA",
         "BELUMBEKERJA": "TIDAK BEKERJA",
+        "TIDAKBEKERJA": "TIDAK BEKERJA",
+        "IBURUMAHTANGGA": "TIDAK BEKERJA",
+        "IRT": "TIDAK BEKERJA",
+        "RUMAHTANGGA": "TIDAK BEKERJA",
+        "PELAJAR": "TIDAK BEKERJA",
+        "MAHASISWA": "TIDAK BEKERJA",
+        "PNS": "PNS",
+        "ASN": "PNS",
+        "APARATURSIPILNEGARA": "PNS",
+        "TNI": "TNI / POLRI",
+        "POLRI": "TNI / POLRI",
+        "POLISI": "TNI / POLRI",
+        "LAINNYA": "LAINNYA",
+        "GURU": "LAINNYA",
+        "DOSEN": "LAINNYA",
+        "DOKTER": "LAINNYA",
+        "BIDAN": "LAINNYA",
+        "PERAWAT": "LAINNYA",
+        "PENSIUNAN": "LAINNYA",
+        "PENDETA": "LAINNYA",
+        "USTADZ": "LAINNYA",
+        "SUPIR": "LAINNYA",
+        "OJEK": "LAINNYA",
+        "SATPAM": "LAINNYA",
     }
 
     for item in items:
@@ -238,7 +285,25 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
         if kabupaten and provinsi:
             named_range = provinsi.replace(" ", "_")
             kabupaten_lookup = kabupaten_lookup_by_named_range.get(named_range, {})
-            item.kabupaten = _map_value(kabupaten, kabupaten_lookup)
+            mapped = _map_value(kabupaten, kabupaten_lookup)
+
+            if mapped == kabupaten and kabupaten_lookup:
+                for prefix in ("KOTA ", "KAB. ", "KAB ", "KABUPATEN "):
+                    prefixed = prefix + kabupaten
+                    prefixed_mapped = _map_value(prefixed, kabupaten_lookup)
+                    if prefixed_mapped != prefixed:
+                        mapped = prefixed_mapped
+                        break
+
+            if mapped == kabupaten and kabupaten_lookup:
+                kab_key = _lookup_key(kabupaten)
+                for allowed_val in kabupaten_lookup.values():
+                    allowed_key = _lookup_key(allowed_val)
+                    if kab_key in allowed_key or allowed_key in kab_key:
+                        mapped = allowed_val
+                        break
+
+            item.kabupaten = mapped
 
 
 def validate_items_against_siskopatuh_dropdowns(items: list) -> list[str]:

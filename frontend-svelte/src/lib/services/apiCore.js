@@ -44,6 +44,11 @@ export async function parseError(response) {
                 message = `${detailMessage} Remaining ${remaining}/${limit} files in 1h window.${suggestedMode}`;
             } else {
                 message = detailMessage;
+                if (detail.errors && Array.isArray(detail.errors) && detail.errors.length > 0) {
+                    const errorList = detail.errors.slice(0, 10).join('\n');
+                    const more = detail.errors.length > 10 ? `\n... dan ${detail.errors.length - 10} error lainnya` : '';
+                    message = `${detailMessage}\n\n${errorList}${more}`;
+                }
             }
         }
     } catch (e) { /* ignore */ }
