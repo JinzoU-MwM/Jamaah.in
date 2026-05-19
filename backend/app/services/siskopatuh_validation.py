@@ -277,6 +277,8 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
             pekerjaan_aliases,
         )
         item.provider_visa = _map_value(getattr(item, "provider_visa", ""), provider_lookup)
+        if item.provider_visa and item.provider_visa not in provider_lookup.values():
+            item.provider_visa = "B2C"
         item.asuransi = _map_value(getattr(item, "asuransi", ""), asuransi_lookup)
         item.provinsi = _map_value(getattr(item, "provinsi", ""), provinsi_lookup)
 
