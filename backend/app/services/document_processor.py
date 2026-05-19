@@ -315,15 +315,18 @@ def _process_single_image(img_bytes: bytes, filename: str, cache_mode: str = "de
             else:
                 logger.error(f"All {attempt} OCR [{OCR_ENGINE}] attempts failed for {filename}: {e}")
 
-    # Fallback to Gemini if primary wasn't Gemini and fallback is enabled
-    if OCR_FALLBACK_ENABLED and OCR_ENGINE != "gemini":
-        fallback_target = "Gemini"
+    # Fallback: gemini → opencode, anything else → gemini
+    if OCR_FALLBACK_ENABLED:
+        if OCR_ENGINE == "gemini":
+            fallback_fn, fallback_name = _process_with_opencode, "opencode"
+        else:
+            fallback_fn, fallback_name = _process_with_gemini, "gemini"
         try:
-            result = _process_with_gemini(img_bytes, filename, cache_mode=cache_mode)
-            logger.info(f"OCR [gemini-fallback] result for {filename}: type={result.get('document_type', '?')}")
+            result = fallback_fn(img_bytes, filename, cache_mode=cache_mode)
+            logger.info(f"OCR [{fallback_name}-fallback] result for {filename}: type={result.get('document_type', '?')}")
             return result
         except Exception as e:
-            logger.error(f"Gemini fallback also failed for {filename}: {e}")
+            logger.error(f"OCR [{fallback_name}-fallback] also failed for {filename}: {e}")
             last_error = e
 
     # Return empty result with error info instead of crashing
