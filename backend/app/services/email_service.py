@@ -1,6 +1,9 @@
 """
-Email service — sends OTP and password-reset emails via Brevo HTTP API.
-Falls back to SMTP if BREVO_API_KEY is not set.
+Email service — sends OTP and password-reset emails via Resend SMTP relay.
+Falls back to generic SMTP if RESEND_API_KEY is not set.
+
+Resend SMTP relay (smtp.resend.com:465) is used instead of the HTTP API because
+some VPS IPs are blocked by Cloudflare WAF on api.resend.com.
 """
 import os
 import random
@@ -9,6 +12,7 @@ import logging
 import urllib.request
 import urllib.error
 import smtplib
+import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -16,11 +20,15 @@ logger = logging.getLogger(__name__)
 
 SMTP_EMAIL = os.getenv("SMTP_EMAIL", "")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp-relay.brevo.com")
+SMTP_HOST = os.getenv("SMTP_HOST", "smtp.hostinger.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_LOGIN = os.getenv("SMTP_LOGIN", "")
-BREVO_API_KEY = os.getenv("BREVO_API_KEY", "") or os.getenv("BREVI_API_KEY", "")
+RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
 APP_NAME = "Jamaah.in"
+
+# Resend SMTP relay constants
+_RESEND_SMTP_HOST = "smtp.resend.com"
+_RESEND_SMTP_PORT = 465  # SSL
 
 
 def generate_otp() -> str:
@@ -28,25 +36,49 @@ def generate_otp() -> str:
     return str(random.randint(100000, 999999))
 
 
-def _send_via_brevo_api(to: str, subject: str, html_body: str) -> bool:
-    """Send email via Brevo HTTP API (preferred)."""
-    if not BREVO_API_KEY:
+def _send_via_resend_smtp(to: str, subject: str, html_body: str) -> bool:
+    """Send via Resend SMTP relay (avoids HTTP API Cloudflare blocks)."""
+    if not RESEND_API_KEY:
         return False
 
+    from_email = SMTP_EMAIL or "noreply@jamaah.in"
+    msg = MIMEMultipart("alternative")
+    msg["From"] = f"{APP_NAME} <{from_email}>"
+    msg["To"] = to
+    msg["Subject"] = subject
+    msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(_RESEND_SMTP_HOST, _RESEND_SMTP_PORT, context=context) as server:
+            server.login("resend", RESEND_API_KEY)
+            server.sendmail(from_email, to, msg.as_string())
+        logger.info("Resend SMTP email sent to %s: %s", to, subject)
+        return True
+    except Exception as e:
+        logger.error("Resend SMTP failed for %s: %s", to, str(e))
+        return False
+
+
+def _send_via_resend_api(to: str, subject: str, html_body: str) -> bool:
+    """Send email via Resend HTTP API (kept as secondary attempt after SMTP)."""
+    if not RESEND_API_KEY:
+        return False
+
+    from_email = SMTP_EMAIL or "noreply@jamaah.in"
     payload = json.dumps({
-        "sender": {"name": APP_NAME, "email": SMTP_EMAIL},
-        "to": [{"email": to}],
+        "from": f"{APP_NAME} <{from_email}>",
+        "to": [to],
         "subject": subject,
-        "htmlContent": html_body,
+        "html": html_body,
     }).encode("utf-8")
 
     req = urllib.request.Request(
-        "https://api.brevo.com/v3/smtp/email",
+        "https://api.resend.com/emails",
         data=payload,
         headers={
-            "api-key": BREVO_API_KEY,
+            "Authorization": f"Bearer {RESEND_API_KEY}",
             "Content-Type": "application/json",
-            "Accept": "application/json",
         },
         method="POST",
     )
@@ -54,19 +86,19 @@ def _send_via_brevo_api(to: str, subject: str, html_body: str) -> bool:
     try:
         resp = urllib.request.urlopen(req)
         result = json.loads(resp.read())
-        logger.info("Brevo API email sent to %s: %s (messageId: %s)", to, subject, result.get("messageId"))
+        logger.info("Resend API email sent to %s: %s (id: %s)", to, subject, result.get("id"))
         return True
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
-        logger.error("Brevo API error %d for %s: %s", e.code, to, body)
+        logger.error("Resend API error %d for %s: %s", e.code, to, body)
         return False
     except Exception as e:
-        logger.error("Brevo API failed for %s: %s", to, str(e))
+        logger.error("Resend API failed for %s: %s", to, str(e))
         return False
 
 
 def _send_via_smtp(to: str, subject: str, html_body: str) -> bool:
-    """Send email via SMTP (fallback)."""
+    """Send email via generic SMTP (final fallback)."""
     if not SMTP_EMAIL or not SMTP_PASSWORD:
         logger.warning("SMTP not configured — skipping email to %s", to)
         return False
@@ -92,9 +124,11 @@ def _send_via_smtp(to: str, subject: str, html_body: str) -> bool:
 
 
 def _send_email(to: str, subject: str, html_body: str) -> bool:
-    """Send email — tries Brevo API first, falls back to SMTP."""
-    if BREVO_API_KEY:
-        return _send_via_brevo_api(to, subject, html_body)
+    """Send email — Resend SMTP relay → Resend API → generic SMTP."""
+    if RESEND_API_KEY:
+        if _send_via_resend_smtp(to, subject, html_body):
+            return True
+        return _send_via_resend_api(to, subject, html_body)
     return _send_via_smtp(to, subject, html_body)
 
 
