@@ -33,13 +33,17 @@ def doc_data_to_item(doc_data: dict) -> ExtractedDataItem:
     kk_member_fathers = (doc_data.get('kk_member_fathers') or "").strip()
     raw_doc_type = doc_data.get('document_type', 'UNKNOWN')
     identity_type = _normalize_identity_type(raw_doc_type)
+    is_kk = raw_doc_type.strip().upper() in {"KK", "KARTU KELUARGA", "FAMILY_CARD"}
     source_document_type = _normalize_source_document_type(raw_doc_type, kk_member_names)
+    no_identitas = (doc_data.get('no_identitas') or "").strip()
+    if is_kk and no_identitas:
+        no_identitas = ""
     return ExtractedDataItem(
         title=doc_data.get('title') or "",
         nama=nama,
         nama_ayah=doc_data.get('nama_ayah') or "",
         jenis_identitas=identity_type,
-        no_identitas=doc_data.get('no_identitas') or "",
+        no_identitas=no_identitas,
         nama_paspor=nama,  # Same as nama by default
         no_paspor=doc_data.get('no_paspor') or "",
         tanggal_paspor=doc_data.get('tanggal_paspor') or "",

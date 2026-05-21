@@ -200,6 +200,9 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
         "S1": "D4/S1",
         "D4": "D4/S1",
         "SARJANA": "D4/S1",
+        "STRATA1": "D4/S1",
+        "STRATAI": "D4/S1",
+        "DIV": "D4/S1",
         "SMA": "SMA/MA",
         "SMU": "SMA/MA",
         "SLTA": "SMA/MA",
@@ -210,6 +213,17 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
         "TIDAKADA": "TIDAK SEKOLAH",
         "TIDAKBERSYARAT": "TIDAK SEKOLAH",
         "BELUMSEKOLAH": "TIDAK SEKOLAH",
+        "S2": "S2",
+        "STRATA2": "S2",
+        "MAGISTER": "S2",
+        "PASCASARJANA": "S2",
+        "S3": "S3",
+        "STRATA3": "S3",
+        "DOKTOR": "S3",
+        "D3": "D3",
+        "DIII": "D3",
+        "DIPLOMA3": "D3",
+        "AKADEMI": "D3",
     }
     pekerjaan_aliases = {
         "SWASTA": "PEG. SWASTA",
@@ -229,6 +243,9 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
         "RUMAHTANGGA": "TIDAK BEKERJA",
         "PELAJAR": "TIDAK BEKERJA",
         "MAHASISWA": "TIDAK BEKERJA",
+        "PELAJARMAHASISWA": "TIDAK BEKERJA",
+        "MAHASISWI": "TIDAK BEKERJA",
+        "KARYAWANSWSTA": "PEG. SWASTA",
         "PNS": "PNS",
         "ASN": "PNS",
         "APARATURSIPILNEGARA": "PNS",
@@ -251,36 +268,84 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
 
     for item in items:
         item.title = _map_value(getattr(item, "title", ""), title_lookup, title_aliases)
+        if item.title and item.title not in title_lookup.values():
+            item.title = "TUAN"
         item.jenis_identitas = _map_value(
             getattr(item, "jenis_identitas", ""),
             jenis_lookup,
             jenis_aliases,
         )
+        if item.jenis_identitas and item.jenis_identitas not in jenis_lookup.values():
+            item.jenis_identitas = "NIK"
         item.kewarganegaraan = _map_value(
             getattr(item, "kewarganegaraan", ""),
             kewarg_lookup,
             kewarg_aliases,
         )
+        if item.kewarganegaraan and item.kewarganegaraan not in kewarg_lookup.values():
+            item.kewarganegaraan = "WNI"
         item.status_pernikahan = _map_value(
             getattr(item, "status_pernikahan", ""),
             pernikahan_lookup,
             pernikahan_aliases,
         )
+        if item.status_pernikahan and item.status_pernikahan not in pernikahan_lookup.values():
+            item.status_pernikahan = "BELUM MENIKAH"
         item.pendidikan = _map_value(
             getattr(item, "pendidikan", ""),
             pendidikan_lookup,
             pendidikan_aliases,
         )
+        if item.pendidikan and item.pendidikan not in pendidikan_lookup.values():
+            item.pendidikan = "SMA/MA"
         item.pekerjaan = _map_value(
             getattr(item, "pekerjaan", ""),
             pekerjaan_lookup,
             pekerjaan_aliases,
         )
+        if item.pekerjaan and item.pekerjaan not in pekerjaan_lookup.values():
+            item.pekerjaan = "LAINNYA"
         item.provider_visa = _map_value(getattr(item, "provider_visa", ""), provider_lookup)
         if item.provider_visa and item.provider_visa not in provider_lookup.values():
             item.provider_visa = "B2C"
         item.asuransi = _map_value(getattr(item, "asuransi", ""), asuransi_lookup)
+        if item.asuransi and item.asuransi not in asuransi_lookup.values():
+            for prefix in ("PT. ASURANSI ", "PT ASURANSI ", "PT. ", "PT ", "ASURANSI "):
+                if item.asuransi.upper().startswith(prefix.upper()):
+                    stripped = item.asuransi[len(prefix):].strip()
+                    if not stripped:
+                        continue
+                    stripped_mapped = _map_value(stripped, asuransi_lookup)
+                    if stripped_mapped != stripped:
+                        item.asuransi = stripped_mapped
+                        break
+                    asuransi_key = _lookup_key(stripped)
+                    for allowed_val in asuransi_lookup.values():
+                        allowed_key = _lookup_key(allowed_val)
+                        if asuransi_key in allowed_key or allowed_key in asuransi_key:
+                            item.asuransi = allowed_val
+                            break
+                    if item.asuransi not in asuransi_lookup.values():
+                        continue
+                    break
+            if item.asuransi and item.asuransi not in asuransi_lookup.values():
+                asuransi_key = _lookup_key(item.asuransi)
+                for allowed_val in asuransi_lookup.values():
+                    allowed_key = _lookup_key(allowed_val)
+                    if asuransi_key in allowed_key or allowed_key in asuransi_key:
+                        item.asuransi = allowed_val
+                        break
+            if item.asuransi and item.asuransi not in asuransi_lookup.values():
+                item.asuransi = ""
         item.provinsi = _map_value(getattr(item, "provinsi", ""), provinsi_lookup)
+        if item.provinsi and item.provinsi not in provinsi_lookup.values():
+            for prefix in ("PROVINSI ", "PROPINSI ", "PROV. ", "PROP. "):
+                if item.provinsi.upper().startswith(prefix.upper()):
+                    stripped = item.provinsi[len(prefix):].strip()
+                    item.provinsi = _map_value(stripped, provinsi_lookup)
+                    break
+            if item.provinsi and item.provinsi not in provinsi_lookup.values():
+                item.provinsi = ""
 
         provinsi = _normalize(getattr(item, "provinsi", ""))
         kabupaten = _normalize(getattr(item, "kabupaten", ""))
@@ -288,6 +353,23 @@ def normalize_items_to_siskopatuh_dropdowns(items: list) -> None:
             named_range = provinsi.replace(" ", "_")
             kabupaten_lookup = kabupaten_lookup_by_named_range.get(named_range, {})
             mapped = _map_value(kabupaten, kabupaten_lookup)
+
+            if mapped == kabupaten and kabupaten_lookup:
+                for prefix in ("KABUPATEN ", "KOTA ", "KAB. ", "KAB "):
+                    if kabupaten.upper().startswith(prefix.upper()):
+                        stripped = kabupaten[len(prefix):].strip()
+                        stripped_mapped = _map_value(stripped, kabupaten_lookup)
+                        if stripped_mapped != stripped:
+                            mapped = stripped_mapped
+                            break
+                        for add_prefix in ("KOTA ", "KAB. ", "KAB "):
+                            prefixed = add_prefix + stripped
+                            prefixed_mapped = _map_value(prefixed, kabupaten_lookup)
+                            if prefixed_mapped != prefixed:
+                                mapped = prefixed_mapped
+                                break
+                        if mapped != kabupaten:
+                            break
 
             if mapped == kabupaten and kabupaten_lookup:
                 for prefix in ("KOTA ", "KAB. ", "KAB ", "KABUPATEN "):

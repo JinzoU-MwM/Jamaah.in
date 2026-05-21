@@ -27,6 +27,7 @@ from app.services.opencode_ocr import (
 from app.services.gemini_cache_key import build_gemini_cache_key
 from app.services.cache import ocr_cache
 from app.services.validators import validate_row
+from app.services.siskopatuh_validation import normalize_items_to_siskopatuh_dropdowns
 from app.services.progress import update_progress
 from app.mappers import doc_data_to_item
 from app.config import ALLOWED_EXTENSIONS
@@ -580,6 +581,9 @@ def run_pipeline(
     # STEP 2: FUZZY MERGE
     update_progress(session_id, status="merging")
     final_data = cleaner.fuzzy_merge_data(sanitized_data)
+
+    # STEP 2.5: NORMALIZE TO SISKOPATUH DROPDOWNS
+    normalize_items_to_siskopatuh_dropdowns(final_data)
 
     # STEP 3: VALIDATION
     update_progress(session_id, status="validating")

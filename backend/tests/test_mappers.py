@@ -21,7 +21,7 @@ def test_doc_data_to_item_normalizes_kk_to_ktp():
     assert item.jenis_kelamin == "LAKI-LAKI"
     assert item.field_source_json == ""
     assert item.field_confidence_json == ""
-    assert item.no_identitas == "1234567890123456"
+    assert item.no_identitas == ""  # KK number is NOT used as NIK
     assert item.alamat == "JL. MELATI 1"
 
 
