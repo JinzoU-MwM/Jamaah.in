@@ -136,25 +136,47 @@ def send_otp_email(to: str, otp_code: str) -> bool:
     """Send registration OTP verification email."""
     subject = f"Kode Verifikasi {APP_NAME} — {otp_code}"
     html = f"""
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #f8fafc;">
-        <div style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <h1 style="color: #10b981; font-size: 24px; margin: 0;">🕌 {APP_NAME}</h1>
-                <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Verifikasi Email Anda</p>
+    <div style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 16px; background: #f8fafc;">
+      <div style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden;">
+
+        <div style="height: 4px; background: linear-gradient(90deg, #2563eb, #1d4ed8);"></div>
+
+        <div style="padding: 36px 32px;">
+
+          <div style="text-align: center; margin-bottom: 28px;">
+            <span style="font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;">Jamaah<span style="color: #10b981;">.in</span></span>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 20px;">
+            <span style="display: inline-block; background: #eff6ff; border-radius: 8px; padding: 5px 14px; font-size: 11px; font-weight: 700; color: #2563eb; letter-spacing: 0.08em; text-transform: uppercase;">Verifikasi Email</span>
+          </div>
+
+          <h1 style="margin: 0 0 12px; font-size: 20px; font-weight: 700; color: #0f172a; text-align: center; line-height: 1.3;">Kode Verifikasi Anda</h1>
+
+          <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 28px; text-align: center;">
+            Masukkan kode berikut untuk memverifikasi alamat email Anda.
+          </p>
+
+          <div style="text-align: center; margin: 0 0 28px;">
+            <div style="display: inline-block; background: linear-gradient(135deg, #2563eb, #1d4ed8); border-radius: 14px; padding: 20px 40px; box-shadow: 0 4px 14px rgba(37,99,235,0.30);">
+              <div style="letter-spacing: 12px; font-size: 36px; font-weight: 800; color: #ffffff; text-indent: 12px;">{otp_code}</div>
             </div>
-            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
-                Gunakan kode di bawah ini untuk memverifikasi alamat email Anda:
-            </p>
-            <div style="text-align: center; margin: 24px 0;">
-                <div style="display: inline-block; background: linear-gradient(135deg, #d1fae5, #cffafe); padding: 16px 32px; border-radius: 12px; letter-spacing: 8px; font-size: 32px; font-weight: 700; color: #059669;">
-                    {otp_code}
-                </div>
-            </div>
-            <p style="color: #94a3b8; font-size: 13px; text-align: center;">
-                Kode berlaku selama <strong>10 menit</strong>. Jangan bagikan kode ini kepada siapapun.
-            </p>
+          </div>
+
+          <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 0;">
+            Kode berlaku selama <strong style="color: #64748b;">10 menit</strong>. Jangan bagikan kode ini kepada siapapun.
+          </p>
+
         </div>
-        <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 16px;">© 2026 {APP_NAME}</p>
+
+        <div style="height: 1px; background: #f1f5f9; margin: 0 32px;"></div>
+
+        <div style="padding: 18px 32px; text-align: center;">
+          <p style="margin: 0; font-size: 12px; color: #94a3b8;">Jika Anda tidak membuat akun, abaikan email ini.</p>
+        </div>
+      </div>
+
+      <p style="text-align: center; color: #cbd5e1; font-size: 12px; margin-top: 20px;">© 2026 Jamaah.in · All rights reserved</p>
     </div>
     """
     return _send_email(to, subject, html)
@@ -164,25 +186,47 @@ def send_reset_email(to: str, reset_code: str) -> bool:
     """Send password reset code email."""
     subject = f"Reset Password {APP_NAME} — {reset_code}"
     html = f"""
-    <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px; background: #f8fafc;">
-        <div style="background: white; border-radius: 16px; padding: 32px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;">
-            <div style="text-align: center; margin-bottom: 24px;">
-                <h1 style="color: #10b981; font-size: 24px; margin: 0;">🕌 {APP_NAME}</h1>
-                <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Reset Password</p>
+    <div style="font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 32px 16px; background: #f8fafc;">
+      <div style="background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05); overflow: hidden;">
+
+        <div style="height: 4px; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+
+        <div style="padding: 36px 32px;">
+
+          <div style="text-align: center; margin-bottom: 28px;">
+            <span style="font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #0f172a;">Jamaah<span style="color: #10b981;">.in</span></span>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 20px;">
+            <span style="display: inline-block; background: #fffbeb; border-radius: 8px; padding: 5px 14px; font-size: 11px; font-weight: 700; color: #d97706; letter-spacing: 0.08em; text-transform: uppercase;">Reset Password</span>
+          </div>
+
+          <h1 style="margin: 0 0 12px; font-size: 20px; font-weight: 700; color: #0f172a; text-align: center; line-height: 1.3;">Kode Reset Password</h1>
+
+          <p style="color: #475569; font-size: 15px; line-height: 1.6; margin: 0 0 28px; text-align: center;">
+            Kami menerima permintaan reset password. Gunakan kode berikut untuk melanjutkan.
+          </p>
+
+          <div style="text-align: center; margin: 0 0 28px;">
+            <div style="display: inline-block; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 14px; padding: 20px 40px; box-shadow: 0 4px 14px rgba(245,158,11,0.30);">
+              <div style="letter-spacing: 12px; font-size: 36px; font-weight: 800; color: #ffffff; text-indent: 12px;">{reset_code}</div>
             </div>
-            <p style="color: #334155; font-size: 15px; line-height: 1.6;">
-                Kami menerima permintaan reset password. Gunakan kode berikut:
-            </p>
-            <div style="text-align: center; margin: 24px 0;">
-                <div style="display: inline-block; background: linear-gradient(135deg, #fef3c7, #fde68a); padding: 16px 32px; border-radius: 12px; letter-spacing: 8px; font-size: 32px; font-weight: 700; color: #b45309;">
-                    {reset_code}
-                </div>
-            </div>
-            <p style="color: #94a3b8; font-size: 13px; text-align: center;">
-                Kode berlaku selama <strong>15 menit</strong>. Abaikan email ini jika Anda tidak meminta reset password.
-            </p>
+          </div>
+
+          <p style="color: #94a3b8; font-size: 13px; text-align: center; margin: 0;">
+            Kode berlaku selama <strong style="color: #64748b;">15 menit</strong>. Abaikan email ini jika Anda tidak meminta reset password.
+          </p>
+
         </div>
-        <p style="text-align: center; color: #94a3b8; font-size: 12px; margin-top: 16px;">© 2026 {APP_NAME}</p>
+
+        <div style="height: 1px; background: #f1f5f9; margin: 0 32px;"></div>
+
+        <div style="padding: 18px 32px; text-align: center;">
+          <p style="margin: 0; font-size: 12px; color: #94a3b8;">Jika Anda tidak meminta ini, akun Anda tetap aman. Tidak ada tindakan yang diperlukan.</p>
+        </div>
+      </div>
+
+      <p style="text-align: center; color: #cbd5e1; font-size: 12px; margin-top: 20px;">© 2026 Jamaah.in · All rights reserved</p>
     </div>
     """
     return _send_email(to, subject, html)
