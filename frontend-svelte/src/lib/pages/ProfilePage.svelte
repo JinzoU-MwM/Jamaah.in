@@ -1,4 +1,4 @@
-<script>
+﻿<script>
     import { onMount, onDestroy } from "svelte";
     import {
         User,
@@ -62,7 +62,7 @@
     let profileMsg = $state({ type: "", text: "" });
 
     // Avatar color
-    let selectedColor = $state("emerald");
+    let selectedColor = $state("blue");
     const avatarColors = [
         { name: "emerald", bg: "bg-emerald-500", ring: "ring-emerald-300" },
         { name: "blue", bg: "bg-blue-500", ring: "ring-blue-300" },
@@ -116,7 +116,7 @@
             ]);
             profile = me;
             editName = me.name;
-            selectedColor = me.avatar_color || "emerald";
+            selectedColor = me.avatar_color || "blue";
             notifyUsageLimit =
                 me.notify_usage_limit !== undefined
                     ? me.notify_usage_limit
@@ -306,14 +306,14 @@
     // Get current avatar bg class
     let avatarBg = $derived(
         avatarColors.find((c) => c.name === selectedColor)?.bg ||
-            "bg-emerald-500",
+            "bg-blue-500",
     );
 </script>
 
-<div class="profile-page min-h-screen bg-slate-50">
+<div class="profile-page min-h-screen bg-slate-50/70">
     <!-- Mobile Header (sidebar handles desktop nav) -->
     <header
-        class="lg:hidden bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-10"
+        class="hidden"
     >
         <h1 class="text-lg font-semibold text-slate-800">Profil</h1>
         <div class="flex items-center gap-2">
@@ -338,6 +338,27 @@
             <div class="spinner"></div>
         </div>
     {:else if profile}
+        <header class="sticky top-16 z-20 flex min-h-[72px] items-center justify-between gap-4 border-b border-slate-200/80 bg-white/80 px-4 backdrop-blur-xl lg:top-0 lg:px-8">
+            <div class="min-w-0">
+                <h1 class="text-lg font-bold text-slate-900">Profil</h1>
+                <p class="hidden text-xs text-slate-400 sm:block">
+                    Pengaturan akun, paket, keamanan, dan preferensi.
+                </p>
+            </div>
+            <button
+                type="button"
+                onclick={toggleDarkMode}
+                class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100"
+                title={darkMode ? "Mode Terang" : "Mode Gelap"}
+                aria-label={darkMode ? "Mode Terang" : "Mode Gelap"}
+            >
+                {#if darkMode}
+                    <Sun class="h-5 w-5 text-amber-500" />
+                {:else}
+                    <Moon class="h-5 w-5 text-slate-500" />
+                {/if}
+            </button>
+        </header>
         <div class="profile-content">
             <div class="profile-grid">
                 <!-- Left Column: Profile Card + Activity -->
@@ -416,7 +437,7 @@
                                     <p class="stat-value">
                                         {groupCount}<span class="stat-limit"
                                             >/{subscription?.plan === "pro"
-                                                ? "∞"
+                                                ? "unlimited"
                                                 : "2"}</span
                                         >
                                     </p>
@@ -502,15 +523,15 @@
                                     class="upgrade-btn-full"
                                 >
                                     <Crown class="h-4 w-4" />
-                                    Upgrade ke Pro — Rp80.000/bulan
+                                    Upgrade ke Pro - Rp80.000/bulan
                                 </button>
                                 {#if trialStatus?.can_activate}
                                     <button
                                         onclick={onUpgradeRequest}
                                         class="upgrade-btn-full"
-                                        style="background: linear-gradient(135deg, #8b5cf6, #6d28d9); margin-top: 8px;"
+                                        style="background: linear-gradient(135deg, #2563eb, #1d4ed8); margin-top: 8px;"
                                     >
-                                        🎁 Coba Pro 7 Hari GRATIS
+                                        Coba Pro 7 Hari Gratis
                                     </button>
                                 {/if}
                             {/if}
@@ -854,7 +875,7 @@
                 </h3>
                 <button
                     onclick={() => (showDeleteModal = false)}
-                    class="modal-close">✕</button
+                    class="modal-close">x</button
                 >
             </div>
             <div class="modal-body">
@@ -1003,7 +1024,7 @@
         width: 2rem;
         height: 2rem;
         border: 2px solid transparent;
-        border-bottom-color: #10b981;
+        border-bottom-color: #3b82f6;
         border-radius: 50%;
         animation: spin 0.8s linear infinite;
     }
@@ -1015,18 +1036,18 @@
 
     /* ---- Content Container ---- */
     .profile-content {
-        max-width: 72rem;
-        margin: 0 auto;
-        padding: 1.25rem 1rem 2rem;
+        width: 100%;
+        margin: 0;
+        padding: 1rem;
     }
     @media (min-width: 640px) {
         .profile-content {
-            padding: 1.5rem 1.5rem 2rem;
+            padding: 1.5rem;
         }
     }
     @media (min-width: 1024px) {
         .profile-content {
-            padding: 2rem 2rem 3rem;
+            padding: 2rem;
         }
     }
 
@@ -1075,8 +1096,8 @@
     /* ---- Profile Card ---- */
     .profile-card {
         background: #fff;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
+        border-radius: 1.5rem;
+        border: 1px solid #f1f5f9;
         overflow: hidden;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
@@ -1087,7 +1108,7 @@
 
     /* ---- Profile Header ---- */
     .profile-header {
-        background: linear-gradient(135deg, #10b981, #0d9488);
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
         padding: 1.25rem 1rem;
         color: white;
     }
@@ -1153,14 +1174,14 @@
         font-weight: 500;
     }
     .profile-email {
-        color: rgba(167, 243, 208, 0.9);
+        color: rgba(219, 234, 254, 0.92);
         font-size: 0.8rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
     .profile-joined {
-        color: rgba(167, 243, 208, 0.6);
+        color: rgba(219, 234, 254, 0.72);
         font-size: 0.7rem;
         margin-top: 0.125rem;
     }
@@ -1219,7 +1240,7 @@
     .stat-icon {
         width: 2rem;
         height: 2rem;
-        border-radius: 0.5rem;
+        border-radius: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1230,8 +1251,8 @@
         color: #2563eb;
     }
     .stat-icon-group {
-        background: #d1fae5;
-        color: #059669;
+        background: #dbeafe;
+        color: #2563eb;
     }
     .stat-icon-plan {
         background: #fef3c7;
@@ -1241,7 +1262,7 @@
         background: #1e3a5f;
     }
     :global(.dark) .stat-icon-group {
-        background: #064e3b;
+        background: #1e3a8a;
     }
     :global(.dark) .stat-icon-plan {
         background: #451a03;
@@ -1348,7 +1369,7 @@
         gap: 0.5rem;
         width: 100%;
         padding: 0.625rem;
-        background: linear-gradient(135deg, #10b981, #059669);
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
         color: white;
         font-size: 0.8rem;
         font-weight: 600;
@@ -1382,16 +1403,16 @@
         background: #bbf7d0;
     }
     :global(.dark) .wa-btn {
-        background: #064e3b;
+        background: #1e3a8a;
         color: #6ee7b7;
     }
 
     /* ---- Form Card ---- */
     .form-card {
         background: #fff;
-        border-radius: 1rem;
-        border: 1px solid #e2e8f0;
-        padding: 1.25rem 1rem;
+        border-radius: 1.5rem;
+        border: 1px solid #f1f5f9;
+        padding: 1.25rem;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
     }
     :global(.dark) .form-card {
@@ -1408,7 +1429,7 @@
         align-items: center;
         gap: 0.5rem;
         font-size: 1rem;
-        font-weight: 600;
+        font-weight: 700;
         color: #1e293b;
         margin-bottom: 1rem;
     }
@@ -1434,12 +1455,12 @@
     }
     .field-input {
         width: 100%;
-        padding: 0.625rem 0.75rem;
+        padding: 0.75rem 1rem;
         border: 1px solid #e2e8f0;
         border-radius: 0.75rem;
         font-size: 0.875rem;
         color: #1e293b;
-        background: #fff;
+        background: #f8fafc;
         outline: none;
         transition:
             border-color 0.2s,
@@ -1452,8 +1473,8 @@
         color: #e2e8f0;
     }
     .field-input:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
     }
     .field-disabled {
         background: #f8fafc;
@@ -1501,7 +1522,7 @@
         flex-shrink: 0;
     }
     .toggle-on {
-        background: #10b981;
+        background: #3b82f6;
     }
     .toggle-off {
         background: #cbd5e1;
@@ -1531,15 +1552,15 @@
         align-items: center;
         gap: 0.5rem;
         padding: 0.5rem 0.75rem;
-        border-radius: 0.5rem;
+        border-radius: 1.5rem;
         font-size: 0.8rem;
     }
     .msg-success {
-        background: #d1fae5;
-        color: #065f46;
+        background: #dbeafe;
+        color: #1d4ed8;
     }
     :global(.dark) .msg-success {
-        background: #064e3b;
+        background: #1e3a8a;
         color: #6ee7b7;
     }
     .msg-error {
@@ -1558,8 +1579,8 @@
         justify-content: center;
         gap: 0.5rem;
         width: 100%;
-        padding: 0.625rem;
-        background: #10b981;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
         color: white;
         font-size: 0.875rem;
         font-weight: 600;
@@ -1569,7 +1590,7 @@
         transition: all 0.2s;
     }
     .save-btn:hover:not(:disabled) {
-        background: #059669;
+        background: #1d4ed8;
     }
     .save-btn:disabled {
         opacity: 0.5;
@@ -1616,7 +1637,7 @@
         width: 0.5rem;
         height: 0.5rem;
         border-radius: 50%;
-        background: #10b981;
+        background: #3b82f6;
         flex-shrink: 0;
     }
     .activity-info {
@@ -1789,16 +1810,16 @@
     .price-box {
         text-align: center;
         padding: 1rem;
-        background: linear-gradient(135deg, #d1fae5, #cffafe);
+        background: linear-gradient(135deg, #dbeafe, #eff6ff);
         border-radius: 0.75rem;
     }
     :global(.dark) .price-box {
-        background: linear-gradient(135deg, #064e3b, #083344);
+        background: linear-gradient(135deg, #1e3a8a, #1e40af);
     }
     .price-amount {
         font-size: 1.75rem;
         font-weight: 700;
-        color: #059669;
+        color: #2563eb;
     }
     :global(.dark) .price-amount {
         color: #6ee7b7;
@@ -1845,7 +1866,7 @@
         align-items: center;
         gap: 0.25rem;
         font-size: 0.75rem;
-        color: #10b981;
+        color: #3b82f6;
         background: none;
         border: none;
         cursor: pointer;

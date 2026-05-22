@@ -1,26 +1,28 @@
-<!--
-  Sidebar.svelte — Professional Navigation Sidebar
-  
-  Design: Compact, clean, efficient use of space
--->
 <script>
   import {
-    Home,
-    Package,
-    Hotel,
-    LogOut,
-    Crown,
-    Menu,
-    X,
-    ChevronLeft,
-    ChevronRight,
+    BarChart3,
+    BookOpen,
+    Briefcase,
     Building2,
+    ChevronDown,
+    ClipboardList,
+    Crown,
+    DollarSign,
+    FileText,
+    Home,
+    LogOut,
+    Menu,
+    Package,
+    Receipt,
     ScanLine,
-    CalendarDays,
-    Lock,
+    Settings,
+    TrendingUp,
+    Users,
+    UsersRound,
+    Wallet,
+    X,
   } from "lucide-svelte";
   import BrandLogo from "./BrandLogo.svelte";
-  import NotificationBell from "./NotificationBell.svelte";
 
   let {
     currentPage = "dashboard",
@@ -28,263 +30,227 @@
     user = null,
     isPro = false,
     trialAvailable = false,
+    jamaahCount = 0,
     onLogout,
     collapsed = false,
     onToggleCollapse,
   } = $props();
 
-  const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: Home, proOnly: false },
-    { id: "scanner", label: "Scanner", icon: ScanLine, proOnly: false },
-    { id: "itinerary", label: "Jadwal", icon: CalendarDays, proOnly: true },
-    { id: "inventory", label: "Inventori", icon: Package, proOnly: true },
-    { id: "rooming", label: "Rooming", icon: Hotel, proOnly: true },
-    { id: "team", label: "Tim", icon: Building2, proOnly: true },
-  ];
-
-  let visibleItems = $derived(menuItems);
   let mobileMenuOpen = $state(false);
 
+  // Which expandable section is open on mobile
+  let openSection = $state("main");
+
+  const navGroups = [
+    {
+      id: "main",
+      label: "Utama",
+      items: [
+        { id: "dashboard", label: "Dashboard", icon: Home, page: "dashboard" },
+        { id: "scanner", label: "AI Scanner", icon: ScanLine, page: "scanner", pulse: true },
+      ],
+    },
+    {
+      id: "ops",
+      label: "Operasional",
+      items: [
+        { id: "packages", label: "Paket & Harga", icon: Package, page: "packages" },
+        { id: "crm", label: "CRM & Jamaah", icon: UsersRound, page: "crm", isCRM: true },
+        { id: "invoices", label: "Invoice & Bayar", icon: Receipt, page: "invoices" },
+        { id: "documents", label: "Dokumen & Paspor", icon: ClipboardList, page: "documents" },
+      ],
+    },
+    {
+      id: "finance",
+      label: "Keuangan",
+      ownerOnly: true,
+      items: [
+        { id: "finance", label: "Laporan Keuangan", icon: TrendingUp, page: "finance" },
+        { id: "vendors", label: "Vendor & Biaya", icon: Building2, page: "vendors" },
+        { id: "agents", label: "Komisi Agen", icon: DollarSign, page: "agents" },
+      ],
+    },
+    {
+      id: "advanced",
+      label: "Advanced",
+      proOnly: true,
+      items: [
+        { id: "contracts", label: "E-Kontrak", icon: FileText, page: "contracts" },
+        { id: "stock", label: "Persediaan", icon: Briefcase, page: "stock" },
+        { id: "payroll", label: "Penggajian", icon: Wallet, page: "payroll" },
+      ],
+    },
+    {
+      id: "settings",
+      label: "Pengaturan",
+      items: [
+        { id: "team", label: "Tim & Organisasi", icon: Users, page: "team" },
+        { id: "profile", label: "Profil Saya", icon: Settings, page: "profile" },
+      ],
+    },
+  ];
+
+  // Legacy items that are being retired from the sidebar but still reachable
+  // (rooming, manifest, analytics, itinerary, grup stay accessible via dashboard shortcuts)
+
+  function isActive(page) {
+    return currentPage === page;
+  }
+
   function handleNavClick(pageId) {
-    onPageChange(pageId);
+    onPageChange?.(pageId);
     mobileMenuOpen = false;
+  }
+
+  function initial() {
+    return (user?.name || "A").charAt(0).toUpperCase();
+  }
+
+  // Determine if a group should be shown based on role
+  function showGroup(group) {
+    if (group.ownerOnly) {
+      return user?.role === "owner" || user?.is_super_admin;
+    }
+    return true;
   }
 </script>
 
-<!-- Mobile Header -->
-<div
-  class="lg:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-40 px-3 py-2 flex items-center justify-between"
->
+<!-- Mobile top bar -->
+<div class="lg:hidden fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4">
   <button
     type="button"
     onclick={() => (mobileMenuOpen = true)}
-    class="p-1.5 hover:bg-slate-100 rounded-lg"
+    class="flex h-10 w-10 items-center justify-center rounded-xl transition-colors hover:bg-slate-100"
     aria-label="Buka menu"
   >
-    <Menu class="h-5 w-5 text-slate-600" />
+    <Menu class="h-6 w-6 text-slate-600" />
   </button>
-
-  <span class="text-sm font-semibold text-slate-800">Jamaah.in</span>
-
-  {#if user}
-    <div
-      class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
-      style="background-color: {user.avatar_color || '#10b981'}"
-    >
-      {user.name?.charAt(0)?.toUpperCase() || "U"}
-    </div>
-  {:else}
-    <div class="w-7"></div>
-  {/if}
+  <BrandLogo size="small" />
+  <button
+    type="button"
+    onclick={() => handleNavClick("profile")}
+    class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-sm font-bold text-white shadow-lg shadow-primary-500/20"
+    aria-label="Profil"
+  >
+    {initial()}
+  </button>
 </div>
 
-<!-- Mobile Overlay -->
 {#if mobileMenuOpen}
-  <!-- svelte-ignore a11y_click_events_have_key_events -->
-  <div
-    class="lg:hidden fixed inset-0 bg-black/40 z-40"
+  <button
+    type="button"
+    class="fixed inset-0 z-40 bg-slate-900/50 lg:hidden"
     onclick={() => (mobileMenuOpen = false)}
-    role="button"
-    tabindex="-1"
     aria-label="Tutup menu"
-  ></div>
+  ></button>
 {/if}
 
-<!-- Sidebar -->
 <aside
-  class="fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-700 z-50 transition-all duration-200
-    {mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-    {collapsed ? 'lg:w-16' : 'lg:w-64'}
-    w-64"
+  class="fixed left-0 top-0 z-50 flex h-full w-[272px] flex-col border-r border-slate-200/80 bg-white transition-transform duration-300 lg:translate-x-0
+    {mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}"
 >
-  <!-- Header -->
-  <div
-    class="h-14 flex items-center justify-between px-4 border-b border-slate-200"
-  >
-    {#if collapsed}
-      <button
-        type="button"
-        onclick={onToggleCollapse}
-        class="flex items-center justify-center w-full py-1 hover:bg-slate-50 rounded transition-colors"
-        aria-label="Perluas sidebar"
-      >
-        <BrandLogo size="small" iconOnly={true} />
-      </button>
-    {:else}
-      <BrandLogo size="small" iconOnly={false} />
-      <div class="flex items-center gap-1">
-        {#if !isPro}
-          <button
-            type="button"
-            onclick={() => handleNavClick("header:upgrade")}
-            class="p-1.5 text-amber-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-            aria-label="Upgrade ke Pro"
-            title="Upgrade ke Pro"
-          >
-            <Crown class="h-4 w-4" />
-          </button>
-        {/if}
-        <NotificationBell onNavigate={onPageChange} />
+  <div class="flex h-[72px] items-center justify-between border-b border-slate-100 px-6">
+    <BrandLogo size="small" />
+    <button
+      type="button"
+      class="flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 lg:hidden"
+      onclick={() => (mobileMenuOpen = false)}
+      aria-label="Tutup"
+    >
+      <X class="h-5 w-5" />
+    </button>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+    {#each navGroups as group}
+      {#if showGroup(group)}
+        <div>
+          <p class="mb-1.5 px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            {group.label}
+            {#if group.proOnly && !isPro}
+              <span class="ml-1 rounded-sm bg-amber-100 px-1 py-0.5 text-[9px] font-bold text-amber-600">PRO</span>
+            {/if}
+          </p>
+          <div class="space-y-0.5">
+            {#each group.items as item}
+              {@const ItemIcon = item.icon}
+              <button
+                type="button"
+                onclick={() => handleNavClick(item.page)}
+                class="sidebar-link {isActive(item.page) ? 'active' : ''}"
+              >
+                <ItemIcon class="h-[18px] w-[18px] flex-shrink-0" />
+                <span>{item.label}</span>
+                {#if item.isCRM && jamaahCount > 0}
+                  <span class="ml-auto rounded-full bg-primary-100 px-2 py-0.5 text-[10px] font-bold text-primary-600">{jamaahCount}</span>
+                {/if}
+                {#if item.pulse}
+                  <span class="ml-auto h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                {/if}
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+    {/each}
+  </nav>
+
+  <div class="border-t border-slate-100 px-4 py-4">
+    {#if !isPro}
+      <div class="mb-3 rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 p-4 text-white">
+        <div class="mb-2 flex items-center gap-2">
+          <Crown class="h-4 w-4 text-primary-200" />
+          <span class="text-xs font-bold">Upgrade ke Pro</span>
+        </div>
+        <p class="mb-3 text-[11px] leading-relaxed text-primary-200">
+          Invoice, laporan keuangan, e-kontrak, dan semua modul bisnis.
+        </p>
         <button
           type="button"
-          onclick={onToggleCollapse}
-          class="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
-          aria-label="Minimalkan sidebar"
+          onclick={() => handleNavClick(trialAvailable ? "trial:activate" : "profile:upgrade")}
+          class="w-full rounded-xl bg-white py-2 text-[11px] font-bold text-primary-700 transition-colors hover:bg-primary-50"
         >
-          <ChevronLeft class="h-4 w-4" />
+          {trialAvailable ? "Coba 14 Hari Gratis" : "Lihat Paket"}
         </button>
       </div>
     {/if}
 
     <button
       type="button"
-      class="lg:hidden p-1.5 hover:bg-slate-100 rounded absolute right-2"
-      onclick={() => (mobileMenuOpen = false)}
-      aria-label="Tutup"
-    >
-      <X class="h-4 w-4 text-slate-500" />
-    </button>
-  </div>
-
-  <!-- User Info - Compact -->
-  {#if user && !collapsed}
-    <button
-      type="button"
-      onclick={() => handleNavClick("profile")}
-      class="w-full px-4 py-3 border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer text-left"
-    >
-      <div class="flex items-center gap-2.5">
-        <div
-          class="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style="background-color: {user.avatar_color || '#10b981'}"
-        >
-          {user.name?.charAt(0)?.toUpperCase() || "U"}
-        </div>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-slate-800 truncate">
-            {user.name || "User"}
-          </p>
-          <p class="text-xs text-slate-400 truncate">{user.email}</p>
-        </div>
-        {#if isPro}
-          <Crown class="h-3.5 w-3.5 text-amber-500 flex-shrink-0" />
-        {/if}
-      </div>
-    </button>
-  {:else if user && collapsed}
-    <button
-      type="button"
-      onclick={() => handleNavClick("profile")}
-      class="py-2 flex justify-center border-b border-slate-100 hover:bg-slate-50 transition-colors cursor-pointer w-full"
-      title="Profil"
-    >
-      <div
-        class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
-        style="background-color: {user.avatar_color || '#10b981'}"
-        title={user.name}
-      >
-        {user.name?.charAt(0)?.toUpperCase() || "U"}
-      </div>
-    </button>
-  {/if}
-
-  <!-- Navigation -->
-  <nav class="flex-1 px-3 py-3 space-y-1">
-    {#each visibleItems as item}
-      <button
-        type="button"
-        onclick={() => handleNavClick(item.id)}
-        class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all text-sm
-          {currentPage === item.id
-          ? 'bg-emerald-50 text-emerald-700 font-medium'
-          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'}
-          {collapsed ? 'lg:justify-center' : ''}"
-        title={item.label}
-      >
-        <item.icon class="h-[18px] w-[18px] flex-shrink-0" />
-        {#if !collapsed}
-          <span class="flex-1 text-left text-sm">{item.label}</span>
-          {#if item.proOnly && !isPro}
-            <span
-              class="px-1.5 py-0.5 text-[10px] font-semibold bg-slate-100 text-slate-500 rounded flex items-center gap-0.5"
-              ><Lock class="h-2.5 w-2.5" /> PRO</span
-            >
-          {:else if item.proOnly}
-            <span
-              class="px-1.5 py-0.5 text-[10px] font-semibold bg-amber-100 text-amber-700 rounded"
-              >PRO</span
-            >
-          {/if}
-        {/if}
-      </button>
-    {/each}
-  </nav>
-
-  <!-- Trial Card / Pro CTA -->
-  {#if !isPro && !collapsed}
-    <div class="px-3 pb-3">
-      {#if trialAvailable}
-        <!-- Free Trial Card -->
-        <div
-          class="bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl p-4 text-white shadow-lg shadow-purple-500/20"
-        >
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-lg">🎁</span>
-            <span class="text-sm font-bold">FREE Trial 7 Hari!</span>
-          </div>
-          <p class="text-xs text-purple-100 mb-3">
-            Akses SEMUA fitur Pro gratis. Tanpa kartu kredit.
-          </p>
-          <button
-            type="button"
-            onclick={() => handleNavClick("trial:activate")}
-            class="w-full py-2 bg-white text-purple-600 text-sm font-bold rounded-lg hover:bg-purple-50 transition-colors shadow-sm"
-          >
-            Aktifkan Sekarang
-          </button>
-        </div>
-      {:else}
-        <!-- Regular Pro CTA -->
-        <div
-          class="bg-gradient-to-br from-emerald-50 to-amber-50 rounded-lg p-3 border border-emerald-100"
-        >
-          <div class="flex items-center gap-2 mb-2">
-            <Crown class="h-4 w-4 text-amber-500" />
-            <span class="text-sm font-semibold text-slate-800">Upgrade Pro</span>
-          </div>
-          <p class="text-xs text-slate-500 mb-2.5">Unlock Inventori & Rooming</p>
-          <button
-            type="button"
-            onclick={() => handleNavClick("profile:upgrade")}
-            class="w-full py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded transition-colors"
-          >
-            Rp80rb/bulan
-          </button>
-        </div>
-      {/if}
-    </div>
-  {/if}
-
-  <!-- Logout -->
-  <div class="p-2 border-t border-slate-100 dark:border-slate-700">
-    <button
-      type="button"
       onclick={onLogout}
-      class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors text-sm {collapsed
-        ? 'lg:justify-center'
-        : ''}"
+      class="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:bg-red-50 hover:text-red-600"
     >
-      <LogOut class="h-[18px] w-[18px] flex-shrink-0" />
-      {#if !collapsed}
-        <span class="text-sm">Keluar</span>
-      {/if}
+      <LogOut class="h-5 w-5" />
+      Keluar
     </button>
   </div>
 </aside>
 
-<!-- Spacer -->
-<div
-  class="lg:{collapsed
-    ? 'w-16'
-    : 'w-64'} h-0 flex-shrink-0 transition-all duration-200"
-></div>
+<div class="hidden h-0 w-[272px] flex-shrink-0 lg:block"></div>
+
+<style>
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    border-radius: 10px;
+    padding: 9px 14px;
+    color: #64748b;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: all 0.15s;
+    text-align: left;
+  }
+
+  .sidebar-link:hover {
+    background: #f1f5f9;
+    color: #334155;
+  }
+
+  .sidebar-link.active {
+    background: linear-gradient(135deg, #2563eb, #3b82f6);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.28);
+  }
+</style>

@@ -42,11 +42,11 @@
 </script>
 
 {#if subscription && isFree}
-    <div class="max-w-5xl mx-auto px-6 mt-4">
+    <div class="w-full">
         <!-- Blocked: Usage limit or trial expired -->
         {#if isBlocked}
             <div
-                class="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-5"
+                class="rounded-3xl border border-red-100 bg-white p-5 shadow-sm"
             >
                 <div class="flex items-start gap-3">
                     <div class="bg-red-100 rounded-lg p-2 shrink-0">
@@ -62,7 +62,7 @@
                     </div>
                     <button
                         onclick={onUpgrade}
-                        class="px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white text-sm font-semibold rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-1 shrink-0"
+                        class="flex shrink-0 items-center gap-1 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 transition-all hover:-translate-y-0.5"
                     >
                         <Crown class="h-4 w-4" />
                         Upgrade Pro
@@ -74,7 +74,7 @@
             <!-- Trial active -->
         {:else if isTrial}
             <div
-                class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4"
+                class="rounded-3xl border border-primary-100 bg-white p-4 shadow-sm"
             >
                 <div class="flex items-center justify-between flex-wrap gap-3">
                     <div class="flex items-center gap-3">
@@ -83,7 +83,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-blue-800">
-                                Trial Gratis · Berakhir {trialEndsFormatted()}
+                                Trial Gratis - Berakhir {trialEndsFormatted()}
                             </p>
                             <p class="text-xs text-blue-600">
                                 {remaining} scan tersisa dari {subscription.usage_limit}
@@ -115,7 +115,7 @@
             <!-- Free (trial expired but still has uses) -->
         {:else if isExpired && remaining > 0}
             <div
-                class="bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-4"
+                class="rounded-3xl border border-amber-100 bg-white p-4 shadow-sm"
             >
                 <div class="flex items-center justify-between flex-wrap gap-3">
                     <div class="flex items-center gap-3">
@@ -124,7 +124,7 @@
                         </div>
                         <div>
                             <p class="text-sm font-medium text-amber-800">
-                                Trial berakhir · {remaining} scan tersisa
+                                Trial berakhir - {remaining} scan tersisa
                             </p>
                             <p class="text-xs text-amber-600">
                                 Upgrade ke Pro untuk akses unlimited
@@ -145,19 +145,19 @@
 {/if}
 
 {#if subscription && subscription.plan === "pro"}
-    <div class="max-w-5xl mx-auto px-6 mt-4">
+    <div class="w-full">
         <div
-            class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-4"
+            class="rounded-3xl border border-primary-100 bg-white p-4 shadow-sm"
         >
             <div class="flex items-center gap-3">
-                <div class="bg-emerald-100 rounded-lg p-2">
-                    <Crown class="h-4 w-4 text-emerald-500" />
+                <div class="rounded-2xl bg-primary-50 p-2">
+                    <Crown class="h-4 w-4 text-primary-600" />
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-emerald-800">
-                        Pro Plan · Unlimited Scan
+                    <p class="text-sm font-semibold text-slate-900">
+                        Pro Plan - Unlimited Scan
                     </p>
-                    <p class="text-xs text-emerald-600">
+                    <p class="text-xs text-slate-500">
                         Total {subscription.usage_count} dokumen di-scan
                     </p>
                 </div>

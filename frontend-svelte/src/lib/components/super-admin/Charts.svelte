@@ -1,4 +1,4 @@
-<script>
+﻿<script>
     export let stats = {
         total_users: 0,
         active_users: 0,
@@ -75,11 +75,11 @@
 </script>
 
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">User Activity (30 Days)</h3>
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+        <h3 class="text-lg font-semibold text-slate-900 mb-4">User Activity (30 Days)</h3>
         <div class="h-64">
             {#if loading}
-                <div class="h-full flex items-center justify-center text-gray-500 text-sm">Loading chart...</div>
+                <div class="h-full flex items-center justify-center text-slate-500 text-sm">Loading chart...</div>
             {:else}
                 <svg viewBox="0 0 400 150" class="w-full h-full">
                     <line x1="40" y1="10" x2="400" y2="10" stroke="#e5e7eb" stroke-width="1" />
@@ -98,14 +98,14 @@
 
                     <polygon
                         points={userAreaPoints}
-                        fill="#10b981"
+                        fill="#3b82f6"
                         fill-opacity="0.1"
                     />
 
                     <polyline
                         points={userPoints}
                         fill="none"
-                        stroke="#10b981"
+                        stroke="#3b82f6"
                         stroke-width="2"
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -116,7 +116,7 @@
                             cx={userChartLeft + (i * userStep)}
                             cy={chartBottom - ((value / userMax) * chartHeight)}
                             r="2"
-                            fill="#10b981"
+                            fill="#3b82f6"
                         />
                     {/each}
                 </svg>
@@ -124,11 +124,11 @@
         </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Revenue Growth (Monthly)</h3>
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+        <h3 class="text-lg font-semibold text-slate-900 mb-4">Revenue Growth (Monthly)</h3>
         <div class="h-64">
             {#if loading}
-                <div class="h-full flex items-center justify-center text-gray-500 text-sm">Loading chart...</div>
+                <div class="h-full flex items-center justify-center text-slate-500 text-sm">Loading chart...</div>
             {:else}
                 <svg viewBox="0 0 400 150" class="w-full h-full">
                     <line x1="40" y1="10" x2="400" y2="10" stroke="#e5e7eb" stroke-width="1" />
@@ -158,8 +158,8 @@
 
                     <defs>
                         <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stop-color="#10b981" />
-                            <stop offset="100%" stop-color="#059669" />
+                            <stop offset="0%" stop-color="#3b82f6" />
+                            <stop offset="100%" stop-color="#2563eb" />
                         </linearGradient>
                     </defs>
                 </svg>
@@ -170,12 +170,12 @@
 
 <div class="mt-4 flex justify-center space-x-8">
     <div class="flex items-center">
-        <div class="w-4 h-4 bg-emerald-500 rounded mr-2"></div>
-        <span class="text-sm text-gray-600">Users</span>
+        <div class="w-4 h-4 bg-primary-500 rounded mr-2"></div>
+        <span class="text-sm text-slate-600">Users</span>
     </div>
     <div class="flex items-center">
-        <div class="w-4 h-4 bg-gradient-to-b from-emerald-500 to-emerald-600 rounded mr-2" style="background: linear-gradient(to bottom, #10b981, #059669)"></div>
-        <span class="text-sm text-gray-600">Revenue (Rp)</span>
+        <div class="w-4 h-4 bg-gradient-to-b from-primary-500 to-primary-600 rounded mr-2" style="background: linear-gradient(to bottom, #3b82f6, #2563eb)"></div>
+        <span class="text-sm text-slate-600">Revenue (Rp)</span>
     </div>
 </div>
 
@@ -185,6 +185,6 @@
     </div>
 {/if}
 
-<div class="mt-3 text-center text-xs text-gray-500">
+<div class="mt-3 text-center text-xs text-slate-500">
     Total users: {stats.total_users} | Pro: {stats.pro_users} | Free: {stats.free_users}
 </div>

@@ -209,13 +209,13 @@
     <!-- Header -->
     <div class="flex items-center justify-between mb-4">
         <div class="flex items-center gap-2">
-            <FolderOpen class="h-5 w-5 text-emerald-600" />
+            <FolderOpen class="h-5 w-5 text-primary-600" />
             <h3 class="font-semibold text-slate-800">Grup Jamaah</h3>
             <span class="text-sm text-slate-400">({groups.length})</span>
         </div>
         <button
             onclick={() => (showCreateInput = !showCreateInput)}
-            class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+            class="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold text-primary-600 transition-colors hover:bg-primary-50"
         >
             <Plus class="h-4 w-4" />
             <span class="hidden sm:inline">Buat Grup</span>
@@ -230,12 +230,12 @@
                 bind:value={newGroupName}
                 onkeydown={handleKeydown}
                 placeholder="Nama grup (mis: UMROH 12 Februari)"
-                class="flex-1 px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent"
+                class="flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition focus:border-primary-400 focus:bg-white"
             />
             <button
                 onclick={createGroup}
                 disabled={creating || !newGroupName.trim()}
-                class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 text-white text-sm font-medium rounded-xl transition-colors flex items-center gap-2"
+                class="flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-primary-700 disabled:bg-slate-300"
             >
                 {#if creating}
                     <Loader2 class="h-4 w-4 animate-spin" />
@@ -285,14 +285,14 @@
                     tabindex="0"
                     class="text-left p-4 rounded-xl border-2 transition-all cursor-pointer
             {selectedGroup?.id === group.id
-                        ? 'border-emerald-400 bg-emerald-50 shadow-md shadow-emerald-100'
+                        ? 'border-primary-400 bg-primary-50 shadow-md shadow-primary-100'
                         : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}"
                 >
                     <div class="flex items-start justify-between mb-2">
                         <h4
                             class="font-semibold text-sm truncate pr-2
               {selectedGroup?.id === group.id
-                                ? 'text-emerald-700'
+                                ? 'text-primary-700'
                                 : 'text-slate-700'}"
                         >
                             {group.name}
@@ -306,7 +306,7 @@
                                         e.stopPropagation();
                                         onViewGroup(group);
                                     }}
-                                    class="p-1 text-slate-400 hover:text-emerald-500 rounded transition-colors"
+                                    class="rounded p-1 text-slate-400 transition-colors hover:text-primary-500"
                                     title="Lihat data"
                                 >
                                     <Eye class="h-3.5 w-3.5" />
@@ -333,7 +333,7 @@
                                     e.stopPropagation();
                                     openRegistrationLink(group);
                                 }}
-                                class="p-1 text-slate-400 hover:text-emerald-500 rounded transition-colors"
+                                class="rounded p-1 text-slate-400 transition-colors hover:text-primary-500"
                                 title="Link Pendaftaran"
                             >
                                 <Link class="h-3.5 w-3.5" />
@@ -402,7 +402,7 @@
 
                     {#if selectedGroup?.id === group.id}
                         <div
-                            class="mt-2 pt-2 border-t border-emerald-200 flex items-center gap-1 text-xs text-emerald-600 font-medium"
+                            class="mt-2 flex items-center gap-1 border-t border-primary-200 pt-2 text-xs font-semibold text-primary-600"
                         >
                             <ChevronRight class="h-3 w-3" />
                             Upload ke grup ini
@@ -531,16 +531,16 @@
             {:else}
                 <!-- Success: Show URL -->
                 <div
-                    class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4"
+                    class="mb-4 rounded-2xl border border-primary-100 bg-primary-50 p-4"
                 >
                     <div class="flex items-center gap-2 mb-2">
-                        <CheckCircle class="h-5 w-5 text-emerald-500" />
-                        <span class="text-sm font-medium text-emerald-700"
+                        <CheckCircle class="h-5 w-5 text-primary-600" />
+                        <span class="text-sm font-semibold text-primary-700"
                             >Link berhasil dibuat!</span
                         >
                     </div>
                     <div
-                        class="bg-white rounded-lg p-3 border border-emerald-100"
+                        class="rounded-xl border border-primary-100 bg-white p-3"
                     >
                         <p class="text-xs text-slate-400 mb-1">
                             URL untuk Mutawwif:
@@ -549,7 +549,7 @@
                             {shareResult.shared_url}
                         </p>
                     </div>
-                    <div class="mt-2 text-xs text-emerald-600">
+                    <div class="mt-2 text-xs text-primary-600">
                         PIN: <strong class="font-mono">{shareResult.pin}</strong
                         >
                         · Berlaku hingga: {formatDate(shareResult.expires_at)}

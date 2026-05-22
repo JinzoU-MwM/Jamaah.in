@@ -1,7 +1,7 @@
 <script>
-  import { UsersRound, ArrowRightToLine } from 'lucide-svelte';
+  import { ArrowRightToLine, UsersRound } from 'lucide-svelte';
   
-  let { size = 'default', iconOnly = false } = $props();
+  let { size = 'default', iconOnly = false, variant = 'default' } = $props();
   
   const sizeClasses = {
     small: 'text-xl',
@@ -14,27 +14,28 @@
     default: 'h-6 w-6',
     large: 'h-8 w-8'
   };
+
+  const textColor = $derived(variant === 'light' ? 'text-white' : 'text-slate-950');
+  const dotColor = $derived(variant === 'light' ? 'text-emerald-400' : 'text-emerald-500');
+  const peopleColor = $derived(variant === 'light' ? 'text-emerald-400' : 'text-emerald-500');
+  const arrowColor = $derived(variant === 'light' ? 'text-emerald-300' : 'text-emerald-600');
 </script>
 
 {#if iconOnly}
-  <!-- Icon only mode for collapsed sidebar -->
   <div class="flex items-center justify-center">
-    <div class="flex items-center">
-      <UsersRound class="{iconSizes[size]} text-emerald-500" />
+    <div class="flex items-center {peopleColor}">
+      <UsersRound class={iconSizes[size]} strokeWidth={2.35} />
     </div>
   </div>
 {:else}
-  <!-- Full logo with icon and text -->
   <div class="flex items-center gap-2">
-    <!-- Icon Group: Users + Arrow (Login/Entry Concept) -->
-    <div class="flex items-center -space-x-1">
-      <UsersRound class="{iconSizes[size]} text-emerald-500" />
-      <ArrowRightToLine class="{iconSizes[size]} text-emerald-600" />
+    <div class="flex items-center -space-x-1 {peopleColor}">
+      <UsersRound class={iconSizes[size]} strokeWidth={2.25} />
+      <ArrowRightToLine class="{iconSizes[size]} {arrowColor}" strokeWidth={2.35} />
     </div>
-    
-    <!-- Brand Text -->
-    <span class="{sizeClasses[size]} font-bold text-slate-800">
-      Jamaah<span class="text-emerald-500">.in</span>
+
+    <span class="{sizeClasses[size]} font-black tracking-normal {textColor}">
+      Jamaah<span class={dotColor}>.in</span>
     </span>
   </div>
 {/if}

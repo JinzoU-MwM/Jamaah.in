@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   PublicRegistrationPage.svelte — Self-service jamaah registration page
   Accessible via jamaah.in/reg/{token}
 -->
@@ -69,7 +69,7 @@
 <div class="registration-page">
   {#if loading}
     <div class="loading">
-      <Loader2 class="w-8 h-8 animate-spin text-emerald-500" />
+      <Loader2 class="w-8 h-8 animate-spin text-primary-600" />
       <p>Memuat...</p>
     </div>
   {:else if error && !groupInfo}
@@ -127,7 +127,7 @@
             />
             {#if ktpFile}
               <div class="file-selected">
-                <Check class="w-5 h-5 text-emerald-500" />
+                <Check class="w-5 h-5 text-primary-600" />
                 <span>{ktpFile.name}</span>
               </div>
             {:else}
@@ -151,7 +151,7 @@
             />
             {#if passportFile}
               <div class="file-selected">
-                <Check class="w-5 h-5 text-emerald-500" />
+                <Check class="w-5 h-5 text-primary-600" />
                 <span>{passportFile.name}</span>
               </div>
             {:else}
@@ -175,7 +175,7 @@
             />
             {#if visaFile}
               <div class="file-selected">
-                <Check class="w-5 h-5 text-emerald-500" />
+                <Check class="w-5 h-5 text-primary-600" />
                 <span>{visaFile.name}</span>
               </div>
             {:else}
@@ -212,7 +212,7 @@
 <style>
   .registration-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f0fdf4, #ecfeff, #f0f9ff);
+    background: linear-gradient(135deg, #f8fafc, #eff6ff, #f8fafc);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -237,7 +237,7 @@
   .success-icon {
     width: 64px;
     height: 64px;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -247,7 +247,7 @@
   }
 
   .success h2 {
-    color: #059669;
+    color: #2563eb;
     margin-top: 1rem;
   }
 
@@ -259,7 +259,7 @@
 
   .form-container {
     background: white;
-    border-radius: 1rem;
+    border-radius: 1.5rem;
     padding: 1.5rem;
     max-width: 400px;
     width: 100%;
@@ -279,14 +279,14 @@
   }
 
   .group-name {
-    color: #10b981;
+    color: #3b82f6;
     font-weight: 500;
     font-size: 0.9375rem;
   }
 
   .alert {
     padding: 0.75rem;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     margin-bottom: 1rem;
     display: flex;
     align-items: center;
@@ -328,19 +328,19 @@
     width: 100%;
     padding: 0.75rem;
     border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     font-size: 1rem;
     transition: border-color 0.2s;
   }
 
   input[type="tel"]:focus {
     outline: none;
-    border-color: #10b981;
+    border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
   }
 
   .upload-area {
     border: 2px dashed #cbd5e1;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     padding: 1.5rem;
     text-align: center;
     position: relative;
@@ -349,8 +349,8 @@
   }
 
   .upload-area:hover {
-    border-color: #10b981;
-    background: #f0fdf4;
+    border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    background: #eff6ff;
   }
 
   .upload-area.optional {
@@ -377,17 +377,17 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    color: #059669;
+    color: #2563eb;
     font-size: 0.875rem;
   }
 
   button {
     width: 100%;
     padding: 0.875rem;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
     border: none;
-    border-radius: 0.5rem;
+    border-radius: 0.75rem;
     font-weight: 600;
     font-size: 1rem;
     cursor: pointer;
@@ -400,7 +400,7 @@
 
   button:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.18);
   }
 
   button:disabled {

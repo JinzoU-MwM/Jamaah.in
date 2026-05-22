@@ -1,4 +1,4 @@
-/* Import Google Font - must be first */
+﻿/* Import Google Font - must be first */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
@@ -6,21 +6,21 @@
 @tailwind utilities;
 
 /* =============================================================================
-   JAMAAH.IN DESIGN SYSTEM — Professional Travel Agency Dashboard
+   JAMAAH.IN DESIGN SYSTEM - Professional Travel Agency Dashboard
    ============================================================================= */
 
 :root {
-  /* Primary: Deep Emerald (trust, Islamic heritage) */
-  --color-primary-50: #ecfdf5;
-  --color-primary-100: #d1fae5;
-  --color-primary-200: #a7f3d0;
-  --color-primary-300: #6ee7b7;
-  --color-primary-400: #34d399;
-  --color-primary-500: #10b981;
-  --color-primary-600: #059669;
-  --color-primary-700: #047857;
-  --color-primary-800: #065f46;
-  --color-primary-900: #064e3b;
+  /* Primary: dashboard blue, with emerald reserved for logo/status accents */
+  --color-primary-50: #eff6ff;
+  --color-primary-100: #dbeafe;
+  --color-primary-200: #bfdbfe;
+  --color-primary-300: #93c5fd;
+  --color-primary-400: #60a5fa;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-800: #1e40af;
+  --color-primary-900: #1e3a8a;
 
   /* Accent: Warm Gold */
   --color-accent: #f59e0b;
@@ -220,7 +220,7 @@ button {
 .input:focus {
   outline: none;
   border-color: var(--color-primary-500);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
 .input-sm {
@@ -392,7 +392,7 @@ button {
   background: var(--color-slate-400);
 }
 
-/* Focus states — remove default black outline on click, keep green ring for keyboard */
+/* Focus states - remove default black outline on click, keep dashboard ring for keyboard */
 *:focus {
   outline: none;
 }

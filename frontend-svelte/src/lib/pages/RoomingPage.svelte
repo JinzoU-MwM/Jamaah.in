@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   RoomingPage.svelte — Professional Room Allocation Dashboard
   
   Design: Compact card-based layout, efficient use of space
@@ -256,7 +256,7 @@
 
     // Update summary counts optimistically
     if (summary && sourceRoomId === null) {
-      // Moving from unassigned → room
+      // Moving from unassigned to room
       summary = {
         ...summary,
         assigned_count: summary.assigned_count + 1,
@@ -395,33 +395,20 @@
 </script>
 
 {#if isOpen}
-  <div class="flex flex-col h-full min-h-screen bg-white">
-    <!-- Compact Header -->
-    <header
-      class="flex items-center px-4 py-3 border-b border-slate-200 bg-slate-50"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center"
-        >
-          <Hotel class="w-4 h-4 text-indigo-600" />
-        </div>
-        <div>
-          <h1 class="text-sm font-semibold text-slate-800">Auto-Rooming</h1>
-          <p class="text-xs text-slate-500">Alokasi kamar hotel otomatis</p>
-        </div>
+  <div class="min-h-screen bg-slate-50/70 p-4 lg:p-8">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Auto-Rooming</h1>
+        <p class="text-sm text-slate-500">Alokasi kamar hotel otomatis, tetap bisa disesuaikan manual.</p>
       </div>
     </header>
 
-    <!-- Toolbar -->
-    <div
-      class="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 bg-white"
-    >
+    <div class="mb-5 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm lg:flex-row lg:items-center">
       <select
         id="room-group-select"
         bind:value={selectedGroupId}
         onchange={loadData}
-        class="flex-1 max-w-[200px] text-sm px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-indigo-500"
+        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white lg:max-w-xs"
       >
         <option value="">Pilih Grup</option>
         {#each groups as group}
@@ -434,18 +421,18 @@
           type="button"
           onclick={loadData}
           disabled={isLoading}
-          class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg disabled:opacity-50"
+          class="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 disabled:opacity-50"
         >
           <RefreshCw class="w-4 h-4 {isLoading ? 'animate-spin' : ''}" />
         </button>
       {/if}
 
-      <div class="flex items-center gap-2 ml-auto">
+      <div class="flex flex-wrap items-center gap-2 lg:ml-auto">
         <button
           type="button"
           onclick={runAutoRooming}
           disabled={isAutoRooming || unassignedCount === 0}
-          class="px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1.5"
+          class="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 disabled:opacity-50"
         >
           {#if isAutoRooming}<Loader2
               class="w-3 h-3 animate-spin"
@@ -456,7 +443,7 @@
           <button
             type="button"
             onclick={exportRoomingPDF}
-            class="px-3 py-1.5 border border-indigo-200 text-indigo-600 text-xs font-medium rounded-lg hover:bg-indigo-50 flex items-center gap-1.5"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-primary-200 px-3 py-2 text-xs font-semibold text-primary-600 transition hover:bg-primary-50"
           >
             <FileDown class="w-3 h-3" />
             PDF
@@ -464,7 +451,7 @@
           <button
             type="button"
             onclick={() => (waBlastOpen = true)}
-            class="px-3 py-1.5 border border-green-200 text-green-600 text-xs font-medium rounded-lg hover:bg-green-50 flex items-center gap-1.5"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-600 transition hover:bg-emerald-50"
           >
             <MessageCircle class="w-3 h-3" />
             WA
@@ -473,7 +460,7 @@
             type="button"
             onclick={clearRooms}
             disabled={isLoading}
-            class="px-3 py-1.5 border border-red-200 text-red-600 text-xs font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 flex items-center gap-1.5"
+            class="inline-flex items-center gap-1.5 rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
           >
             <Trash2 class="w-3 h-3" />
             Reset
@@ -485,7 +472,7 @@
     <!-- Messages -->
     {#if error}
       <div
-        class="mx-4 mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm"
+        class="mb-3 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm"
       >
         <AlertTriangle class="w-4 h-4 text-red-500" />
         <span class="text-red-700 flex-1">{error}</span>
@@ -499,7 +486,7 @@
 
     {#if success}
       <div
-        class="mx-4 mt-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm"
+        class="mb-3 flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm"
       >
         <CheckCircle class="w-4 h-4 text-emerald-500" />
         <span class="text-emerald-700 flex-1">{success}</span>
@@ -512,21 +499,21 @@
     {/if}
 
     <!-- Content -->
-    <div class="flex-1 overflow-auto">
+    <div class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
       {#if isLoading}
-        <div class="flex items-center justify-center py-12">
+        <div class="flex items-center justify-center py-16">
           <Loader2 class="w-6 h-6 animate-spin text-indigo-500" />
         </div>
       {:else if !selectedGroupId}
         <div
-          class="flex flex-col items-center justify-center py-12 text-slate-400"
+          class="flex flex-col items-center justify-center py-16 text-slate-400"
         >
           <Hotel class="w-10 h-10 mb-2" />
           <p class="text-sm">Pilih grup untuk memulai</p>
         </div>
       {:else if summary}
         <!-- Stats - Ultra Compact -->
-        <div class="grid grid-cols-4 gap-2 p-3">
+        <div class="grid grid-cols-2 gap-4 p-4 lg:grid-cols-4">
           <div class="stat-card">
             <span class="stat-value text-slate-800"
               >{summary.total_members}</span
@@ -553,7 +540,7 @@
         <!-- Rooms Grid -->
         {#if rooms.length > 0}
           <div
-            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 px-3 pb-3"
+            class="grid grid-cols-1 gap-3 px-4 pb-4 sm:grid-cols-2 xl:grid-cols-4"
           >
             {#each rooms as room}
               <article

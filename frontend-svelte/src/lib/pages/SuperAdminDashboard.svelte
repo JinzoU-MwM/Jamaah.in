@@ -1,4 +1,4 @@
-<script>
+﻿<script>
     import { onMount } from 'svelte';
     import { SuperAdminApi } from '../services/superAdminApi.js';
     import { ApiService } from '../services/api.js';
@@ -227,19 +227,19 @@
     }
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="min-h-screen bg-slate-50/70">
     <!-- Header -->
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
+    <header class="sticky top-0 z-20 border-b border-slate-200/80 bg-white/80 backdrop-blur-xl">
+        <div class="px-4 sm:px-6 lg:px-8">
+            <div class="flex h-[72px] items-center justify-between">
                 <div class="flex items-center">
-                    <h1 class="text-2xl font-bold text-emerald-600">JAMAAH.IN</h1>
-                    <span class="ml-2 px-3 py-1 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full">
+                    <h1 class="text-xl font-extrabold text-slate-900">Jamaah.in</h1>
+                    <span class="ml-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">
                         SUPER ADMIN
                     </span>
                 </div>
                 <button onclick={handleLogout}
-                    class="px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition">
+                    class="rounded-xl px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-slate-900">
                     Logout
                 </button>
             </div>
@@ -247,20 +247,20 @@
     </header>
 
     {#if error}
-        <div class="max-w-7xl mx-auto px-4 py-8">
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div class="px-4 py-8 lg:px-8">
+            <div class="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-red-700">
                 {error}
                 <button onclick={() => loadStats()} class="ml-4 underline hover:no-underline">Retry</button>
             </div>
         </div>
     {:else if loading}
-        <div class="max-w-7xl mx-auto px-4 py-8 flex justify-center">
-            <div class="text-gray-500">Loading...</div>
+        <div class="flex justify-center px-4 py-8 lg:px-8">
+            <div class="text-slate-500">Loading...</div>
         </div>
     {:else}
         <!-- Tabs -->
-        <div class="bg-white border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4">
+        <div class="border-b border-slate-200 bg-white">
+            <div class="px-4 lg:px-8">
                 <nav class="flex space-x-8">
                     <button
                         onclick={() => selectTab('stats')}
@@ -293,40 +293,40 @@
         </div>
 
         <!-- Content -->
-        <div class="max-w-7xl mx-auto px-4 py-8">
+        <div class="px-4 py-8 lg:px-8">
             {#if activeTab === 'stats'}
                 <div class="space-y-8">
                     <StatsCards {stats} />
                     <Charts {stats} chartData={chartsData} loading={chartsLoading} error={chartsError} />
 
-                    <section class="bg-white border border-gray-200 rounded-xl p-5">
+                    <section class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm">
                         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-                            <h3 class="text-lg font-semibold text-gray-900">AI Cache Ops</h3>
+                            <h3 class="text-lg font-bold text-slate-900">AI Cache Ops</h3>
                             <div class="flex items-center gap-2">
-                                <label class="flex items-center gap-2 text-sm text-gray-600">
+                                <label class="flex items-center gap-2 text-sm text-slate-600">
                                     <input
                                         type="checkbox"
                                         bind:checked={showExpiredOnly}
                                         onchange={loadAICacheRecent}
-                                        class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                                    class="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
                                     />
                                     Expired only
                                 </label>
                                 <button
                                     onclick={loadAICacheRecent}
-                                    class="px-3 py-1.5 text-sm border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                                    class="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                                     Refresh
                                 </button>
                                 <button
                                     onclick={exportAICacheCsv}
                                     disabled={aiCacheExportLoading}
-                                    class="px-3 py-1.5 text-sm border border-emerald-300 text-emerald-700 rounded-lg hover:bg-emerald-50 disabled:opacity-60">
+                                    class="rounded-xl border border-primary-200 px-3 py-1.5 text-sm font-semibold text-primary-700 hover:bg-primary-50 disabled:opacity-60">
                                     {aiCacheExportLoading ? 'Exporting...' : 'Export CSV'}
                                 </button>
                                 <button
                                     onclick={purgeExpiredAICache}
                                     disabled={aiCachePurgeLoading}
-                                    class="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-60">
+                                    class="rounded-xl bg-red-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-60">
                                     {aiCachePurgeLoading ? 'Purging...' : 'Purge Expired'}
                                 </button>
                             </div>
@@ -337,13 +337,13 @@
                         {/if}
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-                            <div class="rounded-lg bg-slate-50 border border-slate-200 p-3">
-                                <p class="text-xs text-gray-600">Total</p>
-                                <p class="text-xl font-semibold text-gray-900">{aiCacheLoading ? '...' : aiCacheStats.total}</p>
+                            <div class="rounded-2xl border border-slate-100 bg-slate-50 p-3">
+                                <p class="text-xs text-slate-500">Total</p>
+                                <p class="text-xl font-bold text-slate-900">{aiCacheLoading ? '...' : aiCacheStats.total}</p>
                             </div>
-                            <div class="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
-                                <p class="text-xs text-emerald-700">Active</p>
-                                <p class="text-xl font-semibold text-emerald-800">{aiCacheLoading ? '...' : aiCacheStats.active}</p>
+                            <div class="rounded-2xl border border-primary-100 bg-primary-50 p-3">
+                                <p class="text-xs text-primary-700">Active</p>
+                                <p class="text-xl font-bold text-primary-800">{aiCacheLoading ? '...' : aiCacheStats.active}</p>
                             </div>
                             <div class="rounded-lg bg-amber-50 border border-amber-200 p-3">
                                 <p class="text-xs text-amber-700">Expired</p>
@@ -357,7 +357,7 @@
 
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
-                                <thead class="text-left text-gray-500 border-b border-gray-200">
+                                <thead class="border-b border-slate-200 text-left text-slate-500">
                                     <tr>
                                         <th class="py-2 pr-3">Task</th>
                                         <th class="py-2 pr-3">Model</th>
@@ -367,28 +367,28 @@
                                         <th class="py-2 pr-3">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="text-gray-800">
+                                <tbody class="text-slate-800">
                                     {#if aiCacheRecentLoading}
-                                        <tr><td class="py-3 text-gray-500" colspan="6">Loading recent cache rows...</td></tr>
+                                        <tr><td class="py-3 text-slate-500" colspan="6">Loading recent cache rows...</td></tr>
                                     {:else if aiCacheRecent.length === 0}
-                                        <tr><td class="py-3 text-gray-500" colspan="6">No cache rows found.</td></tr>
+                                        <tr><td class="py-3 text-slate-500" colspan="6">No cache rows found.</td></tr>
                                     {:else}
                                         {#each aiCacheRecent as row}
-                                            <tr class="border-b border-gray-100">
+                                            <tr class="border-b border-slate-100">
                                                 <td class="py-2 pr-3">{row.task_type}</td>
                                                 <td class="py-2 pr-3">{row.model}</td>
                                                 <td class="py-2 pr-3">{row.hits}</td>
                                                 <td class="py-2 pr-3">
-                                                    <span class={row.is_expired ? 'text-red-600' : 'text-emerald-600'}>
+                                                    <span class={row.is_expired ? 'text-red-600' : 'text-primary-600'}>
                                                         {row.is_expired ? 'yes' : 'no'}
                                                     </span>
                                                 </td>
-                                                <td class="py-2 pr-3 font-mono text-xs text-gray-600">{row.cache_key.slice(0, 16)}...</td>
+                                                <td class="py-2 pr-3 font-mono text-xs text-slate-600">{row.cache_key.slice(0, 16)}...</td>
                                                 <td class="py-2 pr-3">
                                                     <button
                                                         onclick={() => deleteAICacheRow(row.cache_key)}
                                                         disabled={aiCacheDeletingKey === row.cache_key}
-                                                        class="px-2 py-1 text-xs border border-red-300 text-red-700 rounded hover:bg-red-50 disabled:opacity-60">
+                                                        class="rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60">
                                                         {aiCacheDeletingKey === row.cache_key ? 'Deleting...' : 'Delete'}
                                                     </button>
                                                 </td>
@@ -398,7 +398,7 @@
                                 </tbody>
                             </table>
                         </div>
-                        <div class="mt-2 text-xs text-gray-500">Showing {aiCacheRecent.length} of {aiCacheRecentTotal} rows.</div>
+                        <div class="mt-2 text-xs text-slate-500">Showing {aiCacheRecent.length} of {aiCacheRecentTotal} rows.</div>
                     </section>
                 </div>
             {:else if activeTab === 'users'}
@@ -407,7 +407,7 @@
                 {#if selectedTicket}
                     <div>
                         <button onclick={closeTicketDetail}
-                            class="mb-4 flex items-center text-gray-600 hover:text-gray-900 transition">
+                            class="mb-4 flex items-center text-slate-600 transition hover:text-slate-900">
                             <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                             </svg>
@@ -425,8 +425,8 @@
 
 <style>
     .active {
-        border-color: #059669;
-        color: #059669;
+        border-color: #2563eb;
+        color: #2563eb;
     }
     .inactive {
         border-color: transparent;

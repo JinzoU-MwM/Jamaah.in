@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   ProGateScreen.svelte — Beautiful upsell landing page for Pro-only features.
   Shown to Free users when they click a Pro-only menu item in the sidebar.
 -->
@@ -73,7 +73,7 @@
 
             <button type="button" onclick={onUpgrade} class="gate-btn-upgrade">
                 <Crown class="h-4 w-4" />
-                Upgrade ke Pro — Rp 80.000/bulan
+                Upgrade ke Pro - Rp 80.000/bulan
             </button>
         </div>
     </div>
@@ -240,7 +240,7 @@
         padding: 0.75rem 1.5rem;
         font-size: 0.875rem;
         font-weight: 600;
-        color: #059669;
+        color: #2563eb;
         background: white;
         border: 2px solid #a7f3d0;
         border-radius: 0.625rem;

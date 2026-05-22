@@ -1,4 +1,4 @@
-<script>
+﻿<script>
     import { onMount, onDestroy } from "svelte";
     import { Crown, CheckCircle, Loader2 } from "lucide-svelte";
     import { ApiService } from "../services/api";
@@ -165,7 +165,7 @@
                         Upgrade ke Pro
                     </h3>
                     <button onclick={closeUpgradeModal} class="modal-close"
-                        >✕</button
+                        >x</button
                     >
                 </div>
 
@@ -188,7 +188,7 @@
                             <button
                                 onclick={closeUpgradeModal}
                                 class="wa-confirm-btn"
-                                style="margin-top: 16px; background: #10b981;"
+                                style="margin-top: 16px; background: #3b82f6;"
                             >
                                 Mulai Menggunakan Pro
                             </button>
@@ -216,7 +216,7 @@
                             >
                                 Tahunan
                                 <span
-                                    style="position: absolute; top: -8px; right: -4px; font-size: 10px; background: #10b981; color: white; padding: 2px 6px; border-radius: 999px; font-weight: 700;"
+                                    style="position: absolute; top: -8px; right: -4px; font-size: 10px; background: #3b82f6; color: white; padding: 2px 6px; border-radius: 999px; font-weight: 700;"
                                     >HEMAT</span
                                 >
                             </button>
@@ -320,7 +320,7 @@
                                         <Loader2 class="h-4 w-4 animate-spin" />
                                         Memproses...
                                     {:else}
-                                        🎁 Coba Pro 7 Hari GRATIS
+                                        Coba Pro 7 Hari Gratis
                                     {/if}
                                 </button>
                                 <p
@@ -395,7 +395,7 @@
                             phoneOtpSent = false;
                             phoneError = "";
                         }}
-                        class="modal-close">✕</button
+                        class="modal-close">x</button
                     >
                 </div>
 
@@ -558,7 +558,7 @@
     .price-amount {
         font-size: 1.75rem;
         font-weight: 700;
-        color: #059669;
+        color: #2563eb;
     }
     :global(.dark) .price-amount {
         color: #6ee7b7;

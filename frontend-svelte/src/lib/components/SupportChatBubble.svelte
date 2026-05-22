@@ -1,4 +1,4 @@
-<script>
+﻿<script>
   import { MessageCircle, Send, X, Plus } from "lucide-svelte";
   import { ApiService } from "../services/api";
 
@@ -111,8 +111,8 @@
 
 <div class="fixed right-4 bottom-4 z-[70]">
   {#if isOpen}
-    <div class="w-[22rem] max-w-[calc(100vw-2rem)] h-[30rem] bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden flex flex-col">
-      <div class="px-4 py-3 border-b border-slate-200 bg-emerald-50 flex items-center justify-between">
+    <div class="w-[22rem] max-w-[calc(100vw-2rem)] h-[30rem] bg-white border border-slate-200 shadow-2xl rounded-3xl overflow-hidden flex flex-col">
+      <div class="px-4 py-3 border-b border-slate-200 bg-primary-50 flex items-center justify-between">
         <div>
           <p class="text-sm font-semibold text-slate-800">Support Chat</p>
           <p class="text-[11px] text-slate-500">Hubungi admin support</p>
@@ -154,17 +154,17 @@
             type="text"
             bind:value={newSubject}
             placeholder="Subjek masalah"
-            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-300"
           />
           <textarea
             rows="7"
             bind:value={newMessage}
             placeholder="Tulis kendala Anda..."
-            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            class="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-300"
           ></textarea>
           <button
             type="button"
-            class="w-full px-3 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-700 disabled:opacity-50"
+            class="w-full px-3 py-2 rounded-lg bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-50"
             onclick={createTicket}
             disabled={isLoading || !newSubject.trim() || !newMessage.trim()}
           >
@@ -182,9 +182,9 @@
             <div class="space-y-2">
               {#each activeTicket.messages as msg}
                 <div class="flex {msg.sender_type === 'user' ? 'justify-end' : 'justify-start'}">
-                  <div class="{msg.sender_type === 'user' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'} max-w-[85%] px-3 py-2 rounded-2xl text-xs leading-relaxed">
+                  <div class="{msg.sender_type === 'user' ? 'bg-primary-600 text-white' : 'bg-white text-slate-700 border border-slate-200'} max-w-[85%] px-3 py-2 rounded-3xl text-xs leading-relaxed">
                     <p>{msg.content}</p>
-                    <p class="{msg.sender_type === 'user' ? 'text-emerald-100' : 'text-slate-400'} mt-1 text-[10px]">
+                    <p class="{msg.sender_type === 'user' ? 'text-primary-100' : 'text-slate-400'} mt-1 text-[10px]">
                       {formatTime(msg.created_at)}
                     </p>
                   </div>
@@ -201,11 +201,11 @@
             rows="1"
             bind:value={draft}
             placeholder="Tulis pesan..."
-            class="flex-1 resize-none px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-300"
+            class="flex-1 resize-none px-3 py-2 text-sm rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-primary-300"
           ></textarea>
           <button
             type="button"
-            class="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50"
+            class="p-2 rounded-lg bg-primary-600 text-white hover:bg-primary-700 disabled:opacity-50"
             onclick={sendReply}
             disabled={isLoading || !draft.trim()}
             aria-label="Kirim pesan"
@@ -243,7 +243,7 @@
 
   <button
     type="button"
-    class="mt-3 ml-auto w-14 h-14 rounded-full bg-emerald-600 text-white shadow-lg hover:bg-emerald-700 flex items-center justify-center"
+    class="mt-3 ml-auto w-14 h-14 rounded-full bg-primary-600 text-white shadow-lg hover:bg-primary-700 flex items-center justify-center"
     onclick={() => {
       isOpen = !isOpen;
       if (!isOpen) {

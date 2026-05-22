@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   TeamPage.svelte — Team / Organization Management (Pro Feature)
   Create org, invite members by email, manage roles.
 -->
@@ -162,28 +162,19 @@
     let canManage = $derived(myRole === "owner" || myRole === "admin");
 </script>
 
-<div class="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+<div class="min-h-screen bg-slate-50/70 p-4 lg:p-8">
     <!-- Header -->
-    <div class="flex items-center gap-3 mb-6">
-        <div
-            class="w-10 h-10 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center"
-        >
-            <Building2 class="w-5 h-5 text-violet-600" />
-        </div>
+    <div class="mb-6">
         <div>
-            <h1 class="text-xl font-bold text-slate-800 dark:text-slate-100">
-                Tim
-            </h1>
-            <p class="text-sm text-slate-500">
-                Kelola organisasi & anggota tim
-            </p>
+            <h1 class="text-xl font-bold text-slate-900">Tim</h1>
+            <p class="text-sm text-slate-500">Kelola organisasi, anggota tim, dan akses operasional.</p>
         </div>
     </div>
 
     <!-- Error -->
     {#if error}
         <div
-            class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm"
+            class="mb-5 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
         >
             <AlertCircle class="w-4 h-4 flex-shrink-0" />
             {error}
@@ -200,7 +191,7 @@
     {:else if !hasOrg}
         <!-- No Organization Yet -->
         <div
-            class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-8 text-center"
+            class="rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-sm"
         >
             <Users class="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h2

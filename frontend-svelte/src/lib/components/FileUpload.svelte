@@ -119,15 +119,15 @@
   });
 </script>
 
-<div class="max-w-5xl mx-auto px-4 sm:px-6 mt-4 sm:mt-8">
+<div>
   <!-- Card Wrapper -->
   <div
-    class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-5 sm:p-8"
+    class="rounded-3xl border border-slate-100 bg-white p-5 shadow-sm sm:p-8"
   >
     <!-- Hero with Brand -->
     <div class="text-center mb-6 sm:mb-8">
       <h2
-        class="text-lg sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mb-1 sm:mb-2"
+        class="mb-1 text-lg font-bold text-slate-900 sm:mb-2 sm:text-2xl"
       >
         Upload Dokumen Jamaah
       </h2>
@@ -138,9 +138,9 @@
 
     <!-- Dropzone -->
     <div
-      class="group relative border-2 border-dashed rounded-xl sm:rounded-2xl p-6 sm:p-10 text-center transition-all cursor-pointer {dragOver
-        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
-        : 'border-slate-200 dark:border-slate-600 hover:border-emerald-400 hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10'}"
+      class="group relative cursor-pointer rounded-2xl border-2 border-dashed p-6 text-center transition-all sm:p-10 {dragOver
+        ? 'border-primary-500 bg-primary-50'
+        : 'border-slate-200 hover:border-primary-400 hover:bg-primary-50/40'}"
       ondragover={(e) => {
         e.preventDefault();
         dragOver = true;
@@ -167,10 +167,10 @@
 
       <div class="flex flex-col items-center gap-3 sm:gap-4">
         <div
-          class="bg-slate-100 p-3 sm:p-4 rounded-full group-hover:bg-emerald-100 transition-colors"
+          class="rounded-full bg-slate-100 p-3 transition-colors group-hover:bg-primary-100 sm:p-4"
         >
           <UploadCloud
-            class="h-8 w-8 sm:h-10 sm:w-10 text-slate-400 group-hover:text-emerald-500"
+            class="h-8 w-8 text-slate-400 group-hover:text-primary-500 sm:h-10 sm:w-10"
           />
         </div>
         <div>
@@ -192,7 +192,7 @@
 
       <!-- Paste Button -->
       <button
-        class="absolute top-2 right-2 sm:top-4 sm:right-4 bg-white border border-slate-200 text-slate-600 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-slate-50 shadow-sm flex items-center gap-1 sm:gap-2"
+        class="absolute right-2 top-2 flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 shadow-sm hover:bg-slate-50 sm:right-4 sm:top-4 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-sm"
         onclick={(e) => {
           e.stopPropagation();
           handlePaste();
@@ -231,10 +231,10 @@
         >
           {#each files as file, i}
             <div
-              class="relative group bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg p-2 shadow-sm hover:shadow-md transition-shadow"
+              class="group relative rounded-xl border border-slate-200 bg-white p-2 shadow-sm transition-shadow hover:shadow-md"
             >
               <button
-                class="absolute -top-2 -right-2 bg-white dark:bg-slate-700 rounded-full p-1 shadow-md text-slate-400 hover:text-red-500 border border-slate-200 dark:border-slate-600 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity z-10"
+                class="absolute -right-2 -top-2 z-10 rounded-full border border-slate-200 bg-white p-1 text-slate-400 opacity-100 shadow-md transition-opacity hover:text-red-500 sm:opacity-0 sm:group-hover:opacity-100"
                 onclick={() => removeFile(i)}
               >
                 <X class="h-4 w-4" />
@@ -254,7 +254,7 @@
                 {/if}
               </div>
               <p
-                class="text-xs text-slate-600 dark:text-slate-300 truncate px-1"
+                class="truncate px-1 text-xs text-slate-600"
               >
                 {file.name}
               </p>
@@ -298,7 +298,7 @@
       <!-- Progress Bar (during processing) -->
       {#if isProcessing && progress}
         <div
-          class="mt-6 bg-white border border-slate-200 rounded-xl p-6 shadow-sm"
+          class="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
         >
           <div class="flex items-center justify-between mb-3">
             <span class="text-sm font-medium text-slate-700"
@@ -310,7 +310,7 @@
           </div>
           <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
             <div
-              class="bg-gradient-to-r from-emerald-400 to-emerald-600 h-3 rounded-full transition-all duration-500 ease-out"
+              class="h-3 rounded-full bg-gradient-to-r from-primary-500 to-emerald-500 transition-all duration-500 ease-out"
               style="width: {progressPercent}%"
             ></div>
           </div>
@@ -327,13 +327,13 @@
         <button
           onclick={onProcess}
           disabled={isProcessing}
-          class="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white text-base sm:text-lg font-semibold py-3 px-8 sm:px-12 rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 sm:gap-3"
+          class="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary-600 to-primary-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-primary-500/20 transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:gap-3 sm:px-12 sm:text-lg"
         >
           {#if isProcessing}
             <Loader2 class="h-6 w-6 animate-spin" />
             Memproses...
           {:else}
-            🔍 Proses & Pratinjau
+            Proses & Pratinjau
           {/if}
         </button>
       </div>

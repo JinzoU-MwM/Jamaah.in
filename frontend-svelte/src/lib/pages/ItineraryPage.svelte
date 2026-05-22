@@ -1,5 +1,5 @@
-<!--
-  ItineraryPage.svelte — Trip schedule/itinerary manager.
+﻿<!--
+  ItineraryPage.svelte - Trip schedule/itinerary manager.
   Timeline view grouped by date with color-coded categories.
 -->
 <script>
@@ -174,39 +174,30 @@
     }
 </script>
 
-<div class="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+<div class="min-h-screen bg-slate-50/70 p-4 lg:p-8">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center gap-3">
-            <div
-                class="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center"
-            >
-                <CalendarDays class="w-5 h-5 text-indigo-600" />
-            </div>
-            <div>
-                <h1 class="text-xl font-bold text-slate-800">
-                    Jadwal Perjalanan
-                </h1>
-                <p class="text-sm text-slate-500">
-                    Kelola itinerari & jadwal per grup
-                </p>
-            </div>
+    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Itinerary</h1>
+            <p class="text-sm text-slate-500">Kelola jadwal perjalanan per grup keberangkatan.</p>
         </div>
-        {#if selectedGroupId}
+        <div class="flex items-center gap-3">
+            {#if selectedGroupId}
             <button
                 type="button"
                 onclick={openAddForm}
-                class="px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-xl flex items-center gap-1.5 transition-colors"
+                class="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary-500/20 transition hover:bg-primary-700"
             >
                 <Plus class="w-4 h-4" /> Tambah
             </button>
-        {/if}
+            {/if}
+        </div>
     </div>
 
     <!-- Error -->
     {#if error}
         <div
-            class="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl mb-4 flex items-center gap-2 text-sm"
+            class="mb-5 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
         >
             <AlertCircle class="w-4 h-4 flex-shrink-0" />
             {error}
@@ -217,15 +208,15 @@
     {/if}
 
     <!-- Group Selector -->
-    <div class="mb-6">
+    <div class="mb-6 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm">
         <label
             for="itinerary-group"
-            class="block text-sm font-medium text-slate-600 mb-1.5"
+            class="mb-2 block text-xs font-bold uppercase tracking-wide text-slate-400"
             >Pilih Grup</label
         >
         <select
             id="itinerary-group"
-            class="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent"
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white"
             onchange={(e) => {
                 selectedGroupId = parseInt(
                     /** @type {HTMLSelectElement} */ (e.target).value,
@@ -313,7 +304,7 @@
                                                 >
                                                     <Clock class="w-3 h-3" />
                                                     {item.time_start}{item.time_end
-                                                        ? ` — ${item.time_end}`
+                                                        ? ` - ${item.time_end}`
                                                         : ""}
                                                 </p>
                                             {/if}

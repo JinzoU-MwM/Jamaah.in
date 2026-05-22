@@ -1,4 +1,4 @@
-<script>
+﻿<script>
     import { onMount } from 'svelte';
     import { apiFetch, authHeaders } from '../../services/apiCore.js';
 
@@ -95,19 +95,19 @@
     }
 
     function getPlanBadge(plan) {
-        if (!plan) return '<span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">Unknown</span>';
+        if (!plan) return '<span class="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded">Unknown</span>';
         if (plan === 'pro') {
-            return '<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded">PRO</span>';
+            return '<span class="px-2 py-1 bg-primary-100 text-primary-800 text-xs font-semibold rounded">PRO</span>';
         }
-        return '<span class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">Free</span>';
+        return '<span class="px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded">Free</span>';
     }
 
     function getStatusBadge(isActive, isAdmin) {
         if (isAdmin) {
-            return '<span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">Admin</span>';
+            return '<span class="px-2 py-1 bg-primary-100 text-primary-800 text-xs font-semibold rounded">Admin</span>';
         }
         if (isActive) {
-            return '<span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded">Active</span>';
+            return '<span class="px-2 py-1 bg-emerald-100 text-emerald-800 text-xs rounded">Active</span>';
         }
         return '<span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded">Inactive</span>';
     }
@@ -124,11 +124,11 @@
     });
 </script>
 
-<div class="bg-white rounded-xl shadow-sm border border-gray-200">
+<div class="bg-white rounded-3xl shadow-sm border border-slate-100">
     <!-- Header -->
-    <div class="p-6 border-b border-gray-200">
+    <div class="p-6 border-b border-slate-200">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <h2 class="text-xl font-semibold text-gray-900">User Management</h2>
+            <h2 class="text-xl font-semibold text-slate-900">User Management</h2>
             <div class="flex flex-col sm:flex-row gap-3">
                 <!-- Search -->
                 <div class="relative">
@@ -136,9 +136,9 @@
                         type="text"
                         bind:value={search}
                         placeholder="Search by email or name..."
-                        class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent w-full sm:w-64"
+                        class="pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent w-full sm:w-64"
                     />
-                    <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="absolute left-3 top-2.5 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                 </div>
@@ -146,7 +146,7 @@
                 <!-- Filter -->
                 <select
                     bind:value={statusFilter}
-                    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                    class="px-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                     <option value="all">All Users</option>
                     <option value="active">Active Only</option>
@@ -159,30 +159,30 @@
     <!-- Table -->
     <div class="overflow-x-auto">
         {#if loading}
-            <div class="p-8 text-center text-gray-500">Loading...</div>
+            <div class="p-8 text-center text-slate-500">Loading...</div>
         {:else if error}
             <div class="p-8 text-center text-red-500">{error}</div>
         {:else if filteredUsers.length === 0}
-            <div class="p-8 text-center text-gray-500">No users found</div>
+            <div class="p-8 text-center text-slate-500">No users found</div>
         {:else}
             <table class="w-full">
-                <thead class="bg-gray-50 border-b border-gray-200">
+                <thead class="bg-slate-50 border-b border-slate-200">
                     <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Plan</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Joined</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Usage</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Actions</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200">
+                <tbody class="divide-y divide-slate-200">
                     {#each filteredUsers as user}
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-6 py-4">
                                 <div>
-                                    <div class="font-medium text-gray-900">{user.name}</div>
-                                    <div class="text-sm text-gray-500">{user.email}</div>
+                                    <div class="font-medium text-slate-900">{user.name}</div>
+                                    <div class="text-sm text-slate-500">{user.email}</div>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
@@ -191,17 +191,17 @@
                             <td class="px-6 py-4">
                                 {@html getStatusBadge(user.is_active, user.is_admin)}
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
+                            <td class="px-6 py-4 text-sm text-slate-500">
                                 {formatDate(user.created_at)}
                             </td>
-                            <td class="px-6 py-4 text-sm text-gray-500">
+                            <td class="px-6 py-4 text-sm text-slate-500">
                                 {user.usage_count || 0}
                             </td>
                             <td class="px-6 py-4 text-right">
                                 <div class="flex items-center justify-end space-x-2">
                                     <button
                                         on:click={() => setAdminStatus(user, !user.is_admin)}
-                                        class="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                                        class="p-2 text-slate-400 hover:text-primary-600 hover:bg-primary-50 rounded-xl transition-colors"
                                         title="{user.is_admin ? 'Remove Admin' : 'Make Admin'}"
                                     >
                                         {#if user.is_admin}
@@ -216,7 +216,7 @@
                                     </button>
                                     <button
                                         on:click={() => toggleUserStatus(user)}
-                                        class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors"
                                         title="{user.is_active ? 'Deactivate' : 'Activate'}"
                                     >
                                         {#if user.is_active}
@@ -239,22 +239,22 @@
     </div>
 
     <!-- Pagination -->
-    <div class="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div class="text-sm text-gray-500">
+    <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+        <div class="text-sm text-slate-500">
             Showing {Math.min(filteredUsers.length, limit * page)} of {filteredUsers.length} users
         </div>
         <div class="flex space-x-2">
             <button
                 on:click={() => page > 1 && (page -= 1, loadUsers())}
                 disabled={page === 1}
-                class="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                class="px-4 py-2 border border-slate-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
             >
                 Previous
             </button>
             <button
                 on:click={() => filteredUsers.length === limit * page && (page += 1, loadUsers())}
                 disabled={filteredUsers.length < limit * page}
-                class="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+                class="px-4 py-2 border border-slate-300 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-colors"
             >
                 Next
             </button>

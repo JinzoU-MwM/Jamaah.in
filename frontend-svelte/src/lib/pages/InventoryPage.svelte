@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   InventoryPage.svelte — Professional Logistics Dashboard
   
   Design: Compact card-based layout, efficient use of space
@@ -148,35 +148,20 @@
 </script>
 
 {#if isOpen}
-  <div class="flex flex-col h-full min-h-screen bg-white">
-    <!-- Compact Header -->
-    <header
-      class="flex items-center px-4 py-3 border-b border-slate-200 bg-slate-50"
-    >
-      <div class="flex items-center gap-3">
-        <div
-          class="w-8 h-8 bg-violet-100 rounded-lg flex items-center justify-center"
-        >
-          <Package class="w-4 h-4 text-violet-600" />
-        </div>
-        <div>
-          <h1 class="text-sm font-semibold text-slate-800">
-            Inventori & Logistik
-          </h1>
-          <p class="text-xs text-slate-500">Kelola distribusi perlengkapan</p>
-        </div>
+  <div class="min-h-screen bg-slate-50/70 p-4 lg:p-8">
+    <header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Inventory</h1>
+        <p class="text-sm text-slate-500">Kelola stok koper, ihram, mukena, dan distribusi perlengkapan jamaah.</p>
       </div>
     </header>
 
-    <!-- Toolbar -->
-    <div
-      class="flex items-center gap-3 px-4 py-2.5 border-b border-slate-100 bg-white"
-    >
+    <div class="mb-5 flex flex-col gap-3 rounded-3xl border border-slate-100 bg-white p-4 shadow-sm sm:flex-row sm:items-center">
       <select
         id="inv-group-select"
         bind:value={selectedGroupId}
         onchange={loadGroupData}
-        class="flex-1 max-w-[200px] text-sm px-2.5 py-1.5 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-violet-500"
+        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 outline-none transition focus:border-primary-400 focus:bg-white sm:max-w-xs"
       >
         <option value="">Pilih Grup</option>
         {#each groups as group}
@@ -189,7 +174,7 @@
           type="button"
           onclick={loadGroupData}
           disabled={isLoading}
-          class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg disabled:opacity-50"
+          class="flex h-11 w-11 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 disabled:opacity-50"
         >
           <RefreshCw class="w-4 h-4 {isLoading ? 'animate-spin' : ''}" />
         </button>
@@ -197,7 +182,7 @@
 
       <!-- Bulk Actions -->
       {#if fulfillment && fulfillment.pending?.length > 0}
-        <div class="flex items-center gap-2 ml-auto">
+        <div class="flex flex-wrap items-center gap-2 sm:ml-auto">
           <span class="text-xs text-slate-500"
             >{selectedMembers.size} dipilih</span
           >
@@ -215,7 +200,7 @@
             type="button"
             onclick={markSelectedAsReceived}
             disabled={!canMarkSelected}
-            class="px-3 py-1.5 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
+            class="inline-flex items-center gap-1.5 rounded-xl bg-primary-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {#if isMarking}<Loader2
                 class="w-3 h-3 animate-spin"
@@ -229,7 +214,7 @@
     <!-- Error -->
     {#if error}
       <div
-        class="mx-4 mt-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2 flex items-center gap-2 text-sm"
+        class="mb-5 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm"
       >
         <AlertTriangle class="w-4 h-4 text-red-500" />
         <span class="text-red-700 flex-1">{error}</span>
@@ -244,21 +229,21 @@
     {/if}
 
     <!-- Content -->
-    <div class="flex-1 overflow-auto">
+    <div class="overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
       {#if isLoading}
-        <div class="flex items-center justify-center py-12">
+        <div class="flex items-center justify-center py-16">
           <Loader2 class="w-6 h-6 animate-spin text-violet-500" />
         </div>
       {:else if !selectedGroupId}
         <div
-          class="flex flex-col items-center justify-center py-12 text-slate-400"
+          class="flex flex-col items-center justify-center py-16 text-slate-400"
         >
           <Package class="w-10 h-10 mb-2" />
           <p class="text-sm">Pilih grup untuk memulai</p>
         </div>
       {:else if forecast}
         <!-- Stats Grid - Compact -->
-        <div class="grid grid-cols-4 gap-2 p-3">
+        <div class="grid grid-cols-2 gap-4 p-4 lg:grid-cols-4">
           <div class="stat-card">
             <span class="stat-value text-slate-800"
               >{forecast.total_members}</span

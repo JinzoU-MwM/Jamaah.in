@@ -1,4 +1,4 @@
-<script>
+﻿<script>
     import { onMount } from "svelte";
     import { ApiService } from "../services/api.js";
 
@@ -13,7 +13,7 @@
     let errorMessage = $state("");
     let isOffline = $state(false);
 
-    // Attendance checklist — persisted to localStorage
+    // Attendance checklist persisted to localStorage
     let checkedIds = $state(new Set());
 
     onMount(() => {
@@ -152,9 +152,9 @@
     }
 </script>
 
-<!-- Full-screen mobile-first layout — NO sidebar, NO admin nav -->
+<!-- Full-screen mobile-first layout, no sidebar and no admin nav -->
 <div
-    class="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-emerald-50"
+    class="min-h-screen bg-slate-50/70"
 >
     {#if phase === "pin"}
         <!-- PIN Entry Screen -->
@@ -163,7 +163,7 @@
                 <!-- Logo / Header -->
                 <div class="text-center mb-8">
                     <div
-                        class="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-200"
+                        class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-600 shadow-lg shadow-primary-200"
                     >
                         <svg
                             class="w-8 h-8 text-white"
@@ -203,8 +203,8 @@
                         maxlength="6"
                         bind:value={pin}
                         onkeydown={handlePinKeydown}
-                        placeholder="• • • •"
-                        class="w-full px-4 py-4 border-2 border-slate-200 rounded-xl text-center text-3xl font-mono tracking-[0.6em] focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
+                        placeholder="1234"
+                        class="w-full rounded-xl border-2 border-slate-200 px-4 py-4 text-center font-mono text-3xl tracking-[0.6em] transition-all focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500"
                         autocomplete="off"
                     />
 
@@ -219,14 +219,14 @@
                     <button
                         onclick={submitPin}
                         disabled={pin.length < 4}
-                        class="w-full mt-4 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all shadow-md shadow-emerald-200 active:transform active:scale-[0.98]"
+                        class="w-full mt-4 bg-primary-600 hover:bg-primary-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl transition-all shadow-md shadow-primary-200 active:transform active:scale-[0.98]"
                     >
                         Buka Manifest
                     </button>
                 </div>
 
                 <p class="text-xs text-slate-400 text-center mt-4">
-                    Powered by <span class="font-semibold text-emerald-600"
+                    Powered by <span class="font-semibold text-primary-600"
                         >Jamaah.in</span
                     >
                 </p>
@@ -237,7 +237,7 @@
         <div class="min-h-screen flex items-center justify-center">
             <div class="text-center">
                 <div
-                    class="w-12 h-12 border-4 border-emerald-200 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4"
+                    class="w-12 h-12 border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin mx-auto mb-4"
                 ></div>
                 <p class="text-slate-500">Memuat manifest...</p>
             </div>
@@ -258,8 +258,7 @@
                             {manifest.group_name}
                         </h1>
                         <p class="text-xs text-slate-500">
-                            {manifest.total_members} jamaah · {checkedCount} hadir
-                            ✓
+                            {manifest.total_members} jamaah - {checkedCount} hadir
                         </p>
                     </div>
                     <div class="flex items-center gap-1">
@@ -267,11 +266,11 @@
                             <span
                                 class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700"
                             >
-                                📡 Offline
+                                Offline
                             </span>
                         {/if}
                         <span
-                            class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700"
+                            class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700"
                         >
                             {checkedCount}/{manifest.total_members}
                         </span>
@@ -297,7 +296,7 @@
                         type="text"
                         bind:value={searchQuery}
                         placeholder="Cari nama jamaah..."
-                        class="w-full pl-9 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
+                        class="w-full pl-9 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:bg-white transition-all"
                     />
                     {#if searchQuery}
                         <button
@@ -305,7 +304,7 @@
                             class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                             aria-label="Clear search"
                         >
-                            ✕
+                            x
                         </button>
                     {/if}
                 </div>
@@ -316,7 +315,7 @@
         <div class="max-w-lg mx-auto px-4 py-4 pb-24 space-y-3">
             {#if filteredMembers.length === 0}
                 <div class="text-center py-12 text-slate-400">
-                    <p class="text-lg">🔍</p>
+                    <p class="text-lg font-semibold text-slate-500">Tidak ditemukan</p>
                     <p class="text-sm mt-1">
                         Tidak ditemukan jamaah dengan nama "{searchQuery}"
                     </p>
@@ -327,7 +326,7 @@
                 <div
                     class="bg-white rounded-xl border transition-all shadow-sm
                         {checkedIds.has(member.id)
-                        ? 'border-emerald-300 bg-emerald-50/50'
+                        ? 'border-primary-300 bg-primary-50/50'
                         : 'border-slate-200'}"
                 >
                     <div class="p-4">
@@ -363,10 +362,8 @@
                             <!-- Status Badge (top-right) -->
                             {#if checkedIds.has(member.id)}
                                 <span
-                                    class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"
-                                >
-                                    ✓ Hadir
-                                </span>
+                                    class="flex-shrink-0 inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-primary-100 text-primary-700"
+                                >Hadir</span>
                             {/if}
                         </div>
 
@@ -396,24 +393,23 @@
                                 <span class="text-slate-400">Perlengkapan</span>
                                 <p
                                     class="font-medium {member.is_equipment_received
-                                        ? 'text-emerald-600'
+                                        ? 'text-primary-600'
                                         : 'text-amber-600'}"
                                 >
                                     {member.is_equipment_received
-                                        ? "✓ Sudah"
-                                        : "✗ Belum"}
+                                        ? "Sudah" : "Belum"}
                                 </p>
                             </div>
                         </div>
 
                         <!-- Action Buttons Row -->
                         <div class="mt-3 flex items-center gap-2">
-                            <!-- Attendance Button — PROMINENT -->
+                            <!-- Attendance Button -->
                             <button
                                 onclick={() => toggleCheck(member.id)}
                                 class="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all active:transform active:scale-[0.97]
                                     {checkedIds.has(member.id)
-                                    ? 'bg-emerald-500 text-white shadow-md shadow-emerald-200 hover:bg-emerald-600'
+                                    ? 'bg-primary-600 text-white shadow-md shadow-primary-200 hover:bg-primary-700'
                                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'}"
                             >
                                 {#if checkedIds.has(member.id)}
@@ -488,7 +484,7 @@
                 class="max-w-lg mx-auto px-4 py-3 flex items-center justify-between"
             >
                 <div class="text-xs text-slate-500">
-                    <span class="font-medium text-emerald-600"
+                    <span class="font-medium text-primary-600"
                         >{checkedCount}</span
                     >
                     / {manifest.total_members} hadir
@@ -496,14 +492,14 @@
                 <div class="flex-1 mx-3">
                     <div class="w-full bg-slate-200 rounded-full h-2">
                         <div
-                            class="bg-emerald-500 h-2 rounded-full transition-all duration-300"
+                            class="bg-primary-600 h-2 rounded-full transition-all duration-300"
                             style="width: {manifest.total_members > 0
                                 ? (checkedCount / manifest.total_members) * 100
                                 : 0}%"
                         ></div>
                     </div>
                 </div>
-                <span class="text-xs font-medium text-emerald-600">
+                <span class="text-xs font-medium text-primary-600">
                     {manifest.total_members > 0
                         ? Math.round(
                               (checkedCount / manifest.total_members) * 100,

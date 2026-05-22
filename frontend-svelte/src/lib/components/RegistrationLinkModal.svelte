@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   RegistrationLinkModal.svelte — Admin modal to generate/manage registration links
 -->
 <script>
@@ -376,7 +376,7 @@
     justify-content: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
     border: none;
     border-radius: 0.5rem;

@@ -1,4 +1,4 @@
-<script>
+﻿<script>
   import {
     KeyRound,
     User,
@@ -241,7 +241,7 @@
             error = "";
             success = "";
           }}
-          class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all {mode ===
+          class="flex-1 py-2 text-sm font-semibold rounded-xl transition-all {mode ===
           'login'
             ? 'bg-white text-slate-800 shadow-sm'
             : 'text-slate-500 hover:text-slate-700'}"
@@ -254,7 +254,7 @@
             error = "";
             success = "";
           }}
-          class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all {mode ===
+          class="flex-1 py-2 text-sm font-semibold rounded-xl transition-all {mode ===
           'register'
             ? 'bg-white text-slate-800 shadow-sm'
             : 'text-slate-500 hover:text-slate-700'}"
@@ -266,13 +266,13 @@
       <!-- Tagline -->
       <p class="text-center text-slate-500 text-sm mb-6">
         {mode === "register"
-          ? "Daftar gratis — dapatkan trial 7 hari!"
+          ? "Daftar gratis - dapatkan trial 7 hari!"
           : "Input Data Jamaah, Gak Pake Lama."}
       </p>
 
       {#if error}
         <div
-          class="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center border border-red-100"
+          class="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm text-center border border-red-100"
         >
           {error}
         </div>
@@ -280,7 +280,7 @@
 
       {#if success}
         <div
-          class="bg-emerald-50 text-emerald-600 p-3 rounded-lg mb-4 text-sm text-center border border-emerald-100"
+          class="bg-emerald-50 text-emerald-600 p-3 rounded-xl mb-4 text-sm text-center border border-emerald-100"
         >
           {success}
         </div>
@@ -308,7 +308,7 @@
                 type="text"
                 bind:value={name}
                 required
-                class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+                class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm"
                 placeholder="Nama lengkap"
               />
             </div>
@@ -331,7 +331,7 @@
               type="email"
               bind:value={email}
               required
-              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm"
               placeholder="email@contoh.com"
             />
           </div>
@@ -355,7 +355,7 @@
               bind:value={password}
               required
               minlength="6"
-              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm"
               placeholder="••••••••"
             />
           </div>
@@ -370,7 +370,7 @@
                 error = "";
                 success = "";
               }}
-              class="text-sm text-emerald-500 hover:text-emerald-600 font-medium transition-colors"
+              class="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
             >
               Lupa Password?
             </button>
@@ -380,7 +380,7 @@
         <button
           type="submit"
           disabled={isLoading}
-          class="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 disabled:transform-none flex items-center justify-center gap-2"
+          class="w-full bg-gradient-to-r from-primary-600 to-primary-500 hover:from-primary-700 hover:to-primary-600 disabled:from-primary-300 disabled:to-primary-300 text-white font-semibold py-2.5 rounded-xl shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40 transition-all flex items-center justify-center gap-2"
         >
           {#if isLoading}
             <Loader2 class="h-5 w-5 animate-spin" />
@@ -410,7 +410,7 @@
 
       {#if error}
         <div
-          class="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center border border-red-100"
+          class="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm text-center border border-red-100"
         >
           {error}
         </div>
@@ -418,7 +418,7 @@
 
       {#if success}
         <div
-          class="bg-emerald-50 text-emerald-600 p-3 rounded-lg mb-4 text-sm text-center border border-emerald-100"
+          class="bg-emerald-50 text-emerald-600 p-3 rounded-xl mb-4 text-sm text-center border border-emerald-100"
         >
           {success}
         </div>
@@ -434,7 +434,7 @@
             required
             inputmode="numeric"
             pattern="[0-9]*"
-            class="block w-full text-center text-2xl font-mono tracking-[0.5em] py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+            class="block w-full text-center text-2xl font-mono tracking-[0.5em] py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all"
             placeholder="000000"
           />
         </div>
@@ -442,7 +442,7 @@
         <button
           type="submit"
           disabled={isLoading || otpCode.length !== 6}
-          class="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          class="w-full bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white font-semibold py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
         >
           {#if isLoading}
             <Loader2 class="h-5 w-5 animate-spin" />
@@ -458,7 +458,7 @@
         <button
           onclick={handleResendOtp}
           disabled={isLoading || resendCooldown > 0}
-          class="text-sm text-emerald-500 hover:text-emerald-600 disabled:text-slate-400 font-medium transition-colors inline-flex items-center gap-1"
+          class="text-sm text-primary-600 hover:text-primary-700 disabled:text-slate-400 font-medium transition-colors inline-flex items-center gap-1"
         >
           <RefreshCw class="h-4 w-4" />
           {resendCooldown > 0
@@ -480,7 +480,7 @@
 
       {#if error}
         <div
-          class="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center border border-red-100"
+          class="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm text-center border border-red-100"
         >
           {error}
         </div>
@@ -503,7 +503,7 @@
               type="email"
               bind:value={email}
               required
-              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none transition-all"
+              class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 outline-none transition-all text-sm"
               placeholder="email@contoh.com"
             />
           </div>
@@ -512,7 +512,7 @@
         <button
           type="submit"
           disabled={isLoading}
-          class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-semibold py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
         >
           {#if isLoading}
             <Loader2 class="h-5 w-5 animate-spin" />
@@ -537,7 +537,7 @@
 
       {#if error}
         <div
-          class="bg-red-50 text-red-600 p-3 rounded-lg mb-4 text-sm text-center border border-red-100"
+          class="bg-red-50 text-red-600 p-3 rounded-xl mb-4 text-sm text-center border border-red-100"
         >
           {error}
         </div>
@@ -545,7 +545,7 @@
 
       {#if success}
         <div
-          class="bg-emerald-50 text-emerald-600 p-3 rounded-lg mb-4 text-sm text-center border border-emerald-100"
+          class="bg-emerald-50 text-emerald-600 p-3 rounded-xl mb-4 text-sm text-center border border-emerald-100"
         >
           {success}
         </div>
@@ -566,7 +566,7 @@
             required
             inputmode="numeric"
             pattern="[0-9]*"
-            class="block w-full text-center text-2xl font-mono tracking-[0.5em] py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
+            class="block w-full text-center text-2xl font-mono tracking-[0.5em] py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
             placeholder="000000"
           />
         </div>
@@ -589,7 +589,7 @@
               bind:value={newPassword}
               required
               minlength="6"
-              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
+              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
               placeholder="Minimal 6 karakter"
             />
           </div>
@@ -613,7 +613,7 @@
               bind:value={confirmPassword}
               required
               minlength="6"
-              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
+              class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition-all"
               placeholder="Ulangi password baru"
             />
           </div>
@@ -622,7 +622,7 @@
         <button
           type="submit"
           disabled={isLoading || resetCode.length !== 6}
-          class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-semibold py-2.5 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+          class="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-amber-300 text-white font-semibold py-2.5 rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
         >
           {#if isLoading}
             <Loader2 class="h-5 w-5 animate-spin" />

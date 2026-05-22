@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS audit_logs;
+DROP TABLE IF EXISTS team_invites;
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS team_members;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS organizations;

@@ -1,4 +1,4 @@
-<!--
+﻿<!--
   WhatsAppBlast.svelte — Send template messages to jamaah via WhatsApp
   Uses wa.me deep links (zero cost, no API needed)
 -->
@@ -329,7 +329,7 @@
                                                 📱 {member.no_hp}
                                             {:else}
                                                 <span class="text-amber-500"
-                                                    >⚠ Tidak ada nomor HP</span
+                                                    >Tidak ada nomor HP</span
                                                 >
                                             {/if}
                                         </p>
@@ -358,7 +358,7 @@
 
                         {#if membersWithoutPhone.length > 0}
                             <p class="text-xs text-amber-500 mt-2">
-                                ⚠ {membersWithoutPhone.length} jamaah tanpa nomor
+                                {membersWithoutPhone.length} jamaah tanpa nomor
                                 HP
                             </p>
                         {/if}

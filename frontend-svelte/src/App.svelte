@@ -1,4 +1,4 @@
-<script>
+﻿<script>
   import { onMount } from "svelte";
   import LandingPage from "./lib/pages/LandingPage.svelte";
   import Login from "./lib/pages/Login.svelte";
@@ -53,6 +53,30 @@
     scanner: {
       title: "Scanner Dokumen - Jamaah.in",
       description: "Scan KTP/KK, paspor, dan visa untuk ekstraksi data otomatis.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    jamaah: {
+      title: "Data Jamaah - Jamaah.in",
+      description: "Kelola data jamaah per grup keberangkatan.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    grup: {
+      title: "Grup & Hotel - Jamaah.in",
+      description: "Kelola grup keberangkatan dan persiapan hotel.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    manifest: {
+      title: "Manifest Digital - Jamaah.in",
+      description: "Bagikan manifest digital ber-PIN untuk mutawwif.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    analytics: {
+      title: "Analytics - Jamaah.in",
+      description: "Statistik operasional jamaah dan grup.",
       robots: "noindex,nofollow",
       canonical: `${BASE_URL}/`,
     },
@@ -153,9 +177,21 @@
   let RoomingPage = $state(null);
   let TeamPage = $state(null);
   let ScannerPage = $state(null);
+  let DataJamaahPage = $state(null);
+  let GroupsPage = $state(null);
+  let ManifestPage = $state(null);
+  let AnalyticsPage = $state(null);
   let ItineraryPage = $state(null);
   let MutawwifManifestPage = $state(null);
   let PublicRegistrationPage = $state(null);
+  // v2 pages
+  let PackagesPage = $state(null);
+  let CRMPage = $state(null);
+  let InvoicesPage = $state(null);
+  let FinancePage = $state(null);
+  let VendorsPage = $state(null);
+  let AgentsPage = $state(null);
+  let DocumentsPage = $state(null);
 
   async function ensurePage(page) {
     if (page === "dashboard" && !DashboardPage) {
@@ -172,12 +208,34 @@
       TeamPage = (await import("./lib/pages/TeamPage.svelte")).default;
     } else if (page === "scanner" && !ScannerPage) {
       ScannerPage = (await import("./lib/pages/ScannerPage.svelte")).default;
+    } else if (page === "jamaah" && !DataJamaahPage) {
+      DataJamaahPage = (await import("./lib/pages/DataJamaahPage.svelte")).default;
+    } else if (page === "grup" && !GroupsPage) {
+      GroupsPage = (await import("./lib/pages/GroupsPage.svelte")).default;
+    } else if (page === "manifest" && !ManifestPage) {
+      ManifestPage = (await import("./lib/pages/ManifestPage.svelte")).default;
+    } else if (page === "analytics" && !AnalyticsPage) {
+      AnalyticsPage = (await import("./lib/pages/AnalyticsPage.svelte")).default;
     } else if (page === "itinerary" && !ItineraryPage) {
       ItineraryPage = (await import("./lib/pages/ItineraryPage.svelte")).default;
     } else if (page === "mutawwif" && !MutawwifManifestPage) {
       MutawwifManifestPage = (await import("./lib/pages/MutawwifManifest.svelte")).default;
     } else if (page === "registration" && !PublicRegistrationPage) {
       PublicRegistrationPage = (await import("./lib/pages/PublicRegistrationPage.svelte")).default;
+    } else if (page === "packages" && !PackagesPage) {
+      PackagesPage = (await import("./lib/pages/PackagesPage.svelte")).default;
+    } else if (page === "crm" && !CRMPage) {
+      CRMPage = (await import("./lib/pages/CRMPage.svelte")).default;
+    } else if (page === "invoices" && !InvoicesPage) {
+      InvoicesPage = (await import("./lib/pages/InvoicesPage.svelte")).default;
+    } else if (page === "finance" && !FinancePage) {
+      FinancePage = (await import("./lib/pages/FinancePage.svelte")).default;
+    } else if (page === "vendors" && !VendorsPage) {
+      VendorsPage = (await import("./lib/pages/VendorsPage.svelte")).default;
+    } else if (page === "agents" && !AgentsPage) {
+      AgentsPage = (await import("./lib/pages/AgentsPage.svelte")).default;
+    } else if (page === "documents" && !DocumentsPage) {
+      DocumentsPage = (await import("./lib/pages/DocumentsPage.svelte")).default;
     }
   }
 
@@ -201,7 +259,8 @@
   }
   const initial = getInitialPageAndTokens();
 
-  // Pages: 'landing' | 'login' | 'register' | 'dashboard' | 'profile' | 'inventory' | 'rooming' | 'mutawwif' | 'super-admin'
+  // Pages: 'landing' | 'login' | 'register' | 'dashboard' | 'profile' | 'jamaah' | 'grup' | 'scanner' | 'inventory' | 'rooming' | 'manifest' | 'analytics' | 'mutawwif' | 'super-admin'
+  // v2 pages: 'packages' | 'crm' | 'invoices' | 'finance' | 'vendors' | 'agents' | 'documents' | 'contracts' | 'stock' | 'payroll'
   let currentPage = $state(initial.page);
   let user = $state(null);
   let subscription = $state(null);
@@ -228,12 +287,12 @@
       highlights: [
         "Kelola stok semua item di satu tempat",
         "Forecast kebutuhan otomatis berdasarkan data jamaah",
-        "Tracking distribusi per jamaah — siapa sudah terima",
+        "Tracking distribusi per jamaah - siapa sudah terima",
       ],
     },
     rooming: {
       name: "Smart Auto-Rooming",
-      desc: "Bagi kamar hotel secara otomatis. Gender dipisahkan, keluarga disatukan — cukup 1 klik.",
+      desc: "Bagi kamar hotel secara otomatis. Gender dipisahkan, keluarga disatukan - cukup 1 klik.",
       highlights: [
         "Algoritma cerdas mengisi kamar Quad/Triple/Double",
         "Laki-laki & perempuan otomatis dipisahkan",
@@ -249,6 +308,24 @@
         "Manifest digital aman dengan PIN untuk Mutawwif",
       ],
     },
+    manifest: {
+      name: "Manifest Digital",
+      desc: "Bagikan manifest digital aman untuk mutawwif, lengkap dengan PIN dan link khusus per grup.",
+      highlights: [
+        "Link manifest ber-PIN untuk setiap grup",
+        "Data jamaah dan rooming tampil di HP mutawwif",
+        "Akses bisa dibatasi masa berlakunya",
+      ],
+    },
+    analytics: {
+      name: "Analytics Operasional",
+      desc: "Pantau tren jamaah, kelengkapan perlengkapan, gender, dan performa grup dalam satu tempat.",
+      highlights: [
+        "Ringkasan data jamaah dan grup",
+        "Trend jamaah per bulan",
+        "Komposisi gender dan kelengkapan perlengkapan",
+      ],
+    },
     itinerary: {
       name: "Jadwal Perjalanan",
       desc: "Atur jadwal perjalanan umrah dari hari ke hari. Jamaah dan Mutawwif bisa melihat agenda via manifest digital.",
@@ -260,6 +337,9 @@
     },
   };
   let groups = $state([]);
+  let totalJamaahCount = $derived(
+    groups.reduce((total, group) => total + Number(group.member_count || 0), 0),
+  );
 
   async function checkSuperAdminAuth() {
     checkingSuperAdminAuth = true;
@@ -344,7 +424,7 @@
       }
     });
 
-    // Check for existing cookie session — optimistic navigation from cached profile
+    // Check for existing cookie session - optimistic navigation from cached profile
     const savedUser = localStorage.getItem("user");
     if (savedUser) {
       try {
@@ -441,7 +521,7 @@
     }
 
     // Refresh data when navigating to certain pages
-    if (page === "inventory" || page === "rooming") {
+    if (page === "inventory" || page === "rooming" || page === "jamaah" || page === "grup" || page === "manifest") {
       loadUserData();
     }
   }
@@ -451,15 +531,15 @@
   }
 
   // Authenticated layout with sidebar
-  let showSidebar = $derived(
-    currentPage === "dashboard" ||
-      currentPage === "scanner" ||
-      currentPage === "profile" ||
-      currentPage === "inventory" ||
-      currentPage === "rooming" ||
-      currentPage === "team" ||
-      currentPage === "itinerary",
-  );
+  const SIDEBAR_PAGES = new Set([
+    "dashboard", "jamaah", "grup", "scanner", "profile",
+    "inventory", "rooming", "manifest", "analytics", "team", "itinerary",
+    // v2
+    "packages", "crm", "invoices", "finance", "vendors", "agents", "documents",
+    "contracts", "stock", "payroll",
+  ]);
+
+  let showSidebar = $derived(SIDEBAR_PAGES.has(currentPage));
 
   $effect(() => {
     updateSeoMeta(currentPage);
@@ -482,6 +562,7 @@
     ensurePage(currentPage);
     if (currentPage === "dashboard") {
       ensurePage("scanner");
+      ensurePage("jamaah");
       ensurePage("profile");
     }
   });
@@ -493,7 +574,7 @@
       <div class="min-h-screen flex items-center justify-center">
         <div class="text-center">
           <div class="animate-spin rounded-full h-12 w-12 border-4 border-emerald-500 border-t-transparent mx-auto"></div>
-          <p class="mt-4 text-gray-600">Verifying access...</p>
+          <p class="mt-4 text-slate-600">Verifying access...</p>
         </div>
       </div>
     {:else if user?.is_super_admin}
@@ -507,7 +588,7 @@
         <div class="text-center">
           <div class="text-6xl mb-4">🔒</div>
           <h1 class="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
-          <p class="text-gray-600">You don't have permission to access this page.</p>
+          <p class="text-slate-600">You don't have permission to access this page.</p>
         </div>
       </div>
     {/if}
@@ -531,6 +612,7 @@
         {user}
         {isPro}
         {trialAvailable}
+        jamaahCount={totalJamaahCount}
         onLogout={handleLogout}
         collapsed={sidebarCollapsed}
         onToggleCollapse={toggleSidebar}
@@ -560,6 +642,18 @@
             />
           {:else}
             <div class="p-6 text-slate-500">Loading scanner...</div>
+          {/if}
+        {:else if currentPage === "jamaah"}
+          {#if DataJamaahPage}
+            <DataJamaahPage onNavigate={handlePageChange} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading data jamaah...</div>
+          {/if}
+        {:else if currentPage === "grup"}
+          {#if GroupsPage}
+            <GroupsPage onNavigate={handlePageChange} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading grup...</div>
           {/if}
         {:else if currentPage === "profile"}
           {#if ProfilePage}
@@ -635,6 +729,40 @@
               onTrial={() => handlePageChange("profile:upgrade")}
             />
           {/if}
+        {:else if currentPage === "manifest"}
+          {#if isPro}
+            {#if ManifestPage}
+              <ManifestPage />
+            {:else}
+              <div class="p-6 text-slate-500">Loading manifest...</div>
+            {/if}
+          {:else}
+            <ProGateScreen
+              featureName={proFeatures.manifest.name}
+              featureDescription={proFeatures.manifest.desc}
+              highlights={proFeatures.manifest.highlights}
+              {trialAvailable}
+              onUpgrade={() => handlePageChange("profile:upgrade")}
+              onTrial={() => handlePageChange("profile:upgrade")}
+            />
+          {/if}
+        {:else if currentPage === "analytics"}
+          {#if isPro}
+            {#if AnalyticsPage}
+              <AnalyticsPage />
+            {:else}
+              <div class="p-6 text-slate-500">Loading analytics...</div>
+            {/if}
+          {:else}
+            <ProGateScreen
+              featureName={proFeatures.analytics.name}
+              featureDescription={proFeatures.analytics.desc}
+              highlights={proFeatures.analytics.highlights}
+              {trialAvailable}
+              onUpgrade={() => handlePageChange("profile:upgrade")}
+              onTrial={() => handlePageChange("profile:upgrade")}
+            />
+          {/if}
         {:else if currentPage === "itinerary"}
           {#if isPro}
             {#if ItineraryPage}
@@ -651,6 +779,48 @@
               onUpgrade={() => handlePageChange("profile:upgrade")}
               onTrial={() => handlePageChange("profile:upgrade")}
             />
+          {/if}
+        {:else if currentPage === "packages"}
+          {#if PackagesPage}
+            <PackagesPage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading paket...</div>
+          {/if}
+        {:else if currentPage === "crm"}
+          {#if CRMPage}
+            <CRMPage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading CRM...</div>
+          {/if}
+        {:else if currentPage === "invoices"}
+          {#if InvoicesPage}
+            <InvoicesPage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading invoice...</div>
+          {/if}
+        {:else if currentPage === "finance"}
+          {#if FinancePage}
+            <FinancePage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading keuangan...</div>
+          {/if}
+        {:else if currentPage === "vendors"}
+          {#if VendorsPage}
+            <VendorsPage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading vendor...</div>
+          {/if}
+        {:else if currentPage === "agents"}
+          {#if AgentsPage}
+            <AgentsPage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading agen...</div>
+          {/if}
+        {:else if currentPage === "documents"}
+          {#if DocumentsPage}
+            <DocumentsPage onNavigate={handlePageChange} {user} />
+          {:else}
+            <div class="p-6 text-slate-500">Loading dokumen...</div>
           {/if}
         {/if}
       </div>
