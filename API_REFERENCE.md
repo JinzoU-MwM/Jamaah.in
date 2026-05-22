@@ -105,6 +105,29 @@
 | PUT | `/finance/expenses/:id` | Yes | Update expense |
 | DELETE | `/finance/expenses/:id` | Yes | Delete expense |
 
+## Vendor & Biaya Operasional
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/vendors/` | Yes | Create vendor |
+| GET | `/vendors/` | Yes | List vendors (filter: type, search) |
+| GET | `/vendors/:id` | Yes | Get vendor detail |
+| PUT | `/vendors/:id` | Yes | Update vendor |
+| DELETE | `/vendors/:id` | Yes | Delete vendor (fails if has bills) |
+| POST | `/vendors/bills` | Yes | Create vendor bill |
+| GET | `/vendors/bills` | Yes | List bills (filter: vendor_id, package_id, status) |
+| GET | `/vendors/bills/overdue` | Yes | Get overdue bills |
+| GET | `/vendors/bills/due-soon` | Yes | Get bills due soon (default 7 days) |
+| GET | `/vendors/bills/summary` | Yes | Vendor debt summary |
+| GET | `/vendors/bills/:id` | Yes | Get bill detail |
+| PUT | `/vendors/bills/:id` | Yes | Update bill |
+| DELETE | `/vendors/bills/:id` | Yes | Delete bill |
+| POST | `/vendors/bills/:billId/payments` | Yes | Record payment to vendor |
+| GET | `/vendors/bills/:billId/payments` | Yes | List payments for a bill |
+| GET | `/vendors/payments/:id` | Yes | Get payment detail |
+| DELETE | `/vendors/payments/:id` | Yes | Delete payment |
+| GET | `/vendors/:vendorId/payments` | Yes | List payments by vendor (paginated) |
+
 ## AI / OCR Scanner
 
 | Method | Endpoint | Auth | Description |

@@ -16,6 +16,7 @@ JAMAAH=./cmd/jamaah-service
 INVOICE=./cmd/invoice-service
 FINANCE=./cmd/finance-service
 AIOCR=./cmd/ai-ocr-service
+VENDOR=./cmd/vendor-service
 
 # Output directory
 BIN_DIR=./bin
@@ -38,6 +39,7 @@ build:
 	$(GOBUILD) -o $(BIN_DIR)/invoice-service $(INVOICE)
 	$(GOBUILD) -o $(BIN_DIR)/finance-service $(FINANCE)
 	$(GOBUILD) -o $(BIN_DIR)/ai-ocr-service $(AIOCR)
+	$(GOBUILD) -o $(BIN_DIR)/vendor-service $(VENDOR)
 
 ## Build individual services
 build-gateway:
@@ -61,6 +63,9 @@ build-finance:
 build-aiocr:
 	$(GOBUILD) -o $(BIN_DIR)/ai-ocr-service $(AIOCR)
 
+build-vendor:
+	$(GOBUILD) -o $(BIN_DIR)/vendor-service $(VENDOR)
+
 ## Run services locally (development)
 run-gateway:
 	$(GOCMD) run $(GATEWAY)
@@ -83,6 +88,9 @@ run-finance:
 run-aiocr:
 	$(GOCMD) run $(AIOCR)
 
+run-vendor:
+	$(GOCMD) run $(VENDOR)
+
 ## Test
 test:
 	$(GOTEST) -v ./internal/...
@@ -101,6 +109,9 @@ test-invoice:
 
 test-finance:
 	$(GOTEST) -v ./internal/finance/...
+
+test-vendor:
+	$(GOTEST) -v ./internal/vendor_svc/...
 
 ## Docker
 docker-up:
@@ -137,7 +148,10 @@ migrate-up-finance:
 migrate-up-aiocr:
 	$(GOCMD) run cmd/migration/main.go -service aiocr -direction up
 
-migrate-up-all: migrate-up-auth migrate-up-package migrate-up-jamaah migrate-up-invoice migrate-up-finance migrate-up-aiocr
+migrate-up-vendor:
+	$(GOCMD) run cmd/migration/main.go -service vendor -direction up
+
+migrate-up-all: migrate-up-auth migrate-up-package migrate-up-jamaah migrate-up-invoice migrate-up-finance migrate-up-aiocr migrate-up-vendor
 
 ## Proto generation
 proto:

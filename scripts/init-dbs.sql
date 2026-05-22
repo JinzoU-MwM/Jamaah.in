@@ -4,3 +4,4 @@ CREATE DATABASE jamaah_crm;
 CREATE DATABASE jamaah_invoice;
 CREATE DATABASE jamaah_finance;
 CREATE DATABASE jamaah_aiocr;
+CREATE DATABASE jamaah_vendor;

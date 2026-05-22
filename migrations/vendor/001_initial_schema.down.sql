@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS vendor_payments;
+DROP TABLE IF EXISTS vendor_bills;
+DROP TABLE IF EXISTS vendors;
+DROP EXTENSION IF EXISTS pg_trgm;

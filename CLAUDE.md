@@ -17,6 +17,8 @@ go build -o bin/package-service.exe ./cmd/package-service
 go build -o bin/jamaah-service.exe  ./cmd/jamaah-service
 go build -o bin/invoice-service.exe ./cmd/invoice-service
 go build -o bin/finance-service.exe ./cmd/finance-service
+go build -o bin/ai-ocr-service.exe ./cmd/ai-ocr-service
+go build -o bin/vendor-service.exe  ./cmd/vendor-service
 
 # Run a single service (example: auth)
 $env:POSTGRES_PORT = "5433"; $env:POSTGRES_USER = "jamaah"; $env:POSTGRES_PASSWORD = "Jamaah123!"
@@ -75,6 +77,7 @@ Each service is a standalone Fiber HTTP server. No gRPC between services yet —
 | invoice-service | 50054 | `jamaah_invoice` | `bin/invoice-service.exe` |
 | finance-service | 50055 | `jamaah_finance` | `bin/finance-service.exe` |
 | ai-ocr-service | 50056 | `jamaah_aiocr` | `bin/ai-ocr-service.exe` |
+| vendor-service | 50057 | `jamaah_vendor` | `bin/vendor-service.exe` |
 
 - **Config**: `internal/shared/config/config.go` — reads env vars with sane defaults (postgres port 5433, redis localhost:6379, etc.)
 - **DB**: pgx/v5 pool via `internal/shared/database/`
@@ -90,7 +93,8 @@ GET  /health               → gateway itself
 /api/v1/jamaah/*           → jamaah-service :50053
 /api/v1/invoices/*         → invoice-service :50054
 /api/v1/finance/*          → finance-service :50055
-/api/v1/scan/*             → ai-ocr-service :50056
+/api/v1/vendors/*          → vendor-service :50057
+/api/v1/scan/*              → ai-ocr-service :50056
 ```
 
 ### Frontend (`frontend-svelte/`)
@@ -115,6 +119,7 @@ All containers run from `docker-compose.yml` at repo root:
 - `jamaah_invoice` — invoices, payment_schedules, payments
 - `jamaah_finance` — trip_expenses
 - `jamaah_aiocr` — scan_jobs, scan_results, ai_cache, export_templates
+- `jamaah_vendor` — vendors, vendor_bills, vendor_payments
 
 ---
 

@@ -68,6 +68,7 @@ func main() {
 		"invoice": getEnv("INVOICE_SERVICE_ADDR", "localhost:50054"),
 		"finance": getEnv("FINANCE_SERVICE_ADDR", "localhost:50055"),
 		"aiocr":   getEnv("AIOCR_SERVICE_ADDR", "localhost:50056"),
+		"vendor":  getEnv("VENDOR_SERVICE_ADDR", "localhost:50057"),
 	}
 
 	api := app.Group("/api/v1")
@@ -91,6 +92,9 @@ func main() {
 
 	// Finance service
 	setupProxy(api, "/finance", services["finance"])
+
+	// Vendor & Biaya Operasional service
+	setupProxy(api, "/vendors", services["vendor"])
 
 	// AI/OCR service: scan jobs/results + export templates
 	setupProxy(api, "/scan", services["aiocr"])
