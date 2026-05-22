@@ -132,6 +132,7 @@ func (r *PackageRepo) ListPackages(ctx context.Context, orgID uuid.UUID, status 
 		); err != nil {
 			return nil, 0, err
 		}
+		pkg.PricingTiers, _ = r.GetPricingTiers(ctx, pkg.ID)
 		packages = append(packages, pkg)
 	}
 	return packages, total, nil
@@ -244,6 +245,21 @@ func (r *PackageRepo) UpdatePricingTier(ctx context.Context, tier *model.Pricing
 	return nil
 }
 
+func (r *PackageRepo) GetPricingTierByID(ctx context.Context, id uuid.UUID) (*model.PricingTier, error) {
+	tier := &model.PricingTier{}
+	err := r.pool.QueryRow(ctx, `SELECT id, package_id, room_type, price, label, is_early_bird, early_bird_expires_at, sort_order, created_at, updated_at
+		FROM pricing_tiers WHERE id = $1`, id).Scan(
+		&tier.ID, &tier.PackageID, &tier.RoomType, &tier.Price, &tier.Label, &tier.IsEarlyBird, &tier.EarlyBirdExpiresAt, &tier.SortOrder, &tier.CreatedAt, &tier.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, ErrTierNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return tier, nil
+}
+
 func (r *PackageRepo) DeletePricingTier(ctx context.Context, id uuid.UUID) error {
 	result, err := r.pool.Exec(ctx, `DELETE FROM pricing_tiers WHERE id = $1`, id)
 	if err != nil {
@@ -292,6 +308,21 @@ func (r *PackageRepo) UpdateCostComponent(ctx context.Context, cc *model.CostCom
 		return ErrCostNotFound
 	}
 	return nil
+}
+
+func (r *PackageRepo) GetCostComponentByID(ctx context.Context, id uuid.UUID) (*model.CostComponent, error) {
+	cc := &model.CostComponent{}
+	err := r.pool.QueryRow(ctx, `SELECT id, package_id, name, category, amount_per_person, quantity, total_amount, sort_order, created_at, updated_at
+		FROM cost_components WHERE id = $1`, id).Scan(
+		&cc.ID, &cc.PackageID, &cc.Name, &cc.Category, &cc.AmountPerPerson, &cc.Quantity, &cc.TotalAmount, &cc.SortOrder, &cc.CreatedAt, &cc.UpdatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, ErrCostNotFound
+	}
+	if err != nil {
+		return nil, err
+	}
+	return cc, nil
 }
 
 func (r *PackageRepo) DeleteCostComponent(ctx context.Context, id uuid.UUID) error {

@@ -19,10 +19,10 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-var services = []string{"auth", "package", "jamaah", "invoice", "finance", "aiocr", "vendor"}
+var services = []string{"auth", "package", "jamaah", "invoice", "finance", "aiocr", "vendor", "contract"}
 
 func main() {
-	service := flag.String("service", "all", "service name (auth, package, jamaah, invoice, finance, aiocr, vendor, all)")
+	service := flag.String("service", "all", "service name (auth, package, jamaah, invoice, finance, aiocr, vendor, contract, all)")
 	direction := flag.String("direction", "up", "migration direction (up, down)")
 	dbHost := flag.String("host", "localhost", "postgres host")
 	dbPort := flag.Int("port", 5433, "postgres port")
@@ -43,7 +43,7 @@ func main() {
 			}
 		}
 		if !found {
-			log.Fatalf("unknown service: %s (valid: auth, package, jamaah, invoice, finance, aiocr, vendor, all)", *service)
+			log.Fatalf("unknown service: %s (valid: auth, package, jamaah, invoice, finance, aiocr, vendor, contract, all)", *service)
 		}
 		servicesToMigrate = []string{*service}
 	}

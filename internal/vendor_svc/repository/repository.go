@@ -31,7 +31,9 @@ const vendorCols = `id, org_id, name, type, npwp, address, pic_name, pic_phone, 
 
 const vendorInsertCols = `id, org_id, name, type, npwp, address, pic_name, pic_phone, pic_email, bank_name, bank_account_number, bank_account_name, notes`
 
-func (r *VendorRepo) scanVendor(scanner interface{ Scan(dest ...interface{}) error }) (*model.Vendor, error) {
+func (r *VendorRepo) scanVendor(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*model.Vendor, error) {
 	v := &model.Vendor{}
 	err := scanner.Scan(&v.ID, &v.OrgID, &v.Name, &v.Type, &v.NPWP, &v.Address,
 		&v.PICName, &v.PICPhone, &v.PICEmail, &v.BankName, &v.BankAccountNumber,
@@ -125,18 +127,23 @@ func (r *VendorRepo) ListVendors(ctx context.Context, orgID uuid.UUID, vendorTyp
 		}
 		vendors = append(vendors, *v)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return vendors, total, nil
 }
 
 // --- Vendor Bills ---
 
-const billCols = `vb.id, vb.org_id, vb.vendor_id, vb.package_id, vb.description, vb.amount, vb.currency, vb.exchange_rate, vb.amount_idr, vb.paid_amount, vb.due_date, vb.status, vb.created_at, vb.updated_at, v.name AS vendor_name`
+const billCols = `vb.id, vb.org_id, vb.vendor_id, vb.package_id, vb.description, vb.amount, vb.currency, vb.exchange_rate, vb.amount_idr, vb.paid_amount, vb.due_date, vb.status, vb.created_at, vb.updated_at, v.name AS vendor_name, v.type AS vendor_type`
 
-func (r *VendorRepo) scanBill(scanner interface{ Scan(dest ...interface{}) error }) (*model.VendorBill, error) {
+func (r *VendorRepo) scanBill(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*model.VendorBill, error) {
 	b := &model.VendorBill{}
 	err := scanner.Scan(&b.ID, &b.OrgID, &b.VendorID, &b.PackageID, &b.Description,
 		&b.Amount, &b.Currency, &b.ExchangeRate, &b.AmountIDR, &b.PaidAmount,
-		&b.DueDate, &b.Status, &b.CreatedAt, &b.UpdatedAt, &b.VendorName)
+		&b.DueDate, &b.Status, &b.CreatedAt, &b.UpdatedAt, &b.VendorName, &b.VendorType)
 	return b, err
 }
 
@@ -232,6 +239,9 @@ func (r *VendorRepo) ListBills(ctx context.Context, orgID uuid.UUID, vendorID *u
 		}
 		bills = append(bills, *b)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return bills, total, nil
 }
 
@@ -252,6 +262,9 @@ func (r *VendorRepo) GetOverdueBills(ctx context.Context, orgID uuid.UUID) ([]mo
 			return nil, err
 		}
 		bills = append(bills, *b)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return bills, nil
 }
@@ -275,6 +288,9 @@ func (r *VendorRepo) GetBillsDueSoon(ctx context.Context, orgID uuid.UUID, withi
 		}
 		bills = append(bills, *b)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return bills, nil
 }
 
@@ -294,7 +310,9 @@ func (r *VendorRepo) UpdateBillStatus(ctx context.Context, id uuid.UUID, status 
 
 const paymentCols = `id, org_id, vendor_bill_id, vendor_id, payment_date, amount, currency, exchange_rate, amount_idr, source_account, transfer_proof_url, notes, created_at`
 
-func (r *VendorRepo) scanPayment(scanner interface{ Scan(dest ...interface{}) error }) (*model.VendorPayment, error) {
+func (r *VendorRepo) scanPayment(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*model.VendorPayment, error) {
 	p := &model.VendorPayment{}
 	err := scanner.Scan(&p.ID, &p.OrgID, &p.VendorBillID, &p.VendorID,
 		&p.PaymentDate, &p.Amount, &p.Currency, &p.ExchangeRate, &p.AmountIDR,
@@ -347,6 +365,9 @@ func (r *VendorRepo) ListPaymentsByBill(ctx context.Context, billID, orgID uuid.
 		}
 		payments = append(payments, *p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return payments, nil
 }
 
@@ -372,6 +393,9 @@ func (r *VendorRepo) ListPaymentsByVendor(ctx context.Context, vendorID, orgID u
 			return nil, 0, err
 		}
 		payments = append(payments, *p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
 	}
 	return payments, total, nil
 }
@@ -416,6 +440,41 @@ func (r *VendorRepo) GetDebtSummary(ctx context.Context, orgID uuid.UUID, vendor
 			return nil, err
 		}
 		s.ByStatus[status] = model.BillStatusSummary{Count: count, TotalAmount: total}
+	}
+
+	return s, nil
+}
+
+func (r *VendorRepo) GetPackageBillSummary(ctx context.Context, orgID, packageID uuid.UUID) (*model.PackageBillSummary, error) {
+	s := &model.PackageBillSummary{
+		PackageID: packageID,
+		ByStatus:  make(map[string]model.BillStatusSummary),
+	}
+
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*), COALESCE(SUM(vb.amount_idr), 0), COALESCE(SUM(vb.paid_amount), 0)
+		FROM vendor_bills vb WHERE vb.org_id = $1 AND vb.package_id = $2`, orgID, packageID).Scan(&s.TotalBills, &s.TotalAmountIDR, &s.TotalPaidIDR)
+	if err != nil {
+		return nil, err
+	}
+	s.TotalOutstandingIDR = s.TotalAmountIDR - s.TotalPaidIDR
+
+	rows, err := r.pool.Query(ctx, `SELECT vb.status, COUNT(*), COALESCE(SUM(vb.amount_idr), 0)
+		FROM vendor_bills vb WHERE vb.org_id = $1 AND vb.package_id = $2 GROUP BY vb.status`, orgID, packageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var status string
+		var count int
+		var total int64
+		if err := rows.Scan(&status, &count, &total); err != nil {
+			return nil, err
+		}
+		s.ByStatus[status] = model.BillStatusSummary{Count: count, TotalAmount: total}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 
 	return s, nil

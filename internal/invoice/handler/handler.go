@@ -1,12 +1,14 @@
 package handler
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 
 	"github.com/jamaah-in/v2/internal/invoice/model"
+	"github.com/jamaah-in/v2/internal/invoice/repository"
 	"github.com/jamaah-in/v2/internal/invoice/service"
 	sharedAuth "github.com/jamaah-in/v2/internal/shared/auth"
 	"github.com/jamaah-in/v2/internal/shared/response"
@@ -51,6 +53,9 @@ func (h *InvoiceHandler) CreateInvoice(c *fiber.Ctx) error {
 
 	inv, err := h.svc.CreateInvoice(c.Context(), claims.OrgID, claims.UserID, req)
 	if err != nil {
+		if errors.Is(err, repository.ErrDuplicateNumber) {
+			return response.Conflict(c, "duplicate invoice number, please retry")
+		}
 		return response.InternalError(c, err.Error())
 	}
 	return response.Created(c, inv)
@@ -233,6 +238,32 @@ func (h *InvoiceHandler) GetSummary(c *fiber.Ctx) error {
 		return response.InternalError(c, err.Error())
 	}
 	return response.OK(c, summary)
+}
+
+func (h *InvoiceHandler) GetPackageRevenue(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	packageID, err := uuid.Parse(c.Params("pkgId"))
+	if err != nil {
+		return response.BadRequest(c, "invalid package id")
+	}
+	summary, err := h.svc.GetPackageRevenue(c.Context(), claims.OrgID, packageID)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.OK(c, summary)
+}
+
+func (h *InvoiceHandler) ListByPackage(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	packageID, err := uuid.Parse(c.Params("pkgId"))
+	if err != nil {
+		return response.BadRequest(c, "invalid package id")
+	}
+	invoices, err := h.svc.ListInvoicesByPackage(c.Context(), claims.OrgID, packageID)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.OK(c, invoices)
 }
 
 func isValidPaymentScheme(s string) bool {

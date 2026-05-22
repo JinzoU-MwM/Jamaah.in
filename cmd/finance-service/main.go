@@ -55,7 +55,10 @@ func main() {
 	}
 
 	financeRepo := repository.NewFinanceRepo(pool)
-	financeService := service.NewFinanceService(financeRepo)
+	invoiceAddr := getEnv("INVOICE_SERVICE_ADDR", "localhost:50054")
+	vendorAddr := getEnv("VENDOR_SERVICE_ADDR", "localhost:50057")
+	packageAddr := getEnv("PACKAGE_SERVICE_ADDR", "localhost:50052")
+	financeService := service.NewFinanceService(financeRepo, invoiceAddr, vendorAddr, packageAddr)
 	financeHandler := handler.NewFinanceHandler(financeService)
 
 	app := fiber.New(fiber.Config{
@@ -81,6 +84,9 @@ func main() {
 	expenses.Get("/:id", financeHandler.GetExpense)
 	expenses.Put("/:id", financeHandler.UpdateExpense)
 	expenses.Delete("/:id", financeHandler.DeleteExpense)
+
+	pnl := finance.Group("/pnl")
+	pnl.Get("/:pkgId", financeHandler.GetPnL)
 
 	go func() {
 		if err := app.Listen(":" + strconv.Itoa(cfg.Server.Port)); err != nil {
@@ -120,4 +126,11 @@ func authMiddleware(jwtMgr *sharedAuth.JWTManager, logger *zap.SugaredLogger) fi
 		c.Locals("claims", claims)
 		return c.Next()
 	}
+}
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

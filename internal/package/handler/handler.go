@@ -22,6 +22,9 @@ func NewPackageHandler(svc *service.PackageService) *PackageHandler {
 
 func (h *PackageHandler) CreatePackage(c *fiber.Ctx) error {
 	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to create package")
+	}
 
 	var req model.CreatePackageRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -55,7 +58,7 @@ func (h *PackageHandler) GetPackage(c *fiber.Ctx) error {
 		return response.NotFound(c, "package not found")
 	}
 	claims := c.Locals("claims").(*sharedAuth.Claims)
-	if pkg.OrgID != claims.OrgID && !pkg.IsPublished {
+	if pkg.OrgID != claims.OrgID {
 		return response.NotFound(c, "package not found")
 	}
 	return response.OK(c, pkg)
@@ -75,17 +78,29 @@ func (h *PackageHandler) ListPackages(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) UpdatePackage(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to update package")
+	}
+
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), id)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 
 	var req model.UpdatePackageRequest
 	if err := c.BodyParser(&req); err != nil {
 		return response.BadRequest(c, "invalid request body")
 	}
+	if req.IsPublished != nil && !canPublishPackages(claims.Role) {
+		return response.Forbidden(c, "only owner can publish package")
+	}
 
-	pkg, err := h.svc.UpdatePackage(c.Context(), id, req)
+	pkg, err = h.svc.UpdatePackage(c.Context(), id, req)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
@@ -93,9 +108,18 @@ func (h *PackageHandler) UpdatePackage(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) DeletePackage(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canDeletePackages(claims.Role) {
+		return response.Forbidden(c, "only owner can delete package")
+	}
+
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), id)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 	if err := h.svc.DeletePackage(c.Context(), id); err != nil {
 		return response.NotFound(c, "package not found")
@@ -104,9 +128,18 @@ func (h *PackageHandler) DeletePackage(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) UpdatePackageStatus(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to update package status")
+	}
+
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), id)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 
 	var req model.UpdatePackageStatusRequest
@@ -114,7 +147,7 @@ func (h *PackageHandler) UpdatePackageStatus(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid request body")
 	}
 
-	pkg, err := h.svc.UpdatePackageStatus(c.Context(), id, req.Status)
+	pkg, err = h.svc.UpdatePackageStatus(c.Context(), id, req.Status)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
@@ -122,9 +155,14 @@ func (h *PackageHandler) UpdatePackageStatus(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) GetPackageQuota(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), id)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 	quota, err := h.svc.GetPackageQuota(c.Context(), id)
 	if err != nil {
@@ -134,9 +172,14 @@ func (h *PackageHandler) GetPackageQuota(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) GetProfitProjection(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
 	id, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), id)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 	proj, err := h.svc.GetProfitProjection(c.Context(), id)
 	if err != nil {
@@ -146,9 +189,18 @@ func (h *PackageHandler) GetProfitProjection(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) CreatePricingTier(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to manage pricing tiers")
+	}
+
 	packageID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), packageID)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 
 	var req model.CreatePricingTierRequest
@@ -170,9 +222,22 @@ func (h *PackageHandler) CreatePricingTier(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) UpdatePricingTier(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to manage pricing tiers")
+	}
+
 	tierID, err := uuid.Parse(c.Params("tid"))
 	if err != nil {
 		return response.BadRequest(c, "invalid tier id")
+	}
+	tier, err := h.svc.GetPricingTier(c.Context(), tierID)
+	if err != nil || tier == nil {
+		return response.NotFound(c, "tier not found")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), tier.PackageID)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 
 	var req model.CreatePricingTierRequest
@@ -180,7 +245,7 @@ func (h *PackageHandler) UpdatePricingTier(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid request body")
 	}
 
-	tier, err := h.svc.UpdatePricingTier(c.Context(), tierID, req)
+	tier, err = h.svc.UpdatePricingTier(c.Context(), tierID, req)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
@@ -188,9 +253,22 @@ func (h *PackageHandler) UpdatePricingTier(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) DeletePricingTier(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to manage pricing tiers")
+	}
+
 	tierID, err := uuid.Parse(c.Params("tid"))
 	if err != nil {
 		return response.BadRequest(c, "invalid tier id")
+	}
+	tier, err := h.svc.GetPricingTier(c.Context(), tierID)
+	if err != nil || tier == nil {
+		return response.NotFound(c, "tier not found")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), tier.PackageID)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 	if err := h.svc.DeletePricingTier(c.Context(), tierID); err != nil {
 		return response.NotFound(c, "tier not found")
@@ -199,9 +277,18 @@ func (h *PackageHandler) DeletePricingTier(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) CreateCostComponent(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to manage cost components")
+	}
+
 	packageID, err := uuid.Parse(c.Params("id"))
 	if err != nil {
 		return response.BadRequest(c, "invalid package id")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), packageID)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 
 	var req model.CreateCostComponentRequest
@@ -223,9 +310,22 @@ func (h *PackageHandler) CreateCostComponent(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) UpdateCostComponent(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to manage cost components")
+	}
+
 	ccID, err := uuid.Parse(c.Params("cid"))
 	if err != nil {
 		return response.BadRequest(c, "invalid cost component id")
+	}
+	cc, err := h.svc.GetCostComponent(c.Context(), ccID)
+	if err != nil || cc == nil {
+		return response.NotFound(c, "cost component not found")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), cc.PackageID)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 
 	var req model.CreateCostComponentRequest
@@ -233,7 +333,7 @@ func (h *PackageHandler) UpdateCostComponent(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid request body")
 	}
 
-	cc, err := h.svc.UpdateCostComponent(c.Context(), ccID, req)
+	cc, err = h.svc.UpdateCostComponent(c.Context(), ccID, req)
 	if err != nil {
 		return response.InternalError(c, err.Error())
 	}
@@ -241,9 +341,22 @@ func (h *PackageHandler) UpdateCostComponent(c *fiber.Ctx) error {
 }
 
 func (h *PackageHandler) DeleteCostComponent(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	if !canEditPackages(claims.Role) {
+		return response.Forbidden(c, "insufficient permissions to manage cost components")
+	}
+
 	ccID, err := uuid.Parse(c.Params("cid"))
 	if err != nil {
 		return response.BadRequest(c, "invalid cost component id")
+	}
+	cc, err := h.svc.GetCostComponent(c.Context(), ccID)
+	if err != nil || cc == nil {
+		return response.NotFound(c, "cost component not found")
+	}
+	pkg, err := h.svc.GetPackage(c.Context(), cc.PackageID)
+	if err != nil || pkg.OrgID != claims.OrgID {
+		return response.NotFound(c, "package not found")
 	}
 	if err := h.svc.DeleteCostComponent(c.Context(), ccID); err != nil {
 		return response.NotFound(c, "cost component not found")
@@ -261,20 +374,35 @@ func (h *PackageHandler) GetPublicPackage(c *fiber.Ctx) error {
 		return response.NotFound(c, "package not found")
 	}
 	public := fiber.Map{
-		"id":                pkg.ID,
-		"name":              pkg.Name,
-		"slug":              pkg.Slug,
-		"description":       pkg.Description,
-		"package_type":      pkg.PackageType,
-		"departure_date":    pkg.DepartureDate,
-		"return_date":       pkg.ReturnDate,
-		"duration_days":     pkg.DurationDays,
-		"total_seats":       pkg.TotalSeats,
-		"reserved_seats":    pkg.ReservedSeats,
-		"available_seats":   pkg.TotalSeats - pkg.ReservedSeats,
-		"airline":           pkg.Airline,
-		"hotel_makkah_name": pkg.HotelMakkahName,
-		"pricing_tiers":    pkg.PricingTiers,
+		"id":                   pkg.ID,
+		"name":                 pkg.Name,
+		"slug":                 pkg.Slug,
+		"description":          pkg.Description,
+		"package_type":         pkg.PackageType,
+		"departure_date":       pkg.DepartureDate,
+		"return_date":          pkg.ReturnDate,
+		"duration_days":        pkg.DurationDays,
+		"total_seats":          pkg.TotalSeats,
+		"reserved_seats":       pkg.ReservedSeats,
+		"available_seats":      max(0, pkg.TotalSeats-pkg.ReservedSeats),
+		"airline":              pkg.Airline,
+		"flight_number_go":     pkg.FlightNumberGo,
+		"flight_number_return": pkg.FlightNumberReturn,
+		"hotel_makkah_name":    pkg.HotelMakkahName,
+		"hotel_madinah_name":   pkg.HotelMadinahName,
+		"pricing_tiers":        pkg.PricingTiers,
 	}
 	return response.OK(c, public)
+}
+
+func canEditPackages(role string) bool {
+	return role == "owner" || role == "admin"
+}
+
+func canPublishPackages(role string) bool {
+	return role == "owner"
+}
+
+func canDeletePackages(role string) bool {
+	return role == "owner"
 }

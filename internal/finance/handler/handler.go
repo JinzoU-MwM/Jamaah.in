@@ -2,6 +2,7 @@ package handler
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -34,7 +35,7 @@ func (h *FinanceHandler) CreateExpense(c *fiber.Ctx) error {
 		return response.BadRequest(c, "category is required")
 	}
 	if !isValidCategory(req.Category) {
-		return response.BadRequest(c, "category must be one of: transport, accommodation, visa, insurance, meals, guides, other")
+		return response.BadRequest(c, "category must be one of: "+strings.Join(model.ValidExpenseCategories(), ", "))
 	}
 	if req.Description == "" {
 		return response.BadRequest(c, "description is required")
@@ -82,7 +83,7 @@ func (h *FinanceHandler) UpdateExpense(c *fiber.Ctx) error {
 		return response.BadRequest(c, "invalid request body")
 	}
 	if req.Category != nil && !isValidCategory(*req.Category) {
-		return response.BadRequest(c, "category must be one of: transport, accommodation, visa, insurance, meals, guides, other")
+		return response.BadRequest(c, "category must be one of: "+strings.Join(model.ValidExpenseCategories(), ", "))
 	}
 	if req.Status != nil && !isValidExpenseStatus(*req.Status) {
 		return response.BadRequest(c, "status must be one of: belum_bayar, sebagian, lunas")
@@ -159,6 +160,21 @@ func (h *FinanceHandler) GetOverdueExpenses(c *fiber.Ctx) error {
 		return response.InternalError(c, err.Error())
 	}
 	return response.OK(c, expenses)
+}
+
+func (h *FinanceHandler) GetPnL(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	packageID, err := uuid.Parse(c.Params("pkgId"))
+	if err != nil {
+		return response.BadRequest(c, "invalid package id")
+	}
+
+	authToken := c.Get("Authorization")
+	pnl, err := h.svc.GetPnL(c.Context(), claims.OrgID, packageID, authToken)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.OK(c, pnl)
 }
 
 func isValidCategory(s string) bool {

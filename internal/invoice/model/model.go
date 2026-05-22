@@ -154,3 +154,15 @@ type InvoiceSummary struct {
 	OutstandingCount int64 `json:"outstanding_count"`
 	OverdueCount    int64 `json:"overdue_count"`
 }
+
+type PackageRevenueSummary struct {
+	PackageID       uuid.UUID `json:"package_id"`
+	TotalInvoices   int       `json:"total_invoices"`
+	TotalAmount     int64     `json:"total_amount"`
+	TotalPaid       int64     `json:"total_paid"`
+	TotalRemaining  int64     `json:"total_remaining"`
+	LunasCount      int       `json:"lunas_count"`
+	SebagianCount   int       `json:"sebagian_count"`
+	BelumBayarCount int       `json:"belum_bayar_count"`
+	BatalCount      int       `json:"batal_count"`
+}

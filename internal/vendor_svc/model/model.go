@@ -15,21 +15,21 @@ func ValidBillStatuses() []string {
 }
 
 type Vendor struct {
-	ID                uuid.UUID  `json:"id" db:"id"`
-	OrgID             uuid.UUID  `json:"org_id" db:"org_id"`
-	Name              string     `json:"name" db:"name"`
-	Type              string     `json:"type" db:"type"`
-	NPWP              *string    `json:"npwp,omitempty" db:"npwp"`
-	Address           *string    `json:"address,omitempty" db:"address"`
-	PICName           *string    `json:"pic_name,omitempty" db:"pic_name"`
-	PICPhone          *string    `json:"pic_phone,omitempty" db:"pic_phone"`
-	PICEmail          *string    `json:"pic_email,omitempty" db:"pic_email"`
-	BankName          *string    `json:"bank_name,omitempty" db:"bank_name"`
-	BankAccountNumber *string    `json:"bank_account_number,omitempty" db:"bank_account_number"`
-	BankAccountName   *string    `json:"bank_account_name,omitempty" db:"bank_account_name"`
-	Notes             *string    `json:"notes,omitempty" db:"notes"`
-	CreatedAt         time.Time  `json:"created_at" db:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at" db:"updated_at"`
+	ID                uuid.UUID `json:"id" db:"id"`
+	OrgID             uuid.UUID `json:"org_id" db:"org_id"`
+	Name              string    `json:"name" db:"name"`
+	Type              string    `json:"type" db:"type"`
+	NPWP              *string   `json:"npwp,omitempty" db:"npwp"`
+	Address           *string   `json:"address,omitempty" db:"address"`
+	PICName           *string   `json:"pic_name,omitempty" db:"pic_name"`
+	PICPhone          *string   `json:"pic_phone,omitempty" db:"pic_phone"`
+	PICEmail          *string   `json:"pic_email,omitempty" db:"pic_email"`
+	BankName          *string   `json:"bank_name,omitempty" db:"bank_name"`
+	BankAccountNumber *string   `json:"bank_account_number,omitempty" db:"bank_account_number"`
+	BankAccountName   *string   `json:"bank_account_name,omitempty" db:"bank_account_name"`
+	Notes             *string   `json:"notes,omitempty" db:"notes"`
+	CreatedAt         time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type CreateVendorRequest struct {
@@ -77,6 +77,7 @@ type VendorBill struct {
 	UpdatedAt    time.Time  `json:"updated_at" db:"updated_at"`
 
 	VendorName *string `json:"vendor_name,omitempty" db:"vendor_name"`
+	VendorType *string `json:"vendor_type,omitempty" db:"vendor_type"`
 }
 
 type CreateBillRequest struct {
@@ -90,9 +91,9 @@ type CreateBillRequest struct {
 }
 
 type UpdateBillRequest struct {
-	Description  *string `json:"description,omitempty"`
-	Amount       *int64  `json:"amount,omitempty"`
-	Currency     *string `json:"currency,omitempty"`
+	Description  *string  `json:"description,omitempty"`
+	Amount       *int64   `json:"amount,omitempty"`
+	Currency     *string  `json:"currency,omitempty"`
 	ExchangeRate *float64 `json:"exchange_rate,omitempty"`
 	DueDate      *string  `json:"due_date,omitempty"`
 	Status       *string  `json:"status,omitempty"`
@@ -126,14 +127,23 @@ type CreatePaymentRequest struct {
 }
 
 type VendorDebtSummary struct {
-	TotalBills     int64 `json:"total_bills"`
-	TotalAmountIDR int64 `json:"total_amount_idr"`
-	TotalPaidIDR   int64 `json:"total_paid_idr"`
-	TotalOutstandingIDR int64 `json:"total_outstanding_idr"`
-	ByStatus map[string]BillStatusSummary `json:"by_status"`
+	TotalBills          int64                        `json:"total_bills"`
+	TotalAmountIDR      int64                        `json:"total_amount_idr"`
+	TotalPaidIDR        int64                        `json:"total_paid_idr"`
+	TotalOutstandingIDR int64                        `json:"total_outstanding_idr"`
+	ByStatus            map[string]BillStatusSummary `json:"by_status"`
 }
 
 type BillStatusSummary struct {
 	Count       int   `json:"count"`
 	TotalAmount int64 `json:"total_amount"`
+}
+
+type PackageBillSummary struct {
+	PackageID           uuid.UUID                    `json:"package_id"`
+	TotalBills          int                          `json:"total_bills"`
+	TotalAmountIDR      int64                        `json:"total_amount_idr"`
+	TotalPaidIDR        int64                        `json:"total_paid_idr"`
+	TotalOutstandingIDR int64                        `json:"total_outstanding_idr"`
+	ByStatus            map[string]BillStatusSummary `json:"by_status"`
 }

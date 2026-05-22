@@ -83,6 +83,7 @@ func main() {
 	api.Get("/bills/overdue", vendorHandler.GetOverdueBills)
 	api.Get("/bills/due-soon", vendorHandler.GetBillsDueSoon)
 	api.Get("/bills/summary", vendorHandler.GetDebtSummary)
+	api.Get("/bills/package/:pkgId", vendorHandler.GetPackageBillSummary)
 
 	// Vendor payments (static routes)
 	api.Post("/bills/:billId/payments", vendorHandler.CreatePayment)

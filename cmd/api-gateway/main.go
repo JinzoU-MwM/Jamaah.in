@@ -62,13 +62,14 @@ func main() {
 	})
 
 	services := map[string]string{
-		"auth":    getEnv("AUTH_SERVICE_ADDR", "localhost:50051"),
-		"package": getEnv("PACKAGE_SERVICE_ADDR", "localhost:50052"),
-		"jamaah":  getEnv("JAMAAH_SERVICE_ADDR", "localhost:50053"),
-		"invoice": getEnv("INVOICE_SERVICE_ADDR", "localhost:50054"),
-		"finance": getEnv("FINANCE_SERVICE_ADDR", "localhost:50055"),
-		"aiocr":   getEnv("AIOCR_SERVICE_ADDR", "localhost:50056"),
-		"vendor":  getEnv("VENDOR_SERVICE_ADDR", "localhost:50057"),
+		"auth":     getEnv("AUTH_SERVICE_ADDR", "localhost:50051"),
+		"package":  getEnv("PACKAGE_SERVICE_ADDR", "localhost:50052"),
+		"jamaah":   getEnv("JAMAAH_SERVICE_ADDR", "localhost:50053"),
+		"invoice":  getEnv("INVOICE_SERVICE_ADDR", "localhost:50054"),
+		"finance":  getEnv("FINANCE_SERVICE_ADDR", "localhost:50055"),
+		"aiocr":    getEnv("AIOCR_SERVICE_ADDR", "localhost:50056"),
+		"vendor":   getEnv("VENDOR_SERVICE_ADDR", "localhost:50057"),
+		"contract": getEnv("CONTRACT_SERVICE_ADDR", "localhost:50058"),
 	}
 
 	api := app.Group("/api/v1")
@@ -95,6 +96,10 @@ func main() {
 
 	// Vendor & Biaya Operasional service
 	setupProxy(api, "/vendors", services["vendor"])
+
+	// Contract service
+	setupProxy(api, "/contracts", services["contract"])
+	setupPublicProxy(app, "/public/contracts", services["contract"])
 
 	// AI/OCR service: scan jobs/results + export templates
 	setupProxy(api, "/scan", services["aiocr"])
@@ -150,11 +155,13 @@ func setupPublicProxy(app *fiber.App, prefix string, targetAddr string) {
 	handler := createProxyHandler(targetAddr)
 	app.Get(prefix+"/*", handler)
 	app.Get(prefix, handler)
+	app.Post(prefix+"/*", handler)
+	app.Post(prefix, handler)
 }
 
 func createProxyHandler(targetAddr string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		targetURL := "http://" + targetAddr + c.Path()
+		targetURL := "http://" + targetAddr + c.OriginalURL()
 
 		var body io.Reader
 		if len(c.Body()) > 0 {

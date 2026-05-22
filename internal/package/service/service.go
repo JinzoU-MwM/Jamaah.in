@@ -265,12 +265,11 @@ func (s *PackageService) CreatePricingTier(ctx context.Context, packageID uuid.U
 	return tier, nil
 }
 
+func (s *PackageService) GetPricingTier(ctx context.Context, tierID uuid.UUID) (*model.PricingTier, error) {
+	return s.repo.GetPricingTierByID(ctx, tierID)
+}
+
 func (s *PackageService) UpdatePricingTier(ctx context.Context, tierID uuid.UUID, req model.CreatePricingTierRequest) (*model.PricingTier, error) {
-	tiers, err := s.repo.GetPricingTiers(ctx, uuid.Nil)
-	_ = tiers
-	if err != nil {
-		return nil, err
-	}
 	tier := &model.PricingTier{
 		ID:          tierID,
 		RoomType:    req.RoomType,
@@ -293,6 +292,10 @@ func (s *PackageService) UpdatePricingTier(ctx context.Context, tierID uuid.UUID
 
 func (s *PackageService) DeletePricingTier(ctx context.Context, tierID uuid.UUID) error {
 	return s.repo.DeletePricingTier(ctx, tierID)
+}
+
+func (s *PackageService) GetCostComponent(ctx context.Context, ccID uuid.UUID) (*model.CostComponent, error) {
+	return s.repo.GetCostComponentByID(ctx, ccID)
 }
 
 func (s *PackageService) CreateCostComponent(ctx context.Context, packageID uuid.UUID, req model.CreateCostComponentRequest) (*model.CostComponent, error) {

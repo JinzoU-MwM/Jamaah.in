@@ -123,6 +123,9 @@ func (r *FinanceRepo) ListExpenses(ctx context.Context, orgID uuid.UUID, categor
 		}
 		expenses = append(expenses, *e)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return expenses, total, nil
 }
 
@@ -139,6 +142,9 @@ func (r *FinanceRepo) ListExpensesByPackage(ctx context.Context, orgID, packageI
 			return nil, err
 		}
 		expenses = append(expenses, *e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return expenses, nil
 }
@@ -222,6 +228,9 @@ func (r *FinanceRepo) GetOverdueExpenses(ctx context.Context, orgID uuid.UUID) (
 			return nil, err
 		}
 		expenses = append(expenses, *e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return expenses, nil
 }

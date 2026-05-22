@@ -1,6 +1,12 @@
 import { API_URL, authHeaders, parseError, apiFetch } from '../apiCore.js';
 
 export const registrationApi = {
+    async getPublicPackage(slug) {
+        const response = await apiFetch(`/public/packages/${slug}`);
+        if (!response.ok) throw new Error(await parseError(response));
+        return await response.json();
+    },
+
     async getRegistrationInfo(token) {
         const response = await apiFetch(`${API_URL}/registration/public/${token}`);
         if (!response.ok) throw new Error(await parseError(response));

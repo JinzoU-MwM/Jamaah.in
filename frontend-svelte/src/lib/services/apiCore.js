@@ -50,6 +50,17 @@ export async function parseError(response) {
                     message = `${detailMessage}\n\n${errorList}${more}`;
                 }
             }
+        } else if (typeof json.error === 'string') {
+            message = json.error;
+        } else if (typeof json.message === 'string') {
+            message = json.message;
+        } else if (Array.isArray(json.errors) && json.errors.length > 0) {
+            const firstError = json.errors[0];
+            if (typeof firstError === 'string') {
+                message = firstError;
+            } else if (firstError && typeof firstError.message === 'string') {
+                message = firstError.message;
+            }
         }
     } catch (e) { /* ignore */ }
     return mapError(message || 'Request failed');

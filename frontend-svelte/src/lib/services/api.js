@@ -2,6 +2,8 @@ import { API_URL, authHeaders } from './apiCore.js';
 import { createAuthSubscriptionApi } from './apiDomains/authSubscriptionApi.js';
 import { createGroupOpsApi } from './apiDomains/groupOpsApi.js';
 import { createContentApi } from './apiDomains/contentApi.js';
+import { createPackageApi } from './apiDomains/packageApi.js';
+import { contractApi } from './apiDomains/contractApi.js';
 import { paymentApi } from './apiDomains/paymentApi.js';
 import { documentExcelApi } from './apiDomains/documentExcelApi.js';
 import { supportTicketApi } from './apiDomains/supportTicketApi.js';
@@ -48,6 +50,8 @@ Object.assign(
     createAuthSubscriptionApi({ cacheGet, cacheSet }),
     createGroupOpsApi({ cacheGet, cacheSet, cacheInvalidate }),
     createContentApi({ cacheGet, cacheSet }),
+    createPackageApi({ cacheInvalidate }),
+    contractApi,
     paymentApi,
     documentExcelApi,
     supportTicketApi,

@@ -216,6 +216,10 @@ func (s *VendorService) GetDebtSummary(ctx context.Context, orgID uuid.UUID, ven
 	return s.repo.GetDebtSummary(ctx, orgID, vendorID)
 }
 
+func (s *VendorService) GetPackageBillSummary(ctx context.Context, orgID, packageID uuid.UUID) (*model.PackageBillSummary, error) {
+	return s.repo.GetPackageBillSummary(ctx, orgID, packageID)
+}
+
 // --- Vendor Payments ---
 
 func (s *VendorService) CreatePayment(ctx context.Context, orgID uuid.UUID, req model.CreatePaymentRequest) (*model.VendorPayment, error) {
@@ -277,7 +281,32 @@ func (s *VendorService) GetPayment(ctx context.Context, id, orgID uuid.UUID) (*m
 }
 
 func (s *VendorService) DeletePayment(ctx context.Context, id, orgID uuid.UUID) error {
-	return s.repo.DeletePayment(ctx, id, orgID)
+	p, err := s.repo.GetPaymentByID(ctx, id, orgID)
+	if err != nil {
+		return err
+	}
+	billID := p.VendorBillID
+
+	if err := s.repo.DeletePayment(ctx, id, orgID); err != nil {
+		return err
+	}
+
+	if err := s.repo.UpdateBillPaidAmount(ctx, billID); err != nil {
+		return err
+	}
+
+	updatedBill, err := s.repo.GetBillByID(ctx, billID, orgID)
+	if err != nil {
+		return nil
+	}
+	if updatedBill.PaidAmount >= updatedBill.AmountIDR {
+		_ = s.repo.UpdateBillStatus(ctx, billID, "lunas")
+	} else if updatedBill.PaidAmount > 0 {
+		_ = s.repo.UpdateBillStatus(ctx, billID, "sebagian")
+	} else {
+		_ = s.repo.UpdateBillStatus(ctx, billID, "belum_bayar")
+	}
+	return nil
 }
 
 func (s *VendorService) ListPaymentsByBill(ctx context.Context, billID, orgID uuid.UUID) ([]model.VendorPayment, error) {

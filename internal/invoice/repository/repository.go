@@ -79,10 +79,10 @@ func (r *InvoiceRepo) GetInvoiceByNumber(ctx context.Context, orgID uuid.UUID, n
 
 func (r *InvoiceRepo) UpdateInvoice(ctx context.Context, inv *model.Invoice) error {
 	query := `UPDATE invoices SET discount_amount=$2, surcharge_amount=$3, total_amount=$4,
-		amount_paid=$5, amount_remaining=$6, due_date=$7, notes=$8, updated_at=NOW() WHERE id = $1 AND org_id = $9`
+		amount_paid=$5, amount_remaining=$6, due_date=$7, notes=$8, status=$9, updated_at=NOW() WHERE id = $1 AND org_id = $10`
 	result, err := r.pool.Exec(ctx, query,
 		inv.ID, inv.DiscountAmount, inv.SurchargeAmount, inv.TotalAmount,
-		inv.AmountPaid, inv.AmountRemaining, inv.DueDate, inv.Notes, inv.OrgID)
+		inv.AmountPaid, inv.AmountRemaining, inv.DueDate, inv.Notes, inv.Status, inv.OrgID)
 	if err != nil {
 		return fmt.Errorf("update invoice: %w", err)
 	}
@@ -146,6 +146,9 @@ func (r *InvoiceRepo) ListInvoices(ctx context.Context, orgID uuid.UUID, status 
 		}
 		invoices = append(invoices, *inv)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, err
+	}
 	return invoices, total, nil
 }
 
@@ -162,6 +165,9 @@ func (r *InvoiceRepo) GetInvoicesByJamaah(ctx context.Context, orgID, jamaahID u
 			return nil, err
 		}
 		invoices = append(invoices, *inv)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return invoices, nil
 }
@@ -186,6 +192,9 @@ func (r *InvoiceRepo) GetPaymentSchedules(ctx context.Context, invoiceID uuid.UU
 			return nil, err
 		}
 		schedules = append(schedules, ps)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
 	}
 	return schedules, nil
 }
@@ -225,6 +234,9 @@ func (r *InvoiceRepo) GetPayments(ctx context.Context, invoiceID uuid.UUID) ([]m
 		}
 		payments = append(payments, p)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
 	return payments, nil
 }
 
@@ -239,6 +251,45 @@ func (r *InvoiceRepo) GetSummary(ctx context.Context, orgID uuid.UUID) (*model.I
 		return nil, err
 	}
 	return s, nil
+}
+
+func (r *InvoiceRepo) GetPackageRevenue(ctx context.Context, orgID, packageID uuid.UUID) (*model.PackageRevenueSummary, error) {
+	s := &model.PackageRevenueSummary{PackageID: packageID}
+	err := r.pool.QueryRow(ctx, `SELECT COUNT(*) FILTER (WHERE status != 'batal'),
+		COALESCE(SUM(total_amount) FILTER (WHERE status != 'batal'),0),
+		COALESCE(SUM(amount_paid) FILTER (WHERE status != 'batal'),0),
+		COALESCE(SUM(amount_remaining) FILTER (WHERE status != 'batal'),0),
+		COUNT(*) FILTER (WHERE status = 'lunas'),
+		COUNT(*) FILTER (WHERE status = 'sebagian'),
+		COUNT(*) FILTER (WHERE status = 'belum_bayar'),
+		COUNT(*) FILTER (WHERE status = 'batal')
+		FROM invoices WHERE org_id = $1 AND package_id = $2`, orgID, packageID).Scan(
+		&s.TotalInvoices, &s.TotalAmount, &s.TotalPaid, &s.TotalRemaining,
+		&s.LunasCount, &s.SebagianCount, &s.BelumBayarCount, &s.BatalCount)
+	if err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+func (r *InvoiceRepo) ListInvoicesByPackage(ctx context.Context, orgID, packageID uuid.UUID) ([]model.Invoice, error) {
+	rows, err := r.pool.Query(ctx, fmt.Sprintf(`SELECT %s FROM invoices WHERE org_id = $1 AND package_id = $2 ORDER BY created_at DESC`, invoiceCols), orgID, packageID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	invoices := []model.Invoice{}
+	for rows.Next() {
+		inv, err := r.scanInvoice(rows)
+		if err != nil {
+			return nil, err
+		}
+		invoices = append(invoices, *inv)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return invoices, nil
 }
 
 func GenerateInvoiceNumber(orgID uuid.UUID) string {

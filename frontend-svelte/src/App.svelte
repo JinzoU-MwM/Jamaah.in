@@ -44,6 +44,12 @@
       robots: "noindex,nofollow",
       canonical: `${BASE_URL}/`,
     },
+    package: {
+      title: "Paket Umrah - Jamaah.in",
+      description: "Lihat detail paket umrah, harga per tipe kamar, dan sisa kursi.",
+      robots: "index,follow",
+      canonical: `${BASE_URL}/`,
+    },
     dashboard: {
       title: "Dashboard - Jamaah.in",
       description: "Dashboard operasional jamaah.",
@@ -107,6 +113,18 @@
     itinerary: {
       title: "Itinerary - Jamaah.in",
       description: "Jadwal perjalanan jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    contracts: {
+      title: "E-Kontrak - Jamaah.in",
+      description: "Kelola template kontrak digital untuk jamaah.",
+      robots: "noindex,nofollow",
+      canonical: `${BASE_URL}/`,
+    },
+    "contract-sign": {
+      title: "Tanda Tangan Kontrak - Jamaah.in",
+      description: "Baca dan tanda tangani kontrak perjalanan secara digital dari HP.",
       robots: "noindex,nofollow",
       canonical: `${BASE_URL}/`,
     },
@@ -184,6 +202,8 @@
   let ItineraryPage = $state(null);
   let MutawwifManifestPage = $state(null);
   let PublicRegistrationPage = $state(null);
+  let PublicPackagePage = $state(null);
+  let PublicContractSigningPage = $state(null);
   // v2 pages
   let PackagesPage = $state(null);
   let CRMPage = $state(null);
@@ -192,6 +212,7 @@
   let VendorsPage = $state(null);
   let AgentsPage = $state(null);
   let DocumentsPage = $state(null);
+  let ContractsPage = $state(null);
 
   async function ensurePage(page) {
     if (page === "dashboard" && !DashboardPage) {
@@ -222,6 +243,10 @@
       MutawwifManifestPage = (await import("./lib/pages/MutawwifManifest.svelte")).default;
     } else if (page === "registration" && !PublicRegistrationPage) {
       PublicRegistrationPage = (await import("./lib/pages/PublicRegistrationPage.svelte")).default;
+    } else if (page === "package" && !PublicPackagePage) {
+      PublicPackagePage = (await import("./lib/pages/PublicPackagePage.svelte")).default;
+    } else if (page === "contract-sign" && !PublicContractSigningPage) {
+      PublicContractSigningPage = (await import("./lib/pages/PublicContractSigningPage.svelte")).default;
     } else if (page === "packages" && !PackagesPage) {
       PackagesPage = (await import("./lib/pages/PackagesPage.svelte")).default;
     } else if (page === "crm" && !CRMPage) {
@@ -236,26 +261,36 @@
       AgentsPage = (await import("./lib/pages/AgentsPage.svelte")).default;
     } else if (page === "documents" && !DocumentsPage) {
       DocumentsPage = (await import("./lib/pages/DocumentsPage.svelte")).default;
+    } else if (page === "contracts" && !ContractsPage) {
+      ContractsPage = (await import("./lib/pages/ContractsPage.svelte")).default;
     }
   }
 
   // Check hash synchronously BEFORE first render to avoid flash of wrong page
   function getInitialPageAndTokens() {
-    if (typeof window === "undefined") return { page: "landing", sharedToken: "", registrationToken: "" };
+    if (typeof window === "undefined") return { page: "landing", sharedToken: "", registrationToken: "", packageSlug: "", contractToken: "" };
     const hash = window.location.hash;
     const manifestMatch = hash.match(/^#\/m\/([a-f0-9]+)$/i);
     const registrationMatch = hash.match(/^#\/reg\/([a-zA-Z0-9_-]+)$/i);
+    const packageMatch = hash.match(/^#\/paket\/([a-zA-Z0-9_-]+)$/i);
+    const contractMatch = hash.match(/^#\/kontrak\/([a-zA-Z0-9_-]+)$/i);
     const superAdminMatch = hash === "#/super-admin";
     if (superAdminMatch) {
-      return { page: "super-admin", sharedToken: "", registrationToken: "" };
+      return { page: "super-admin", sharedToken: "", registrationToken: "", packageSlug: "", contractToken: "" };
     }
     if (manifestMatch) {
-      return { page: "mutawwif", sharedToken: manifestMatch[1], registrationToken: "" };
+      return { page: "mutawwif", sharedToken: manifestMatch[1], registrationToken: "", packageSlug: "", contractToken: "" };
     }
     if (registrationMatch) {
-      return { page: "registration", sharedToken: "", registrationToken: registrationMatch[1] };
+      return { page: "registration", sharedToken: "", registrationToken: registrationMatch[1], packageSlug: "", contractToken: "" };
     }
-    return { page: "landing", sharedToken: "", registrationToken: "" };
+    if (packageMatch) {
+      return { page: "package", sharedToken: "", registrationToken: "", packageSlug: packageMatch[1], contractToken: "" };
+    }
+    if (contractMatch) {
+      return { page: "contract-sign", sharedToken: "", registrationToken: "", packageSlug: "", contractToken: contractMatch[1] };
+    }
+    return { page: "landing", sharedToken: "", registrationToken: "", packageSlug: "", contractToken: "" };
   }
   const initial = getInitialPageAndTokens();
 
@@ -269,6 +304,8 @@
   let checkingSuperAdminAuth = $state(false); // Loading state for super admin auth check
   let sharedToken = $state(initial.sharedToken); // For /#/m/{token} public manifest
   let registrationToken = $state(initial.registrationToken); // For /#/reg/{token} public registration
+  let packageSlug = $state(initial.packageSlug); // For /#/paket/{slug} public package page
+  let contractToken = $state(initial.contractToken); // For /#/kontrak/{token} public contract signing
 
   // Derived
   let isPro = $derived(
@@ -335,6 +372,15 @@
         "Template jadwal untuk reuse di grup berikutnya",
       ],
     },
+    contracts: {
+      name: "E-Kontrak Digital",
+      desc: "Kelola template kontrak digital dan siapkan fondasi penandatanganan jamaah.",
+      highlights: [
+        "Template kontrak dengan variabel otomatis",
+        "Preview isi kontrak sebelum dikirim",
+        "Fondasi untuk monitoring tanda tangan",
+      ],
+    },
   };
   let groups = $state([]);
   let totalJamaahCount = $derived(
@@ -395,7 +441,7 @@
     localStorage.removeItem("token");
 
     // If already on public page (set by getInitialPageAndTokens), skip auth flow
-    if (currentPage === "mutawwif" || currentPage === "registration") {
+    if (currentPage === "mutawwif" || currentPage === "registration" || currentPage === "package" || currentPage === "contract-sign") {
       return;
     }
 
@@ -410,6 +456,8 @@
       const h = window.location.hash;
       const m = h.match(/^#\/m\/([a-f0-9]+)$/i);
       const r = h.match(/^#\/reg\/([a-zA-Z0-9_-]+)$/i);
+      const p = h.match(/^#\/paket\/([a-zA-Z0-9_-]+)$/i);
+      const ct = h.match(/^#\/kontrak\/([a-zA-Z0-9_-]+)$/i);
       if (h === "#/super-admin") {
         currentPage = "super-admin";
         checkSuperAdminAuth(); // Check auth when navigating to super-admin
@@ -421,6 +469,14 @@
       if (r) {
         registrationToken = r[1];
         currentPage = "registration";
+      }
+      if (p) {
+        packageSlug = p[1];
+        currentPage = "package";
+      }
+      if (ct) {
+        contractToken = ct[1];
+        currentPage = "contract-sign";
       }
     });
 
@@ -554,7 +610,8 @@
       currentPage !== "login" &&
       currentPage !== "register" &&
       currentPage !== "mutawwif" &&
-      currentPage !== "registration",
+      currentPage !== "registration" &&
+      currentPage !== "contract-sign",
   );
 
   $effect(() => {
@@ -822,6 +879,23 @@
           {:else}
             <div class="p-6 text-slate-500">Loading dokumen...</div>
           {/if}
+        {:else if currentPage === "contracts"}
+          {#if isPro}
+            {#if ContractsPage}
+              <ContractsPage {user} />
+            {:else}
+              <div class="p-6 text-slate-500">Loading e-kontrak...</div>
+            {/if}
+          {:else}
+            <ProGateScreen
+              featureName={proFeatures.contracts.name}
+              featureDescription={proFeatures.contracts.desc}
+              highlights={proFeatures.contracts.highlights}
+              {trialAvailable}
+              onUpgrade={() => handlePageChange("profile:upgrade")}
+              onTrial={() => handlePageChange("profile:upgrade")}
+            />
+          {/if}
         {/if}
       </div>
     </div>
@@ -852,6 +926,18 @@
       <PublicRegistrationPage token={registrationToken} />
     {:else}
       <div class="min-h-screen flex items-center justify-center text-slate-500">Loading registration...</div>
+    {/if}
+  {:else if currentPage === "package"}
+    {#if PublicPackagePage}
+      <PublicPackagePage slug={packageSlug} />
+    {:else}
+      <div class="min-h-screen flex items-center justify-center text-slate-500">Loading package...</div>
+    {/if}
+  {:else if currentPage === "contract-sign"}
+    {#if PublicContractSigningPage}
+      <PublicContractSigningPage token={contractToken} />
+    {:else}
+      <div class="min-h-screen flex items-center justify-center text-slate-500">Loading contract...</div>
     {/if}
   {/if}
 

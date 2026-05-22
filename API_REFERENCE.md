@@ -49,6 +49,22 @@
 | DELETE | `/packages/:id/costs/:cid` | Yes | Delete cost component |
 | GET | `/public/packages/:slug` | No | Public package page |
 
+### Contract Service
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/contracts/templates` | Yes | List contract templates |
+| GET | `/contracts/templates/:id` | Yes | Get contract template detail |
+| POST | `/contracts/templates` | Yes | Create contract template |
+| PUT | `/contracts/templates/:id` | Yes | Update contract template |
+| DELETE | `/contracts/templates/:id` | Yes | Delete contract template |
+| POST | `/contracts/templates/preview` | Yes | Render contract template preview |
+| GET | `/contracts/` | Yes | List generated contracts by status |
+| GET | `/contracts/:id` | Yes | Get generated contract detail |
+| POST | `/contracts/` | Yes | Generate contract instance and public signing link |
+| GET | `/public/contracts/:token` | No | Get public signing payload |
+| POST | `/public/contracts/:token/sign` | No | Submit jamaah digital signature |
+
 ## Jamaah / CRM
 
 | Method | Endpoint | Auth | Description |
@@ -104,6 +120,14 @@
 | GET | `/finance/expenses/:id` | Yes | Get expense detail |
 | PUT | `/finance/expenses/:id` | Yes | Update expense |
 | DELETE | `/finance/expenses/:id` | Yes | Delete expense |
+
+## Finance / P&L
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/finance/pnl/:pkgId` | Yes | Package P&L — projected vs actual revenue/cost, category breakdown, cash flow |
+
+> `data_notes` in the response flags any metrics that are approximations pending future modules (e.g., equipment HPP without inventory data).
 
 ## Vendor & Biaya Operasional
 

@@ -114,8 +114,7 @@ func main() {
 	logger.Info("shutting down auth service...")
 	shutdownCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	_ = shutdownCtx
-	if err := app.Shutdown(); err != nil {
+	if err := app.ShutdownWithContext(shutdownCtx); err != nil {
 		logger.Errorf("fiber shutdown: %v", err)
 	}
 }

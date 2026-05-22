@@ -255,6 +255,19 @@ func (h *VendorHandler) GetDebtSummary(c *fiber.Ctx) error {
 	return response.OK(c, summary)
 }
 
+func (h *VendorHandler) GetPackageBillSummary(c *fiber.Ctx) error {
+	claims := c.Locals("claims").(*sharedAuth.Claims)
+	packageID, err := uuid.Parse(c.Params("pkgId"))
+	if err != nil {
+		return response.BadRequest(c, "invalid package id")
+	}
+	summary, err := h.svc.GetPackageBillSummary(c.Context(), claims.OrgID, packageID)
+	if err != nil {
+		return response.InternalError(c, err.Error())
+	}
+	return response.OK(c, summary)
+}
+
 // --- Vendor Payments ---
 
 func (h *VendorHandler) CreatePayment(c *fiber.Ctx) error {

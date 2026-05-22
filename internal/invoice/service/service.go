@@ -241,11 +241,8 @@ func (s *InvoiceService) RecordPayment(ctx context.Context, orgID, userID, invoi
 	} else if inv.AmountPaid > 0 {
 		inv.Status = string(model.InvoiceStatusSebagian)
 	}
-	if err := s.repo.UpdateInvoiceStatus(ctx, invoiceID, orgID, inv.Status); err != nil {
-		return payment, nil, fmt.Errorf("update invoice status: %w", err)
-	}
 	if err := s.repo.UpdateInvoice(ctx, inv); err != nil {
-		return payment, nil, fmt.Errorf("update invoice amounts: %w", err)
+		return payment, nil, fmt.Errorf("update invoice: %w", err)
 	}
 
 	updated, err := s.repo.GetInvoiceByID(ctx, invoiceID, orgID)
@@ -265,6 +262,14 @@ func (s *InvoiceService) GetPayments(ctx context.Context, orgID, invoiceID uuid.
 
 func (s *InvoiceService) GetSummary(ctx context.Context, orgID uuid.UUID) (*model.InvoiceSummary, error) {
 	return s.repo.GetSummary(ctx, orgID)
+}
+
+func (s *InvoiceService) GetPackageRevenue(ctx context.Context, orgID, packageID uuid.UUID) (*model.PackageRevenueSummary, error) {
+	return s.repo.GetPackageRevenue(ctx, orgID, packageID)
+}
+
+func (s *InvoiceService) ListInvoicesByPackage(ctx context.Context, orgID, packageID uuid.UUID) ([]model.Invoice, error) {
+	return s.repo.ListInvoicesByPackage(ctx, orgID, packageID)
 }
 
 func parseDate(s string) (*time.Time, error) {

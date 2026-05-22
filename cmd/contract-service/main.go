@@ -13,9 +13,9 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"go.uber.org/zap"
 
-	"github.com/jamaah-in/v2/internal/invoice/handler"
-	"github.com/jamaah-in/v2/internal/invoice/repository"
-	"github.com/jamaah-in/v2/internal/invoice/service"
+	"github.com/jamaah-in/v2/internal/contract/handler"
+	"github.com/jamaah-in/v2/internal/contract/repository"
+	"github.com/jamaah-in/v2/internal/contract/service"
 	sharedAuth "github.com/jamaah-in/v2/internal/shared/auth"
 	sharedConfig "github.com/jamaah-in/v2/internal/shared/config"
 	sharedDB "github.com/jamaah-in/v2/internal/shared/database"
@@ -24,14 +24,14 @@ import (
 
 func main() {
 	cfg := sharedConfig.Load()
-	cfg.Database.DBName = "jamaah_invoice"
-	cfg.Server.Port = 50054
-	if p := os.Getenv("INVOICE_SERVICE_PORT"); p != "" {
+	cfg.Database.DBName = "jamaah_contract"
+	cfg.Server.Port = 50058
+	if p := os.Getenv("CONTRACT_SERVICE_PORT"); p != "" {
 		cfg.Server.Port, _ = strconv.Atoi(p)
 	}
 
 	logger := sharedLogger.New(cfg.App.Env)
-	logger.Infof("starting invoice service on :%d", cfg.Server.Port)
+	logger.Infof("starting contract service on :%d", cfg.Server.Port)
 
 	ctx := context.Background()
 	pool, err := sharedDB.Connect(ctx, cfg.Database.DSN())
@@ -54,52 +54,47 @@ func main() {
 		logger.Warn("JWT keys not found - running without auth")
 	}
 
-	invoiceRepo := repository.NewInvoiceRepo(pool)
-	invoiceService := service.NewInvoiceService(invoiceRepo)
-	invoiceHandler := handler.NewInvoiceHandler(invoiceService)
+	contractRepo := repository.NewContractRepo(pool)
+	contractService := service.NewContractService(contractRepo)
+	contractHandler := handler.NewContractHandler(contractService)
 
 	app := fiber.New(fiber.Config{
-		AppName:      "jamaah-invoice-service",
+		AppName:      "jamaah-contract-service",
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	})
 	app.Use(recover.New())
 
 	app.Get("/health", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{"status": "ok", "service": "invoice"})
+		return c.JSON(fiber.Map{"status": "ok", "service": "contract"})
 	})
 
 	authMW := authMiddleware(jwtManager, logger)
+	api := app.Group("/api/v1/contracts", authMW)
+	api.Get("/templates", contractHandler.ListTemplates)
+	api.Get("/templates/:id", contractHandler.GetTemplate)
+	api.Post("/templates", contractHandler.CreateTemplate)
+	api.Put("/templates/:id", contractHandler.UpdateTemplate)
+	api.Delete("/templates/:id", contractHandler.DeleteTemplate)
+	api.Post("/templates/preview", contractHandler.PreviewTemplate)
+	api.Get("/", contractHandler.ListInstances)
+	api.Get("/:id", contractHandler.GetInstance)
+	api.Post("/", contractHandler.CreateInstance)
 
-	invoices := app.Group("/api/v1/invoices", authMW)
-	invoices.Post("/", invoiceHandler.CreateInvoice)
-	invoices.Get("/", invoiceHandler.ListInvoices)
-	invoices.Get("/summary", invoiceHandler.GetSummary)
-	invoices.Get("/package/:pkgId/revenue", invoiceHandler.GetPackageRevenue)
-	invoices.Get("/package/:pkgId", invoiceHandler.ListByPackage)
-	invoices.Get("/number/:number", invoiceHandler.GetInvoiceByNumber)
-	invoices.Get("/jamaah/:jamaahId", invoiceHandler.GetInvoicesByJamaah)
-	invoices.Get("/:id", invoiceHandler.GetInvoice)
-	invoices.Put("/:id", invoiceHandler.UpdateInvoice)
-	invoices.Patch("/:id/cancel", invoiceHandler.CancelInvoice)
-
-	invoices.Post("/:id/schedules", invoiceHandler.CreatePaymentSchedules)
-	invoices.Get("/:id/schedules", invoiceHandler.GetPaymentSchedules)
-
-	invoices.Post("/:id/payments", invoiceHandler.RecordPayment)
-	invoices.Get("/:id/payments", invoiceHandler.GetPayments)
+	app.Get("/public/contracts/:token", contractHandler.GetPublicContract)
+	app.Post("/public/contracts/:token/sign", contractHandler.SignPublicContract)
 
 	go func() {
 		if err := app.Listen(":" + strconv.Itoa(cfg.Server.Port)); err != nil {
-			logger.Fatalf("invoice service listen: %v", err)
+			logger.Fatalf("contract service listen: %v", err)
 		}
 	}()
-	logger.Infof("invoice service listening on :%d", cfg.Server.Port)
+	logger.Infof("contract service listening on :%d", cfg.Server.Port)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
-	logger.Info("shutting down invoice service...")
+	logger.Info("shutting down contract service...")
 	app.Shutdown()
 }
 
